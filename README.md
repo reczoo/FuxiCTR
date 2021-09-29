@@ -78,7 +78,7 @@ For example, `DeepFM_test` is an expid located in `config/model_config/tests.yam
 
 ```bash
 cd benchmarks
-python benchmark.py --config ../config --expid DeepFM_test --gpu 0
+python run.py --config ../config --expid DeepFM_test --gpu 0
 
 ```
 
