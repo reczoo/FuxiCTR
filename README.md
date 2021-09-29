@@ -1,6 +1,6 @@
 # FuxiCTR
 
-Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. 
+Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the development of [Open-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction), making open benchmarking for CTR prediction available.
 
 
 ## Model List
@@ -97,6 +97,17 @@ python run_param_tuner.py --config ./FM_criteo_x4_001/FM_criteo_x4_tuner_config_
 
 ## Code Structure
 [Check an overview of code structure](./docs/FuxiCTR_overview.jpg) for more details on API design.
+
+
+## Dependency
+FuxiCTR has the following requirements to install.
+
++ python 3.6.x
++ pytorch 1.0.x
++ pandas
++ numpy
++ h5py
++ pyyaml
 
 
 ## License
