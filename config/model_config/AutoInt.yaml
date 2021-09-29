@@ -1,0 +1,119 @@
+AutoInt_base:
+    model: AutoInt
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    dnn_hidden_units: [400, 400]
+    dnn_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    num_heads: 2
+    attention_layers: 3
+    attention_dim: 40
+    use_residual: True
+    batch_norm: False
+    layer_norm: False
+    use_scale: False
+    use_wide: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AutoInt_criteo_x4:
+    model: AutoInt
+    dataset_id: criteo_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    dnn_hidden_units: [400, 400]
+    dnn_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    num_heads: 2
+    attention_layers: 3
+    attention_dim: 40
+    use_residual: True
+    batch_norm: False
+    layer_norm: False
+    use_scale: False
+    use_wide: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AutoInt_avazu_x4:
+    model: AutoInt
+    dataset_id: avazu_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    dnn_hidden_units: [400, 400]
+    dnn_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    num_heads: 2
+    attention_layers: 3
+    attention_dim: 40
+    use_residual: True
+    batch_norm: False
+    layer_norm: False
+    use_scale: False
+    use_wide: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AutoInt_kkbox_x4:
+    model: AutoInt
+    dataset_id: kkbox_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    dnn_hidden_units: [400, 400]
+    dnn_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    num_heads: 2
+    attention_layers: 3
+    attention_dim: 40
+    use_residual: True
+    batch_norm: False
+    layer_norm: False
+    use_scale: False
+    use_wide: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

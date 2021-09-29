@@ -1,0 +1,17 @@
+FmFM_base:
+    model: FmFM
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    field_interaction_type: matrixed
+    batch_size: 10000
+    embedding_dim: 10
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

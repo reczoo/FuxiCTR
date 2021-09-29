@@ -1,0 +1,27 @@
+InterHAt_base:
+    model: InterHAt
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    hidden_dim: null
+    order: 3
+    num_heads: 1
+    attention_dim: 40
+    hidden_units: [64]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    layer_norm: True
+    use_residual: True
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

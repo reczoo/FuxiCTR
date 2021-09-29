@@ -1,0 +1,10 @@
+Base:
+    model_root: '../checkpoints/'
+    workers: 3
+    verbose: 1
+    patience: 2
+    pickle_feature_encoder: True
+    use_hdf5: True
+    save_best_only: True
+    every_x_epochs: 1
+    debug: False

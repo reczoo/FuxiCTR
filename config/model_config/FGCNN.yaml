@@ -1,0 +1,119 @@
+FGCNN_base:
+    model: FGCNN
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_size: 10000
+    embedding_dim: 20
+    share_embedding: False
+    channels: [38, 40, 42, 44]
+    kernel_heights: [9, 9, 9, 9]
+    pooling_sizes: [2, 2, 2, 2]
+    recombined_channels: [3, 3, 3, 3]
+    conv_activation: Tanh
+    conv_batch_norm: True
+    dnn_hidden_units: [4096, 2048]
+    dnn_activations: ReLU
+    dnn_batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FGCNN_criteo_x4:
+    model: FGCNN
+    dataset_id: criteo_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_size: 10000
+    embedding_dim: 20
+    share_embedding: False
+    channels: [38, 40, 42, 44]
+    kernel_heights: [9, 9, 9, 9]
+    pooling_sizes: [2, 2, 2, 2]
+    recombined_channels: [3, 3, 3, 3]
+    conv_activation: Tanh
+    conv_batch_norm: True
+    dnn_hidden_units: [4096, 2048]
+    dnn_activations: ReLU
+    dnn_batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FGCNN_avazu_x4:
+    model: FGCNN
+    dataset_id: avazu_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_size: 10000
+    embedding_dim: 20
+    share_embedding: False
+    channels: [14, 16, 18, 20]
+    kernel_heights: [7, 7, 7, 7]
+    pooling_sizes: [2, 2, 2, 2]
+    recombined_channels: [3, 3, 3, 3]
+    conv_activation: Tanh
+    conv_batch_norm: True
+    dnn_hidden_units: [4096, 2048, 1024, 512]
+    dnn_activations: ReLU
+    dnn_batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FGCNN_kkbox_x4:
+    model: FGCNN
+    dataset_id: kkbox_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_size: 10000
+    embedding_dim: 20
+    share_embedding: False
+    channels: [14, 16, 18, 20]
+    kernel_heights: [7, 7, 7, 7]
+    pooling_sizes: [2, 2, 2, 2]
+    recombined_channels: [3, 3, 3, 3]
+    conv_activation: Tanh
+    conv_batch_norm: True
+    dnn_hidden_units: [4096, 2048, 1024, 512]
+    dnn_activations: ReLU
+    dnn_batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

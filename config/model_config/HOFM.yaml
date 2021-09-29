@@ -1,0 +1,79 @@
+HOFM_base:
+    model: HOFM
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    embedding_dropout: 0
+    order: 4
+    batch_size: 10000
+    embedding_dim: 10
+    reuse_embedding: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+HOFM_criteo_x4:
+    model: HOFM
+    dataset_id: criteo_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    embedding_dropout: 0
+    order: 4
+    batch_size: 10000
+    embedding_dim: 10
+    reuse_embedding: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+HOFM_avazu_x4:
+    model: HOFM
+    dataset_id: avazu_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    embedding_dropout: 0
+    order: 4
+    batch_size: 10000
+    embedding_dim: 10
+    reuse_embedding: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+HOFM_kkbox_x4:
+    model: HOFM
+    dataset_id: kkbox_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    embedding_dropout: 0
+    order: 4
+    batch_size: 10000
+    embedding_dim: 10
+    reuse_embedding: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

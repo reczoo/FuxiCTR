@@ -1,0 +1,18 @@
+### Avazu dataset  
+avazu_x4:
+    data_root: ../data/Avazu/
+    data_format: csv
+    train_data: ../data/Avazu/Avazu_x4/train.csv
+    valid_data: ../data/Avazu/Avazu_x4/valid.csv
+    test_data: ../data/Avazu/Avazu_x4/test.csv
+    min_categr_count: 2
+    feature_cols:
+        - {name: id, active: False, dtype: str, type: categorical}
+        - {name: hour, active: True, dtype: str, type: categorical, preprocess: convert_hour}
+        - {name: [C1,banner_pos,site_id,site_domain,site_category,app_id,app_domain,app_category,device_id,
+                  device_ip,device_model,device_type,device_conn_type,C14,C15,C16,C17,C18,C19,C20,C21], 
+           active: True, dtype: str, type: categorical}
+        - {name: weekday, active: True, dtype: str, type: categorical, preprocess: convert_weekday}
+        - {name: weekend, active: True, dtype: str, type: categorical, preprocess: convert_weekend}
+    label_col: {name: click, dtype: float}
+

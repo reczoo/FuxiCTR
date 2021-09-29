@@ -1,0 +1,16 @@
+### KKBox dataset
+kkbox_x4:
+    data_root: ../data/KKBox/
+    data_format: csv
+    train_data: ../data/KKBox/KKBox_x4/train.csv
+    valid_data: ../data/KKBox/KKBox_x4/valid.csv
+    test_data: ../data/KKBox/KKBox_x4/test.csv
+    min_categr_count: 10
+    feature_cols:
+        - {name: ["msno","song_id","source_system_tab","source_screen_name","source_type","city","gender",
+                  "registered_via","language"], active: True, dtype: str, type: categorical}
+        - {name: genre_ids, active: True, dtype: str, type: sequence, max_len: 3}
+        - {name: artist_name, active: True, dtype: str, type: sequence, max_len: 3}
+        - {name: isrc, active: True, dtype: str, type: categorical, preprocess: extract_country_code}
+        - {name: bd, active: True, dtype: str, type: categorical, preprocess: bucketize_age}
+    label_col: {name: label, dtype: float}

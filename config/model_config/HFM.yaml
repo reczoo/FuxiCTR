@@ -1,0 +1,101 @@
+HFM_base:
+    model: HFM
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    interaction_type: circular_convolution
+    use_dnn: False
+    hidden_units: [64, 64, 64]
+    hidden_activations: relu
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+HFM_criteo_x4:
+    model: HFM
+    dataset_id: criteo_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    interaction_type: circular_convolution
+    use_dnn: False
+    hidden_units: [64, 64, 64]
+    hidden_activations: relu
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+HFM_avazu_x4:
+    model: HFM
+    dataset_id: avazu_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    interaction_type: circular_convolution
+    use_dnn: False
+    hidden_units: [64, 64, 64]
+    hidden_activations: relu
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+HFM_kkbox_x4:
+    model: HFM
+    dataset_id: kkbox_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    interaction_type: circular_convolution
+    use_dnn: False
+    hidden_units: [64, 64, 64]
+    hidden_activations: relu
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+    

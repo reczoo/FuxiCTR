@@ -1,0 +1,111 @@
+AFN_base:
+    model: AFN
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 20
+    embedding_dropout: 0
+    logarithmic_neurons: 1200
+    afn_hidden_units: [400, 400, 400]
+    afn_activations: relu
+    afn_dropout: 0
+    ensemble_dnn: False
+    dnn_hidden_units: [400, 400, 400]
+    dnn_activations: relu
+    dnn_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AFN_criteo_x4:
+    model: AFN
+    dataset_id: criteo_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 20
+    embedding_dropout: 0
+    logarithmic_neurons: 1500
+    afn_hidden_units: [400, 400, 400]
+    afn_activations: relu
+    afn_dropout: 0
+    ensemble_dnn: False
+    dnn_hidden_units: [400, 400, 400]
+    dnn_activations: relu
+    dnn_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AFN_avazu_x4:
+    model: AFN
+    dataset_id: avazu_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 20
+    embedding_dropout: 0
+    logarithmic_neurons: 1200
+    afn_hidden_units: [400, 400, 400]
+    afn_activations: relu
+    afn_dropout: 0
+    ensemble_dnn: False
+    dnn_hidden_units: [400, 400, 400]
+    dnn_activations: relu
+    dnn_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AFN_kkbox_x4:
+    model: AFN
+    dataset_id: kkbox_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 20
+    embedding_dropout: 0
+    logarithmic_neurons: 1200
+    afn_hidden_units: [400, 400, 400]
+    afn_activations: relu
+    afn_dropout: 0
+    ensemble_dnn: False
+    dnn_hidden_units: [400, 400, 400]
+    dnn_activations: relu
+    dnn_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

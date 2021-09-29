@@ -1,0 +1,91 @@
+DNN_base:
+    model: DNN
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    hidden_units: [500, 500, 500]
+    hidden_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+DNN_criteo_x4:
+    model: DNN
+    dataset_id: criteo_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    hidden_units: [500, 500, 500]
+    hidden_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+DNN_avazu_x4:
+    model: DNN
+    dataset_id: avazu_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    hidden_units: [500, 500, 500]
+    hidden_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+DNN_kkbox_x4:
+    model: DNN
+    dataset_id: kkbox_x4
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    hidden_units: [500, 500, 500]
+    hidden_activations: relu
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

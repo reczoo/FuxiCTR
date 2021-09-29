@@ -1,0 +1,87 @@
+AFM_base:
+    model: AFM
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    attention_dim: 40
+    attention_dropout: [0, 0]
+    embedding_dropout: 0
+    use_attention: True
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AFM_criteo_x4:
+    model: AFM
+    dataset_id: criteo_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    attention_dim: 40
+    attention_dropout: [0, 0]
+    embedding_dropout: 0
+    use_attention: True
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AFM_avazu_x4:
+    model: AFM
+    dataset_id: avazu_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    attention_dim: 40
+    attention_dropout: [0, 0]
+    embedding_dropout: 0
+    use_attention: True
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+AFM_kkbox_x4:
+    model: AFM
+    dataset_id: kkbox_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    attention_dim: 40
+    attention_dropout: [0, 0]
+    embedding_dropout: 0
+    use_attention: True
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

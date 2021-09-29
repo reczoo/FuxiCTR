@@ -1,0 +1,71 @@
+FwFM_base:
+    model: FwFM
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    linear_type: FiLV
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FwFM_criteo_x4:
+    model: FwFM
+    dataset_id: criteo_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    linear_type: FiLV
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FwFM_avazu_x4:
+    model: FwFM
+    dataset_id: avazu_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    linear_type: FiLV
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FwFM_kkbox_x4:
+    model: FwFM
+    dataset_id: kkbox_x4
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    linear_type: FiLV
+    batch_size: 10000
+    embedding_dim: 40
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

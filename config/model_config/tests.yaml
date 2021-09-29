@@ -1,0 +1,551 @@
+AFM_test:
+    model: AFM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    attention_dim: 8
+    attention_dropout: [0, 0]
+    use_attention: True
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+AFN_test:
+    model: AFN
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    logarithmic_neurons: 32
+    afn_hidden_units: [64, 32]
+    afn_activations: relu
+    afn_dropout: 0
+    ensemble_dnn: False
+    dnn_hidden_units: [64, 32]
+    dnn_activations: relu
+    dnn_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+AutoInt_test:
+    model: AutoInt
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    dnn_hidden_units: [64, 32]
+    dnn_activations: relu
+    net_dropout: 0
+    num_heads: 2
+    attention_layers: 3
+    attention_dim: 8
+    use_residual: True
+    batch_norm: False
+    layer_norm: False
+    use_scale: False
+    use_wide: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+CCPM_test:
+    model: CCPM
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    channels: [3, 3]
+    kernel_heights: [3, 3]
+    activation: Tanh
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+DCN_test:
+    model: DCN
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    dnn_hidden_units: [64, 32]
+    dnn_activations: relu
+    crossing_layers: 3
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+DeepCrossing_test:
+    model: DeepCrossing
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    residual_blocks: [64, 64, 64]
+    dnn_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    use_residual: True
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+DeepFM_test:
+    model: DeepFM
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_regularizer: 0
+    embedding_regularizer: 1.e-8
+    learning_rate: 1.e-3
+    batch_norm: False
+    net_dropout: 0
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+DNN_test:
+    model: DNN
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FFM_test:
+    model: FFM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 1.e-8
+    batch_size: 128
+    embedding_dim: 2
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FGCNN_test:
+    model: FGCNN
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    net_dropout: 0
+    batch_size: 128
+    embedding_dim: 4
+    share_embedding: False
+    channels: [14, 16, 18, 20]
+    kernel_heights: [7, 7, 7, 7]
+    pooling_sizes: [2, 2, 2, 2]
+    recombined_channels: [3, 3, 3, 3]
+    conv_activation: Tanh
+    conv_batch_norm: True
+    dnn_hidden_units: [64, 64, 64]
+    dnn_activations: ReLU
+    dnn_batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FiBiNET_test:
+    model: FiBiNET
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    bilinear_type: field_interaction
+    reduction_ratio: 3
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FiGNN_test:
+    model: FiGNN
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    gnn_layers: 2
+    use_residual: True
+    use_gru: True
+    reuse_graph_layer: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FM_test:
+    model: FM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 1.e-8
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FNN_test:
+    model: FNN
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    fm_embedding_regularizer: 0
+    dnn_embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FwFM_test:
+    model: FwFM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 1.e-8
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+HFM_test:
+    model: HFM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    interaction_type: circular_convolution
+    use_dnn: False
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+HOFM_test:
+    model: HOFM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 1.e-8
+    order: 3
+    batch_size: 128
+    embedding_dim: 4
+    reuse_embedding: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+InterHAt_test:
+    model: InterHAt
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    hidden_dim: null
+    order: 3
+    num_heads: 1
+    attention_dim: 8
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    layer_norm: True
+    use_residual: True
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+LorentzFM_test:
+    model: LorentzFM
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 1.e-8
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+LR_test:
+    model: LR
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 1.e-8
+    batch_size: 128
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+NFM_test:
+    model: NFM
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+ONN_test:
+    model: ONN
+    dataset_id: taobao_tiny_data
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+PNN_test:
+    model: PNN
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+WideDeep_test:
+    model: WideDeep
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    hidden_units: [64, 32]
+    hidden_activations: relu
+    net_regularizer: 0
+    embedding_regularizer: 0
+    batch_norm: False
+    net_dropout: 0
+    batch_size: 128
+    embedding_dim: 40
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+xDeepFM_test:
+    model: xDeepFM
+    dataset_id: taobao_tiny_data
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    dnn_hidden_units: [64, 32]
+    cin_layer_units: [10, 10]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
