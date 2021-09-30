@@ -66,12 +66,12 @@ model.evaluate_generator(test_gen)
 
 ```
 
-#### 2. Run the benchmark with given experiment_ID
+#### 2. Run the benchmark with given experiment_id
 
 For reproducing the experiment result, you can run the benchmarking script with the corresponding config file as follows.
 
 + --config: The config directory of data and model config files.
-+ --expid: The specific experiment_ID that records the detailed data and model settings.
++ --expid: The specific experiment_id that records the detailed data and model settings.
 + --gpu: The gpu index used for experiment, and -1 for CPU.
 
 For example, `DeepFM_test` is an expid located in `config/model_config/tests.yaml`.
@@ -84,14 +84,15 @@ python run.py --config ../config --expid DeepFM_test --gpu 0
 
 #### 3. Tune the model hyper-parameters
 
-For model hyper-parameters tuning, you can apply grid-search over the specified tuning space with the following script.
+For tuning model hyper-parameters, you can apply grid-search over the specified tuning space with the following script.
 
 + --config: The config file that defines the tuning space
-+ --gpu: The available gpus for parameters tuning.
++ --tag: (optional) Specify the tag to determine which expid to run (e.g. 001 for the first expid). This is useful to rerun one specific experiment_id that contains the tag.
++ --gpu: The available gpus for parameters tuning (e.g., setting --gpu 0 1 for two gpus)
 
 ```bash
 cd benchmarks
-python run_param_tuner.py --config ./FM_criteo_x4_001/FM_criteo_x4_tuner_config_01.yaml --gpu 0
+python run_param_tuner.py --config ./FM_criteo_x4_001/FM_criteo_x4_tuner_config_01.yaml --gpu 0 1
 
 ```
 
@@ -100,10 +101,10 @@ python run_param_tuner.py --config ./FM_criteo_x4_001/FM_criteo_x4_tuner_config_
 
 
 ## Dependency
-FuxiCTR has the following requirements to install.
+FuxiCTR has the following requirements to install. While the implementation of FuxiCTR should support more pytorch versions, we currently perform the tests on pytorch 1.0.x-1.1.x only.
 
 + python 3.6.x
-+ pytorch 1.0.x
++ pytorch 1.0.x-1.1.x
 + pandas
 + numpy
 + h5py
