@@ -1,0 +1,6 @@
+torch>=1.0
+pandas
+sklearn
+numpy
+PyYAML
+h5py
