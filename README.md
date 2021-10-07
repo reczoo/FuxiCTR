@@ -2,7 +2,7 @@
 
 This is a fork from the official release at https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR.
 
-Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the development of [Open-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction), making open benchmarking for CTR prediction available.
+Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR builds an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the development of [Open-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction), making open benchmarking for CTR prediction available.
 
 
 ## Model List
@@ -36,7 +36,19 @@ Click-through rate (CTR) prediction is an critical task for many industrial appl
 | AAAI'20  | LorentzFM | [Learning Feature Interactions with Lorentzian Factorization](https://arxiv.org/abs/1911.09821) | :heavy_check_mark: |
 | WSDM'20 | InterHAt | [Interpretable Click-through Rate Prediction through Hierarchical Attention](https://dl.acm.org/doi/10.1145/3336191.3371785) | :heavy_check_mark: |
 | DLP-KDD'20 | FLEN | [FLEN: Leveraging Field for Scalable CTR Prediction](https://arxiv.org/abs/1911.04690) | :heavy_check_mark: |
+| WWW'21 | FmFM | [FM^2: Field-matrixed Factorization Machines for Recommender Systems](https://arxiv.org/abs/2102.12994) | :heavy_check_mark: |
 
+
+
+## Dependency
+FuxiCTR has the following requirements to install. While the implementation of FuxiCTR should support more pytorch versions, we currently perform the tests on pytorch 1.0.x-1.1.x only.
+
++ python 3.6.x
++ pytorch 1.0.x-1.1.x
++ pandas
++ numpy
++ h5py
++ pyyaml
 
 ## Get Started
 
@@ -76,7 +88,7 @@ For reproducing the experiment result, you can run the benchmarking script with 
 + --expid: The specific experiment_id that records the detailed data and model settings.
 + --gpu: The gpu index used for experiment, and -1 for CPU.
 
-For example, `DeepFM_test` is an expid located in `config/model_config/tests.yaml`.
+In the following example, `DeepFM_test` corresponds to an expid with specific model and dataset configurations located in [config/model_config/tests.yaml](./config/model_config/tests.yaml#L145).
 
 ```bash
 cd benchmarks
@@ -92,25 +104,18 @@ For tuning model hyper-parameters, you can apply grid-search over the specified 
 + --tag: (optional) Specify the tag to determine which expid to run (e.g. 001 for the first expid). This is useful to rerun one specific experiment_id that contains the tag.
 + --gpu: The available gpus for parameters tuning (e.g., setting --gpu 0 1 for two gpus)
 
+In the following example, [FM_criteo_x4_tuner_config_01.yaml](./benchmarks/FM_criteo_x4_001/FM_criteo_x4_tuner_config_01.yaml) is a demo configuration file that defines the tuning space for parameter tuning.
+
 ```bash
 cd benchmarks
 python run_param_tuner.py --config ./FM_criteo_x4_001/FM_criteo_x4_tuner_config_01.yaml --gpu 0 1
 
 ```
 
+For more running examples, please refer to the "Reproduce-Steps" of benchmarking results in [Open-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction).
+
 ## Code Structure
 [Check an overview of code structure](./docs/FuxiCTR_overview.jpg) for more details on API design.
-
-
-## Dependency
-FuxiCTR has the following requirements to install. While the implementation of FuxiCTR should support more pytorch versions, we currently perform the tests on pytorch 1.0.x-1.1.x only.
-
-+ python 3.6.x
-+ pytorch 1.0.x-1.1.x
-+ pandas
-+ numpy
-+ h5py
-+ pyyaml
 
 
 ## License

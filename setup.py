@@ -7,7 +7,7 @@ setuptools.setup(
     name="fuxictr",
     version="1.0.1",
     author="zhujiem",
-    author_email="zhujiem@outlook.com",
+    author_email="zhujiem@users.noreply.github.com",
     description="A configurable, tunable, and reproducible library for CTR prediction",
     long_description=long_description,
     long_description_content_type="text/markdown",

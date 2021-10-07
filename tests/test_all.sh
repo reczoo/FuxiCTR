@@ -12,30 +12,30 @@
 
 cd ../benchmarks
 
-python benchmark.py --expid AFM_test && \
-python benchmark.py --expid AFN_test && \
-python benchmark.py --expid AutoInt_test && \
-python benchmark.py --expid CCPM_test && \
-python benchmark.py --expid DCN_test && \
-python benchmark.py --expid DeepCrossing_test && \
-python benchmark.py --expid DeepFM_test && \
-python benchmark.py --expid DNN_test && \
-python benchmark.py --expid FFM_test && \
-python benchmark.py --expid FGCNN_test && \
-python benchmark.py --expid FiBiNET_test && \
-python benchmark.py --expid FiGNN_test && \
-python benchmark.py --expid FM_test && \
-python benchmark.py --expid FNN_test && \
-python benchmark.py --expid FwFM_test && \
-python benchmark.py --expid HFM_test && \
-python benchmark.py --expid HOFM_test && \
-python benchmark.py --expid InterHAt_test && \
-python benchmark.py --expid LorentzFM_test && \
-python benchmark.py --expid LR_test && \
-python benchmark.py --expid NFM_test && \
-python benchmark.py --expid ONN_test && \
-python benchmark.py --expid PNN_test && \
-python benchmark.py --expid WideDeep_test && \
-python benchmark.py --expid xDeepFM_test
+python run.py --expid AFM_test && \
+python run.py --expid AFN_test && \
+python run.py --expid AutoInt_test && \
+python run.py --expid CCPM_test && \
+python run.py --expid DCN_test && \
+python run.py --expid DeepCrossing_test && \
+python run.py --expid DeepFM_test && \
+python run.py --expid DNN_test && \
+python run.py --expid FFM_test && \
+python run.py --expid FGCNN_test && \
+python run.py --expid FiBiNET_test && \
+python run.py --expid FiGNN_test && \
+python run.py --expid FM_test && \
+python run.py --expid FNN_test && \
+python run.py --expid FwFM_test && \
+python run.py --expid HFM_test && \
+python run.py --expid HOFM_test && \
+python run.py --expid InterHAt_test && \
+python run.py --expid LorentzFM_test && \
+python run.py --expid LR_test && \
+python run.py --expid NFM_test && \
+python run.py --expid ONN_test && \
+python run.py --expid PNN_test && \
+python run.py --expid WideDeep_test && \
+python run.py --expid xDeepFM_test
 
 echo "All tests done."

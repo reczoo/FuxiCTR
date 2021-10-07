@@ -1,10 +1,20 @@
-""" 
+# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the MIT license.
+
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE. See the MIT License for more details.
+
+""" This is the implementation of the following paper:
     [WWW2021] FM2: Field-matrixed Factorization Machines for Recommender Systems
 """
 import torch
 from torch import nn
 from .base_model import BaseModel
 from ..layers import EmbeddingLayer_v3, LR_Layer
+
 
 class FmFM(BaseModel):
     def __init__(self, 
