@@ -1,8 +1,8 @@
 # FuxiCTR
 
-This is a fork from the official release at https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR.
+This repo is the latest dev version of the official release at [huawei-noah/benchmark/FuxiCTR](https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR).
 
-Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR builds an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the development of [Open-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction), making open benchmarking for CTR prediction available.
+Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the building of [BARS-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction), which aims for open benchmarking for CTR prediction.
 
 
 ## Model List
@@ -39,16 +39,17 @@ Click-through rate (CTR) prediction is an critical task for many industrial appl
 | WWW'21 | [FmFM](./fuxictr/pytorch/models/FmFM.py) | [FM^2: Field-matrixed Factorization Machines for Recommender Systems](https://arxiv.org/abs/2102.12994) | :heavy_check_mark: |
 
 
-
 ## Dependency
-FuxiCTR has the following requirements to install. While the implementation of FuxiCTR should support more pytorch versions, we currently perform the tests on pytorch 1.0.x-1.1.x only.
+FuxiCTR has the following dependent requirements to install. While the implementation of FuxiCTR should support more pytorch versions, we currently perform the tests on pytorch v1.0~1.1 only.
 
-+ python 3.6.x
-+ pytorch 1.0.x-1.1.x
++ python 3.6
++ pytorch v1.0/v1.1
++ scikit-learn
 + pandas
 + numpy
 + h5py
 + pyyaml
++ tqdm
 
 ## Get Started
 
@@ -80,19 +81,19 @@ model.evaluate_generator(test_gen)
 
 ```
 
-#### 2. Run the benchmark with given experiment_id
+#### 2. Run the benchmark with given experiment_id in config file
 
 For reproducing the experiment result, you can run the benchmarking script with the corresponding config file as follows.
 
 + --config: The config directory of data and model config files.
-+ --expid: The specific experiment_id that records the detailed data and model settings.
++ --expid: The specific experiment_id that denotes the detailed data and model settings.
 + --gpu: The gpu index used for experiment, and -1 for CPU.
 
-In the following example, `DeepFM_test` corresponds to an expid with specific model and dataset configurations located in [config/model_config/tests.yaml](./config/model_config/tests.yaml#L145).
+In the following example, we create a demo model_config.yaml and dataset_config.yaml in [benchmarks/expid_config](./benchmarks/expid_config), and set the experiemnt id `FM_test`.
 
 ```bash
 cd benchmarks
-python run.py --config ../config --expid DeepFM_test --gpu 0
+python run_expid.py --config ./expid_config --expid FM_test --gpu 0
 
 ```
 
@@ -102,21 +103,28 @@ For tuning model hyper-parameters, you can apply grid-search over the specified 
 
 + --config: The config file that defines the tuning space
 + --tag: (optional) Specify the tag to determine which expid to run (e.g. 001 for the first expid). This is useful to rerun one specific experiment_id that contains the tag.
-+ --gpu: The available gpus for parameters tuning (e.g., setting --gpu 0 1 for two gpus)
++ --gpu: The available gpus for parameters tuning and multiple gpus can be used (e.g., using --gpu 0 1 for two gpus)
 
-In the following example, [FM_criteo_x4_tuner_config_01.yaml](./benchmarks/FM_criteo_x4_001/FM_criteo_x4_tuner_config_01.yaml) is a demo configuration file that defines the tuning space for parameter tuning.
+In the following example, we use the expid `FM_test` in `benchmarks/expid_config` as the base, and create a tuner config file `FM_tuner_config.yaml` in `benchmarks/tuner_config`, which defines the tuning space for parameter tuning. Note that if a key in `tuner_space` has values stored in a list, those values will be grid-searched. 
 
 ```bash
 cd benchmarks
-python run_param_tuner.py --config ./FM_criteo_x4_001/FM_criteo_x4_tuner_config_01.yaml --gpu 0 1
+python run_param_tuner.py --config ./tuner_config/FM_tuner_config.yaml --gpu 0 1
 
 ```
 
-For more running examples, please refer to the "Reproduce-Steps" of benchmarking results in [Open-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction).
+For more running examples, please refer to the benchmarking results in [BARS-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction).
 
 ## Code Structure
 [Check an overview of code structure](./docs/FuxiCTR_overview.jpg) for more details on API design.
 
 
-## License
-The MIT License
+## Discussion
+Welcome to join our WeChat group for any questions and discussions.
+
+![Scan WeChat QR](./docs/wechat.jpg)
+
+## Join Us
+We have open positions for internships and full-time jobs. If you are interested in research and practice in recommender systems, please send your CV to jamie.zhu@huawei.com.
+
+

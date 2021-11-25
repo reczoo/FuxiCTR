@@ -25,7 +25,7 @@ def load_config(config_dir, experiment_id):
     found_params = dict()
     for config in model_configs:
         with open(config, 'r') as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if 'Base' in config_dict:
                 found_params['Base'] = config_dict['Base']
             if experiment_id in config_dict:
@@ -45,7 +45,7 @@ def load_config(config_dir, experiment_id):
         dataset_configs = glob.glob(os.path.join(config_dir, 'dataset_config/*.yaml'))
     for config in dataset_configs:
         with open(config, 'r') as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if dataset_id in config_dict:
                 params.update(config_dict[dataset_id])
                 break

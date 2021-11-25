@@ -1,0 +1,10 @@
+base_config: ./expid_config/
+base_expid: FM_test
+dataset_id: taobao_tiny_data
+
+tuner_space:
+    model_root: './tuner_config/'
+    embedding_dim: [16, 32]
+    regularizer: [0, 1.e-6, 1.e-5]
+    learning_rate: 1.e-3
+    batch_size: [64, 128]

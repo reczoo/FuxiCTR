@@ -159,7 +159,7 @@ def run_all(version, config_dir, gpu_list, expid_tag=None):
         if len(idle_gpus) > 0:
             gpu_id = idle_gpus.pop(0)
             expid = experiment_id_list.pop(0)
-            cmd = "python -u run.py --version {} --config {} --expid {} --gpu {}"\
+            cmd = "python -u run_expid.py --version {} --config {} --expid {} --gpu {}"\
                   .format(version, config_dir, expid, gpu_id)
             # print("Run cmd:", cmd)
             p = subprocess.Popen(cmd.split())

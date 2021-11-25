@@ -1,6 +1,7 @@
-torch>=1.0
-pandas
-sklearn
-numpy
+torch==1.0
 PyYAML
+pandas
+scikit-learn
+numpy
 h5py
+tqdm
