@@ -1,5 +1,5 @@
 torch==1.0
-PyYAML
+PyYAML>=5.1
 pandas
 scikit-learn
 numpy

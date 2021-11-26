@@ -1,4 +1,5 @@
-Base:
+# The `Base` can be shared by different expid settings
+Base: 
     model_root: '../checkpoints/'
     workers: 3
     verbose: 1
@@ -9,9 +10,10 @@ Base:
     every_x_epochs: 1
     debug: False
 
+# The expid should be unique among all the others
 FM_test:
     model: FM
-    dataset_id: taobao_tiny_data
+    dataset_id: taobao_tiny_data # each expid corresponds to a dataset_id
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

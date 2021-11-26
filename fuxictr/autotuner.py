@@ -30,7 +30,7 @@ def load_model_config(config_dir, experiment_id):
     found_keys = []
     for config in model_configs:
         with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if "Base" in config_dict:
                 params.update(config_dict["Base"])
                 found_keys.append("Base")
@@ -51,7 +51,7 @@ def load_dataset_config(config_dir, dataset_id):
         dataset_configs = glob.glob(os.path.join(config_dir, "dataset_config/*.yaml"))
     for config in dataset_configs:
         with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if dataset_id in config_dict:
                 params.update(config_dict[dataset_id])
                 break
@@ -59,7 +59,7 @@ def load_dataset_config(config_dir, dataset_id):
 
 def enumerate_params(config_file, exclude_expid=[]):
     with open(config_file, "r") as cfg:
-        config_dict = yaml.load(cfg)
+        config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
     # tuning space
     tune_dict = config_dict["tuner_space"]
     for k, v in tune_dict.items():
@@ -67,7 +67,10 @@ def enumerate_params(config_file, exclude_expid=[]):
             tune_dict[k] = [v]
     experiment_id = config_dict["base_expid"]
     if "model_config" in config_dict:
-        model_dict = config_dict["model_config"][experiment_id]
+        model_dict = dict()
+        if 'Base' in config_dict["model_config"]:
+            model_dict.update(config_dict["model_config"]['Base'])
+        model_dict.update(config_dict["model_config"][experiment_id])
     else:
         base_config_dir = config_dict.get("base_config", os.path.dirname(config_file))
         model_dict = load_model_config(base_config_dir, experiment_id)
@@ -144,7 +147,7 @@ def load_experiment_ids(config_dir):
     experiment_id_list = []
     for config in model_configs:
         with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg)
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             experiment_id_list += config_dict.keys()
     return sorted(experiment_id_list)
 

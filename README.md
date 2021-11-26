@@ -15,7 +15,6 @@ Click-through rate (CTR) prediction is an critical task for many industrial appl
 | RecSys'16 | [FFM](./fuxictr/pytorch/models/FFM.py) | [Field-aware Factorization Machines for CTR Prediction](https://dl.acm.org/citation.cfm?id=2959134) |:heavy_check_mark: |
 | RecSys'16 | [YoutubeDNN](./fuxictr/pytorch/models/DNN.py) | [Deep Neural Networks for YouTube Recommendations](http://art.yale.edu/file_columns/0001/1132/covington.pdf) |:heavy_check_mark: |
 | DLRS'16 | [Wide&Deep](./fuxictr/pytorch/models/WideDeep.py)  | [Wide & Deep Learning for Recommender Systems](https://arxiv.org/pdf/1606.07792.pdf) |:heavy_check_mark: |
-|ECIR'16 | [FNN](./fuxictr/pytorch/models/FNN.py) | [Deep Learning over Multi-field Categorical Data: A Case Study on User Response Prediction](https://arxiv.org/abs/1601.02376) |:heavy_check_mark: |
 | ICDM'16 | [IPNN](./fuxictr/pytorch/models/PNN.py) | [Product-based Neural Networks for User Response Prediction](https://arxiv.org/pdf/1611.00144.pdf) | :heavy_check_mark: |
 | KDD'16 | [DeepCross](./fuxictr/pytorch/models/DeepCrossing.py) | [Deep Crossing: Web-Scale Modeling without Manually Crafted Combinatorial Features](https://www.kdd.org/kdd2016/papers/files/adf0975-shanA.pdf)  | :heavy_check_mark: |
 | NIPS'16 | [HOFM](./fuxictr/pytorch/models/HOFM.py) | [Higher-Order Factorization Machines](https://papers.nips.cc/paper/6144-higher-order-factorization-machines.pdf) | :heavy_check_mark: |
@@ -27,12 +26,12 @@ Click-through rate (CTR) prediction is an critical task for many industrial appl
 |KDD'18 | [xDeepFM](./fuxictr/pytorch/models/xDeepFM.py) | [xDeepFM: Combining Explicit and Implicit Feature Interactions for Recommender Systems](https://arxiv.org/pdf/1803.05170.pdf) | :heavy_check_mark: |
 |KDD'18 | [DIN](./fuxictr/pytorch/models/DIN.py) | [Deep Interest Network for Click-Through Rate Prediction](https://www.kdd.org/kdd2018/accepted-papers/view/deep-interest-network-for-click-through-rate-prediction) | :heavy_check_mark: |
 |CIKM'19 | [FiGNN](./fuxictr/pytorch/models/FiGNN.py) | [FiGNN: Modeling Feature Interactions via Graph Neural Networks for CTR Prediction](https://arxiv.org/abs/1910.05552) | :heavy_check_mark: |
-|CIKM'19 | [AutoInt+](./fuxictr/pytorch/models/AutoInt.py) | [AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks](https://arxiv.org/abs/1810.11921) | :heavy_check_mark: |
+|CIKM'19 | [AutoInt/AutoInt+](./fuxictr/pytorch/models/AutoInt.py) | [AutoInt: Automatic Feature Interaction Learning via Self-Attentive Neural Networks](https://arxiv.org/abs/1810.11921) | :heavy_check_mark: |
 |RecSys'19 | [FiBiNET](./fuxictr/pytorch/models/FiBiNET.py) | [FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction](https://arxiv.org/abs/1905.09433) | :heavy_check_mark: |
 |WWW'19 | [FGCNN](./fuxictr/pytorch/models/FGCNN.py) | [Feature Generation by Convolutional Neural Network for Click-Through Rate Prediction](https://arxiv.org/abs/1904.04447) | :heavy_check_mark: |
-| AAAI'19| [HFM+](./fuxictr/pytorch/models/HFM.py) | [Holographic Factorization Machines for Recommendation](https://ojs.aaai.org//index.php/AAAI/article/view/4448)  | :heavy_check_mark: |
+| AAAI'19| [HFM/HFM+](./fuxictr/pytorch/models/HFM.py) | [Holographic Factorization Machines for Recommendation](https://ojs.aaai.org//index.php/AAAI/article/view/4448)  | :heavy_check_mark: |
 | Neural Networks'20 | [ONN](./fuxictr/pytorch/models/ONN.py)  | [Operation-aware Neural Networks for User Response Prediction](https://arxiv.org/pdf/1904.12579)  | :heavy_check_mark: |
-| AAAI'20 | [AFN+](./fuxictr/pytorch/models/AFN.py) | [Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions](https://ojs.aaai.org/index.php/AAAI/article/view/5768) | :heavy_check_mark: |
+| AAAI'20 | [AFN/AFN+](./fuxictr/pytorch/models/AFN.py) | [Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions](https://ojs.aaai.org/index.php/AAAI/article/view/5768) | :heavy_check_mark: |
 | AAAI'20  | [LorentzFM](./fuxictr/pytorch/models/LorentzFM.py) | [Learning Feature Interactions with Lorentzian Factorization](https://arxiv.org/abs/1911.09821) | :heavy_check_mark: |
 | WSDM'20 | [InterHAt](./fuxictr/pytorch/models/InterHAt.py) | [Interpretable Click-through Rate Prediction through Hierarchical Attention](https://dl.acm.org/doi/10.1145/3336191.3371785) | :heavy_check_mark: |
 | DLP-KDD'20 | [FLEN](./fuxictr/pytorch/models/FLEN.py) | [FLEN: Leveraging Field for Scalable CTR Prediction](https://arxiv.org/abs/1911.04690) | :heavy_check_mark: |
@@ -44,11 +43,11 @@ FuxiCTR has the following dependent requirements to install. While the implement
 
 + python 3.6
 + pytorch v1.0/v1.1
++ pyyaml >=5.1
 + scikit-learn
 + pandas
 + numpy
 + h5py
-+ pyyaml
 + tqdm
 
 ## Get Started
@@ -105,7 +104,7 @@ For tuning model hyper-parameters, you can apply grid-search over the specified 
 + --tag: (optional) Specify the tag to determine which expid to run (e.g. 001 for the first expid). This is useful to rerun one specific experiment_id that contains the tag.
 + --gpu: The available gpus for parameters tuning and multiple gpus can be used (e.g., using --gpu 0 1 for two gpus)
 
-In the following example, we use the expid `FM_test` in `benchmarks/expid_config` as the base, and create a tuner config file `FM_tuner_config.yaml` in `benchmarks/tuner_config`, which defines the tuning space for parameter tuning. Note that if a key in `tuner_space` has values stored in a list, those values will be grid-searched. 
+In the following example, we use the hyper-parameters of `FM_test` in [benchmarks/expid_config](./benchmarks/expid_config) as the base setting, and create a tuner config file `FM_tuner_config.yaml` in [benchmarks/tuner_config](./benchmarks/tuner_config), which defines the tuning space for parameter tuning. In particular, if a key in `tuner_space` has values stored in a list, those values will be grid-searched. Otherwise, the default value in `FM_test` will be applied. After finished, all the searched results can be accessed from `FM_tuner_config.csv` in the `./benchmarks` folder.
 
 ```bash
 cd benchmarks
@@ -122,7 +121,7 @@ For more running examples, please refer to the benchmarking results in [BARS-CTR
 ## Discussion
 Welcome to join our WeChat group for any questions and discussions.
 
-![Scan WeChat QR](./docs/wechat.jpg)
+![Scan WeChat QR Code](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg)
 
 ## Join Us
 We have open positions for internships and full-time jobs. If you are interested in research and practice in recommender systems, please send your CV to jamie.zhu@huawei.com.

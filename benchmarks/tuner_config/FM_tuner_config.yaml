@@ -1,10 +1,10 @@
-base_config: ./expid_config/
-base_expid: FM_test
-dataset_id: taobao_tiny_data
+base_config: ./expid_config/ # the location of base config
+base_expid: FM_test # the expid of default hyper-parameters
+dataset_id: taobao_tiny_data # the dataset_id used
 
 tuner_space:
-    model_root: './tuner_config/'
-    embedding_dim: [16, 32]
+    model_root: './tuner_config/' # the value will override the default value in FM_test
+    embedding_dim: [16, 32] # all the values in the list will be grid-searched
     regularizer: [0, 1.e-6, 1.e-5]
-    learning_rate: 1.e-3
+    learning_rate: 1.e-3 # it is equivalent to [1.e-3]
     batch_size: [64, 128]
