@@ -119,9 +119,10 @@ For more running examples, please refer to the benchmarking results in [BARS-CTR
 
 
 ## Discussion
-Welcome to join our WeChat group for any questions and discussions.
+Welcome to join our [WeChat group](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg) for any questions and discussions.
 
-![Scan WeChat QR Code](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg)
+![](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg)
+![](./docs/wechat.jpg)
 
 ## Join Us
 We have open positions for internships and full-time jobs. If you are interested in research and practice in recommender systems, please send your CV to jamie.zhu@huawei.com.
