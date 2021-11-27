@@ -17,7 +17,7 @@ setuptools.setup(
         exclude=["tests", "data", "docs", "demo"]),
     include_package_data=True,
     python_requires="==3.6.*",
-    install_requires=["pandas", "numpy", "h5py", "PyYAML", "scikit-learn", "tqdm"],
+    install_requires=["pandas", "numpy", "h5py", "PyYAML>=5.1", "scikit-learn", "tqdm"],
     extras_require={
         "cpu": ["torch==1.0.*"],
         "gpu": ["torch==1.0.*"],

@@ -121,7 +121,6 @@ For more running examples, please refer to the benchmarking results in [BARS-CTR
 ## Discussion
 Welcome to join our [WeChat group](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg) for any questions and discussions.
 
-![](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg)
 ![](./docs/wechat.jpg)
 
 ## Join Us

@@ -46,7 +46,7 @@ class Tokenizer(object):
         if self._na_value is not None:
             tokens = [tk for tk in tokens if tk != self._na_value]
         self.word_counts = Counter(tokens)
-        words = [token for token, count in self.word_counts.items() if count >= self._min_freq]
+        words = [token for token, count in self.word_counts.most_common() if count >= self._min_freq]
         self.word_counts.clear() # empty the dict to save memory
         if self._topk_words:
             words = words[0:self._topk_words]
