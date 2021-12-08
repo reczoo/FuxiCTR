@@ -2,7 +2,11 @@
 
 This repo is the latest dev version of the official release at [huawei-noah/benchmark/FuxiCTR](https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR).
 
-Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the building of [BARS-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction), which aims for open benchmarking for CTR prediction.
+Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the building of the [BARS-CTR-Prediction benchmark](https://openbenchmark.github.io/ctr-prediction), which aims for open benchmarking for CTR prediction.
+
+:point_right: If you find our code or benchmarks helpful in your research, please kindly cite the following paper.
+
++ Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021.
 
 
 ## Model List
@@ -38,8 +42,9 @@ Click-through rate (CTR) prediction is an critical task for many industrial appl
 | WWW'21 | [FmFM](./fuxictr/pytorch/models/FmFM.py) | [FM^2: Field-matrixed Factorization Machines for Recommender Systems](https://arxiv.org/abs/2102.12994) | :heavy_check_mark: |
 
 
-## Dependency
-FuxiCTR has the following dependent requirements to install. While the implementation of FuxiCTR should support more pytorch versions, we currently perform the tests on pytorch v1.0~1.1 only.
+## Installation
+
+Please follow [the guide for installation](./tutorials/v1.0/0_install_fuxictr.ipynb). In particular, FuxiCTR has the following dependent requirements. 
 
 + python 3.6
 + pytorch v1.0/v1.1
@@ -50,69 +55,17 @@ FuxiCTR has the following dependent requirements to install. While the implement
 + h5py
 + tqdm
 
+
 ## Get Started
 
-#### 1. Run the demo
+1. [Run the demo to understand the overall workflow](./tutorials/v1.0/1_run_the_demo.ipynb)
 
-Please follow [the examples](./demo/DeepFM_demo.py) in the demo directory to get started. The code workflow is structured as follows:
+2. [Run a model with dataset and model config files](./tutorials/v1.0/2_run_model_with_config_file.ipynb)
 
-```python
-# Set the data config and model config
-feature_cols = [{...}] # define feature columns
-label_col = {...} # define label column
-params = {...} # set data params and model params
+3. [How to make configurations?](./tutorials/v1.0/3_how_to_make_configurations.ipynb)
 
-# Set the feature encoding specs
-feature_encoder = FeatureEncoder(feature_cols, label_col, ...) # define the feature encoder
-feature_encoder.fit(...) # fit and transfrom the data
+3. [Tune the model hyper-parameters via grid search](./tutorials/v1.0/4_tune_model_via_grid_search.ipynb)
 
-# Load data generators
-train_gen, valid_gen, test_gen = data_generator(feature_encoder, ...)
-
-# Define a model
-model = DeepFM(...)
-
-# Train the model
-model.fit_generator(train_gen, validation_data=valid_gen, ...)
-
-# Evaluation
-model.evaluate_generator(test_gen)
-
-```
-
-#### 2. Run the benchmark with given experiment_id in config file
-
-For reproducing the experiment result, you can run the benchmarking script with the corresponding config file as follows.
-
-+ --config: The config directory of data and model config files.
-+ --expid: The specific experiment_id that denotes the detailed data and model settings.
-+ --gpu: The gpu index used for experiment, and -1 for CPU.
-
-In the following example, we create a demo model_config.yaml and dataset_config.yaml in [benchmarks/expid_config](./benchmarks/expid_config), and set the experiemnt id `FM_test`.
-
-```bash
-cd benchmarks
-python run_expid.py --config ./expid_config --expid FM_test --gpu 0
-
-```
-
-#### 3. Tune the model hyper-parameters
-
-For tuning model hyper-parameters, you can apply grid-search over the specified tuning space with the following script.
-
-+ --config: The config file that defines the tuning space
-+ --tag: (optional) Specify the tag to determine which expid to run (e.g. 001 for the first expid). This is useful to rerun one specific experiment_id that contains the tag.
-+ --gpu: The available gpus for parameters tuning and multiple gpus can be used (e.g., using --gpu 0 1 for two gpus)
-
-In the following example, we use the hyper-parameters of `FM_test` in [benchmarks/expid_config](./benchmarks/expid_config) as the base setting, and create a tuner config file `FM_tuner_config.yaml` in [benchmarks/tuner_config](./benchmarks/tuner_config), which defines the tuning space for parameter tuning. In particular, if a key in `tuner_space` has values stored in a list, those values will be grid-searched. Otherwise, the default value in `FM_test` will be applied. After finished, all the searched results can be accessed from `FM_tuner_config.csv` in the `./benchmarks` folder.
-
-```bash
-cd benchmarks
-python run_param_tuner.py --config ./tuner_config/FM_tuner_config.yaml --gpu 0 1
-
-```
-
-For more running examples, please refer to the benchmarking results in [BARS-CTR-Benchmark](https://openbenchmark.github.io/ctr-prediction).
 
 ## Code Structure
 [Check an overview of code structure](./docs/FuxiCTR_overview.jpg) for more details on API design.
