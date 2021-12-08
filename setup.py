@@ -19,8 +19,8 @@ setuptools.setup(
     python_requires="==3.6.*",
     install_requires=["pandas", "numpy", "h5py", "PyYAML>=5.1", "scikit-learn", "tqdm"],
     extras_require={
-        "cpu": ["torch==1.0.*"],
-        "gpu": ["torch==1.0.*"],
+        "cpu": ["pytorch==1.0.*"],
+        "gpu": ["pytorch==1.0.*"],
     },
     classifiers=(
         "License :: OSI Approved :: MIT License",
