@@ -2,7 +2,7 @@
 
 This repo is the latest dev version of the official release at [huawei-noah/benchmark/FuxiCTR](https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR).
 
-Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the building of the [BARS-CTR-Prediction benchmark](https://openbenchmark.github.io/ctr-prediction), which aims for open benchmarking for CTR prediction.
+Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the building of the [BARS-CTR-Prediction](https://openbenchmark.github.io/ctr-prediction) benchmark, which aims for open benchmarking for CTR prediction.
 
 :point_right: If you find our code or benchmarks helpful in your research, please kindly cite the following paper.
 
