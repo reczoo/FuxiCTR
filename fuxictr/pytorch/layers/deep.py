@@ -1,19 +1,27 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 
 import numpy as np
 from torch import nn
 import torch
-from ...pytorch.utils import set_activation
+from .sequence import KMaxPooling
+from ...pytorch.torch_utils import set_activation
 
-class DNN_Layer(nn.Module):
+class MLP_Layer(nn.Module):
     def __init__(self, 
                  input_dim, 
                  output_dim=None, 
@@ -23,7 +31,7 @@ class DNN_Layer(nn.Module):
                  dropout_rates=[], 
                  batch_norm=False, 
                  use_bias=True):
-        super(DNN_Layer, self).__init__()
+        super(MLP_Layer, self).__init__()
         dense_layers = []
         if not isinstance(dropout_rates, list):
             dropout_rates = [dropout_rates] * len(hidden_units)
@@ -49,55 +57,62 @@ class DNN_Layer(nn.Module):
         return self.dnn(inputs)
 
 
-class FGCNN_Layer(nn.Module):
+class CCPM_ConvLayer(nn.Module):
     """
     Input X: tensor of shape (batch_size, 1, num_fields, embedding_dim)
     """
-    def __init__(self, 
-                 num_fields, 
-                 embedding_dim,
-                 channels=[3], 
-                 kernel_heights=[3], 
-                 pooling_sizes=[2],
-                 recombined_channels=[2],
-                 activation="Tanh",
-                 batch_norm=True):
-        super(FGCNN_Layer, self).__init__()
-        self.embedding_dim = embedding_dim
-        conv_list = []
-        recombine_list = []
-        self.channels = [1] + channels # input channel = 1
-        input_height = num_fields
+    def __init__(self, num_fields, channels=[3], kernel_heights=[3], activation="Tanh"):
+        super(CCPM_ConvLayer, self).__init__()
+        if not isinstance(kernel_heights, list):
+            kernel_heights = [kernel_heights] * len(channels)
+        elif len(kernel_heights) != len(channels):
+            raise ValueError("channels={} and kernel_heights={} should have the same length."\
+                             .format(channels, kernel_heights))
+        module_list = []
+        self.channels = [1] + channels
+        layers = len(kernel_heights)
         for i in range(1, len(self.channels)):
-            in_channel = self.channels[i - 1]
-            out_channel = self.channels[i]
+            in_channels = self.channels[i - 1]
+            out_channels = self.channels[i]
             kernel_height = kernel_heights[i - 1]
-            pooling_size = pooling_sizes[i - 1]
-            recombined_channel = recombined_channels[i - 1]
-            conv_layer = [nn.Conv2d(in_channel, out_channel, 
-                                    kernel_size=(kernel_height, 1), 
-                                    padding=(int((kernel_height - 1) / 2), 0))] \
-                       + ([nn.BatchNorm2d(out_channel)] if batch_norm else []) \
-                       + [set_activation(activation),
-                          nn.MaxPool2d((pooling_size, 1), padding=(input_height % pooling_size, 0))]
-            conv_list.append(nn.Sequential(*conv_layer))
-            input_height = int(np.ceil(input_height / pooling_size))
-            input_dim =  input_height * embedding_dim * out_channel
-            output_dim = input_height * embedding_dim * recombined_channel
-            recombine_layer = nn.Sequential(nn.Linear(input_dim, output_dim),
-                                            set_activation(activation))
-            recombine_list.append(recombine_layer)
-        self.conv_layers = nn.ModuleList(conv_list)
-        self.recombine_layers = nn.ModuleList(recombine_list)
+            module_list.append(nn.ZeroPad2d((0, 0, kernel_height - 1, kernel_height - 1)))
+            module_list.append(nn.Conv2d(in_channels, out_channels, kernel_size=(kernel_height, 1)))
+            if i < layers:
+                k = max(3, int((1 - pow(float(i) / layers, layers - i)) * num_fields))
+            else:
+                k = 3
+            module_list.append(KMaxPooling(k, dim=2))
+            module_list.append(set_activation(activation))
+        self.conv_layer = nn.Sequential(*module_list)
 
     def forward(self, X):
-        conv_out = X
-        new_feature_list = []
-        for i in range(len(self.channels) - 1):
-            conv_out = self.conv_layers[i](conv_out)
-            flatten_out = torch.flatten(conv_out, start_dim=1)
-            recombine_out = self.recombine_layers[i](flatten_out)
-            new_feature_list.append(recombine_out.reshape(X.size(0), -1, self.embedding_dim))
-        new_feature_emb = torch.cat(new_feature_list, dim=1)
-        return new_feature_emb
+        return self.conv_layer(X)
 
+
+class ResidualBlock(nn.Module):
+    def __init__(self, 
+                 input_dim, 
+                 hidden_dim, 
+                 hidden_activation="ReLU",
+                 dropout_rate=0,
+                 use_residual=True,
+                 batch_norm=False):
+        super(ResidualBlock, self).__init__()
+        self.activation_layer = set_activation(hidden_activation)
+        self.layer = nn.Sequential(nn.Linear(input_dim, hidden_dim),
+                                   self.activation_layer,
+                                   nn.Linear(hidden_dim, input_dim))
+        self.use_residual = use_residual
+        self.batch_norm = nn.BatchNorm1d(input_dim) if batch_norm else None
+        self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
+
+    def forward(self, X):
+        X_out = self.layer(X)
+        if self.use_residual:
+            X_out = X_out + X
+        if self.batch_norm is not None:
+            X_out = self.batch_norm(X_out)
+        output = self.activation_layer(X_out)
+        if self.dropout is not None:
+            output = self.dropout(output)
+        return output

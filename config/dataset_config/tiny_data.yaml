@@ -1,5 +1,5 @@
 ### Tiny data for tests only
-taobao_tiny_data:
+taobao_tiny:
     data_root: ../data/
     data_format: csv
     train_data: ../data/tiny_data/train_sample.csv
@@ -7,7 +7,42 @@ taobao_tiny_data:
     test_data: ../data/tiny_data/test_sample.csv
     min_categr_count: 1
     feature_cols:
-        - {name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
-                  "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
-                  active: True, dtype: str, type: categorical}
+        [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+                 active: True, dtype: str, type: categorical}]
+    label_col: {name: clk, dtype: float}
+
+
+taobao_tiny_x2:
+    data_root: ../data/
+    data_format: csv
+    train_data: ../data/tiny_data/train_sample.csv
+    valid_data: ../data/tiny_data/valid_sample.csv
+    test_data: ../data/tiny_data/test_sample.csv
+    min_categr_count: 1
+    feature_cols:
+        [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+                 active: True, dtype: str, type: categorical},
+         {name: "xxxx", active: True, dtype: str, type: sequence}]
+    label_col: {name: clk, dtype: float}
+
+
+taobao_tiny_x3:
+    data_root: ../data/
+    data_format: csv
+    train_data: ../data/tiny_data/train_sample.csv
+    valid_data: ../data/tiny_data/valid_sample.csv
+    test_data: ../data/tiny_data/test_sample.csv
+    min_categr_count: 1
+    feature_cols:
+        [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+                 active: True, dtype: str, type: categorical, source: user},
+         {name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+                 active: True, dtype: str, type: categorical, source: item},
+         {name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+                 active: True, dtype: str, type: categorical, source: context}]
     label_col: {name: clk, dtype: float}

@@ -1,55 +1,38 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 import torch
 from torch import nn
 from itertools import combinations
-from ...pytorch.utils import set_activation
+from ...pytorch.torch_utils import set_activation
 
 
 class InnerProductLayer(nn.Module):
-    # output: sum (bs x 1), bi_vector: bi-pooling (bs * dim), dot_vector (bs x f2/2), element_wise (bs x f2/2 x emb_dim)
-    def __init__(self, output="sum"):
+    """ output: product_sum_pooling (bs x 1), 
+                Bi_interaction_pooling (bs * dim), 
+                inner_product (bs x f2/2), 
+                elementwise_product (bs x f2/2 x emb_dim)
+    """
+    def __init__(self, num_fields=None, output="product_sum_pooling"):
         super(InnerProductLayer, self).__init__()
         self._output_type = output
-        if output not in ["sum", "bi_vector", "dot_vector", "element_wise"]:
-            raise RuntimeError("InnerProductLayer output={} is not supported.".format(output))
-
-    def forward(self, feature_emb_list):
-        if self._output_type in ["sum", "bi_vector"]:
-            feature_emb_tensor = torch.stack(feature_emb_list)
-            sum_of_square = torch.sum(feature_emb_tensor, dim=0) ** 2  # sum then square
-            square_of_sum = torch.sum(feature_emb_tensor ** 2, dim=0) # square then sum
-            bi_interaction_vector = (sum_of_square - square_of_sum) * 0.5
-            if self._output_type == "bi_vector":
-                return bi_interaction_vector
-            else:
-                return torch.sum(bi_interaction_vector, dim=-1).view(-1, 1)
-        elif self._output_type in ["dot_vector", "element_wise"]:
-            pairs = list(combinations(feature_emb_list, 2))
-            emb1 = torch.stack([p for p, _ in pairs], dim=1)
-            emb2 = torch.stack([q for _, q in pairs], dim=1)
-            inner_product = emb1 * emb2
-            if self._output_type == "dot_vector":
-                inner_product = torch.sum(inner_product, dim=2)
-            return inner_product
-
-
-class InnerProductLayer_v2(nn.Module):
-    # output: sum (bs x 1), bi_vector: bi-pooling (bs * dim), dot_vector (bs x f2/2), element_wise (bs x f2/2 x emb_dim)
-    def __init__(self, num_fields=None, output="sum"):
-        super(InnerProductLayer_v2, self).__init__()
-        self._output_type = output
-        if output not in ["sum", "bi_vector", "dot_vector", "element_wise"]:
+        if output not in ["product_sum_pooling", "Bi_interaction_pooling", "inner_product", "elementwise_product"]:
             raise ValueError("InnerProductLayer output={} is not supported.".format(output))
         if num_fields is None:
-            if output in ["dot_vector", "element_wise"]:
+            if output in ["inner_product", "elementwise_product"]:
                 raise ValueError("num_fields is required when InnerProductLayer output={}.".format(output))
         else:
             p, q = zip(*list(combinations(range(num_fields), 2)))
@@ -60,21 +43,19 @@ class InnerProductLayer_v2(nn.Module):
                                                    requires_grad=False)
 
     def forward(self, feature_emb):
-        # TODO change sum to global_sum_pooling, chnage bi_vector to Bi_interaction_pooling, dot_vector to product_layer_pooling
-        # elsement_wise to element_wise_product
-        if self._output_type in ["sum", "bi_vector"]: 
+        if self._output_type in ["product_sum_pooling", "Bi_interaction_pooling"]: 
             sum_of_square = torch.sum(feature_emb, dim=1) ** 2  # sum then square
             square_of_sum = torch.sum(feature_emb ** 2, dim=1) # square then sum
             bi_interaction = (sum_of_square - square_of_sum) * 0.5
-            if self._output_type == "bi_vector":
+            if self._output_type == "Bi_interaction_pooling":
                 return bi_interaction
             else:
-                return torch.sum(bi_interaction, dim=-1).view(-1, 1)
-        elif self._output_type == "element_wise":
+                return bi_interaction.sum(dim=-1, keepdim=True)
+        elif self._output_type == "elementwise_product":
             emb1 =  torch.index_select(feature_emb, 1, self.field_p)
             emb2 = torch.index_select(feature_emb, 1, self.field_q)
             return emb1 * emb2
-        elif self._output_type == "dot_vector":
+        elif self._output_type == "inner_product":
             inner_product_matrix = torch.bmm(feature_emb, feature_emb.transpose(1, 2))
             flat_upper_triange = torch.masked_select(inner_product_matrix, self.upper_triange_mask)
             return flat_upper_triange.view(-1, self.interaction_units)
@@ -144,5 +125,56 @@ class HolographicInteractionLayer(nn.Module):
         return interact_tensor
 
 
+class CrossInteractionLayer(nn.Module):
+    def __init__(self, input_dim):
+        super(CrossInteractionLayer, self).__init__()
+        self.weight = nn.Linear(input_dim, 1, bias=False)
+        self.bias = nn.Parameter(torch.zeros(input_dim))
+
+    def forward(self, X_0, X_i):
+        interaction_out = self.weight(X_i) * X_0 + self.bias
+        return interaction_out
 
 
+class CrossNet(nn.Module):
+    def __init__(self, input_dim, num_layers):
+        super(CrossNet, self).__init__()
+        self.num_layers = num_layers
+        self.cross_net = nn.ModuleList(CrossInteractionLayer(input_dim)
+                                       for _ in range(self.num_layers))
+
+    def forward(self, X_0):
+        X_i = X_0 # b x dim
+        for i in range(self.num_layers):
+            X_i = X_i + self.cross_net[i](X_0, X_i)
+        return X_i
+        
+
+class CompressedInteractionNet(nn.Module):
+    def __init__(self, num_fields, cin_layer_units, output_dim=1):
+        super(CompressedInteractionNet, self).__init__()
+        self.cin_layer_units = cin_layer_units
+        self.fc = nn.Linear(sum(cin_layer_units), output_dim)
+        self.cin_layer = nn.ModuleDict()
+        for i, unit in enumerate(self.cin_layer_units):
+            in_channels = num_fields * self.cin_layer_units[i - 1] if i > 0 else num_fields ** 2
+            out_channels = unit
+            self.cin_layer["layer_" + str(i + 1)] = nn.Conv1d(in_channels,
+                                                              out_channels,  # how many filters
+                                                              kernel_size=1) # kernel output shape
+
+    def forward(self, feature_emb):
+        pooling_outputs = []
+        X_0 = feature_emb
+        batch_size = X_0.shape[0]
+        embedding_dim = X_0.shape[-1]
+        X_i = X_0
+        for i in range(len(self.cin_layer_units)):
+            hadamard_tensor = torch.einsum("bhd,bmd->bhmd", X_0, X_i)
+            hadamard_tensor = hadamard_tensor.view(batch_size, -1, embedding_dim)
+            X_i = self.cin_layer["layer_" + str(i + 1)](hadamard_tensor) \
+                      .view(batch_size, -1, embedding_dim)
+            pooling_outputs.append(X_i.sum(dim=-1))
+        concate_vec = torch.cat(pooling_outputs, dim=-1)
+        output = self.fc(concate_vec)
+        return output

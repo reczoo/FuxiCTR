@@ -1,21 +1,31 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# Copyright (C) 2021. The Chinese University of Hong Kong. All rights reserved.
+#
+# Authors: Jinyang Liu <The Chinese University of Hong Kong>
+#          Jieming Zhu <Huawei Noah's Ark Lab>
+#          
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 import torch.nn as nn
 import numpy as np
 import torch
-import os
+import os, sys
 import logging
 from ...metrics import evaluate_metrics
-from ...pytorch.utils import set_device, set_optimizer, set_loss, set_regularizer
+from ...pytorch.torch_utils import set_device, set_optimizer, set_loss, set_regularizer
 from ...utils import Monitor
-
 
 class BaseModel(nn.Module):
     def __init__(self, 
@@ -30,6 +40,7 @@ class BaseModel(nn.Module):
                  embedding_regularizer=None, 
                  net_regularizer=None, 
                  reduce_lr_on_plateau=True, 
+                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  **kwargs):
         super(BaseModel, self).__init__()
         self.device = set_device(gpu)
@@ -41,10 +52,11 @@ class BaseModel(nn.Module):
         self._embedding_regularizer = embedding_regularizer
         self._net_regularizer = net_regularizer
         self._reduce_lr_on_plateau = reduce_lr_on_plateau
+        self._embedding_initializer = embedding_initializer
         self._feature_map = feature_map
         self.model_id = model_id
         self.model_dir = os.path.join(kwargs["model_root"], feature_map.dataset_id)
-        self.checkpoint = os.path.abspath(os.path.join(self.model_dir, self.model_id + "_model.ckpt"))
+        self.checkpoint = os.path.abspath(os.path.join(self.model_dir, self.model_id + ".model"))
         self._validation_metrics = kwargs["metrics"]
         self._verbose = kwargs["verbose"]
 
@@ -61,8 +73,13 @@ class BaseModel(nn.Module):
             except:
                 raise NotImplementedError("loss={} is not supported.".format(loss))
 
-    def loss_with_reg(self, y_pred, y_true):
-        total_loss = self.loss_fn(y_pred, y_true, reduction='mean')
+    def get_loss(self, return_dict):
+        total_loss = self.loss_fn(return_dict["y_pred"], return_dict["y_true"], reduction='mean')
+        total_loss += self.get_regularization()
+        return total_loss
+
+    def get_regularization(self):
+        reg_loss = 0
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = set_regularizer(self._embedding_regularizer)
             net_reg = set_regularizer(self._net_regularizer)
@@ -71,34 +88,33 @@ class BaseModel(nn.Module):
                     if "embedding_layer" in name:
                         if self._embedding_regularizer:
                             for emb_p, emb_lambda in emb_reg:
-                                total_loss += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
+                                reg_loss += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
                     else:
                         if self._net_regularizer:
                             for net_p, net_lambda in net_reg:
-                                total_loss += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
-        return total_loss
+                                reg_loss += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
+        return reg_loss
 
-    def init_weights(self, embedding_initializer=None):
-        def _initialize(m):
-            if type(m) == nn.ModuleDict:
-                for k, v in m.items():
-                    if type(v) == nn.Embedding:
-                        if "pretrained_emb" in self._feature_map.feature_specs[k]: # skip pretrained
-                            continue
-                        if embedding_initializer is not None:
-                            try:
-                                initializer = embedding_initializer.replace("(", "(v.weight,")
-                                eval(initializer)
-                            except:
-                                raise NotImplementedError("embedding_initializer={} is not supported."\
-                                                          .format(embedding_initializer))
-                        else:
-                            nn.init.xavier_normal_(v.weight)
-            if type(m) == nn.Linear:
-                nn.init.xavier_normal_(m.weight)
-                if m.bias is not None:
-                    m.bias.data.fill_(0)
-        self.apply(_initialize)
+
+    def init_weights(self, m):
+        if type(m) == nn.ModuleDict:
+            for k, v in m.items():
+                if type(v) == nn.Embedding:
+                    if "pretrained_emb" in self._feature_map.feature_specs[k]: # skip pretrained
+                        continue
+                    if self._embedding_initializer is not None:
+                        try:
+                            initializer = self._embedding_initializer.replace("(", "(v.weight,")
+                            eval(initializer)
+                        except:
+                            raise NotImplementedError("embedding_initializer={} is not supported."\
+                                                      .format(self._embedding_initializer))
+                    else:
+                        nn.init.xavier_normal_(v.weight)
+        if type(m) == nn.Linear:
+            nn.init.xavier_normal_(m.weight)
+            if m.bias is not None:
+                m.bias.data.fill_(0)
         
     def inputs_to_device(self, inputs):
         X, y = inputs
@@ -145,6 +161,15 @@ class BaseModel(nn.Module):
             
     def fit_generator(self, data_generator, epochs=1, validation_data=None,
                       verbose=0, max_gradient_norm=10., **kwargs):
+        """
+        Training a model and valid accuracy.
+        Inputs:
+        - iter_train: I
+        - iter_val: .
+        - optimizer: Abstraction of optimizer used in training process, e.g., "torch.optim.Adam()""torch.optim.SGD()".
+        - epochs: Integer, number of epochs.
+        - verbose: Bool, if print.
+        """
         self.valid_gen = validation_data
         self._max_gradient_norm = max_gradient_norm
         self._best_metric = np.Inf if self._monitor_mode == "min" else -np.Inf
@@ -166,8 +191,6 @@ class BaseModel(nn.Module):
             else:
                 logging.info("************ Epoch={} end ************".format(epoch + 1))
         logging.info("Training finished.")
-        logging.info("Load best model: {}".format(self.checkpoint))
-        self.load_weights(self.checkpoint)
 
     def train_on_epoch(self, data_generator, epoch):
         epoch_loss = 0
@@ -176,11 +199,11 @@ class BaseModel(nn.Module):
             batch_iterator = data_generator
         else:
             from tqdm import tqdm
-            batch_iterator = tqdm(data_generator, disable=False)
+            batch_iterator = tqdm(data_generator, disable=False, file=sys.stdout)
         for batch_index, batch_data in enumerate(batch_iterator):
             self.optimizer.zero_grad()
             return_dict = model.forward(batch_data)
-            loss = return_dict["loss"]
+            loss = return_dict.get("loss", self.get_loss(return_dict))
             loss.backward()
             nn.utils.clip_grad_norm_(self.parameters(), self._max_gradient_norm)
             self.optimizer.step()
@@ -195,6 +218,9 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             y_pred = []
             y_true = []
+            if self._verbose > 0:
+                from tqdm import tqdm
+                data_generator = tqdm(data_generator, disable=False, file=sys.stdout)
             for batch_data in data_generator:
                 return_dict = self.forward(batch_data)
                 y_pred.extend(return_dict["y_pred"].data.cpu().numpy().reshape(-1))
@@ -211,7 +237,11 @@ class BaseModel(nn.Module):
         torch.save(self.state_dict(), checkpoint)
     
     def load_weights(self, checkpoint):
-        self.load_state_dict(torch.load(checkpoint, map_location=self.device))
+        self.to(self.device)
+        state_dict = torch.load(checkpoint, map_location="cpu")
+        self.load_state_dict(state_dict)
+        del state_dict
+        torch.cuda.empty_cache()
 
     def get_final_activation(self, task="binary_classification"):
         if task == "binary_classification":

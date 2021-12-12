@@ -1,19 +1,29 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-# Copyright (C) 2018. Github developer `pengshuang` for ScaledDotProductAttention implementation. 
+# Copyright (C) 2018. pengshuang@Github for ScaledDotProductAttention.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import torch
 from torch import nn
-
+from .activation import Dice
 
 class ScaledDotProductAttention(nn.Module):
-    """ Scaled Dot-Product Attention """
+    """ Scaled Dot-Product Attention 
+    Ref: https://zhuanlan.zhihu.com/p/47812375
+    """
     def __init__(self, dropout_rate=0.):
         super(ScaledDotProductAttention, self).__init__()
         self.dropout = None
@@ -103,3 +113,59 @@ class MultiHeadSelfAttention(MultiHeadAttention):
         return output
 
 
+class SqueezeExcitationLayer(nn.Module):
+    def __init__(self, num_fields, reduction_ratio=3):
+        super(SqueezeExcitationLayer, self).__init__()
+        reduced_size = max(1, int(num_fields / reduction_ratio))
+        self.excitation = nn.Sequential(nn.Linear(num_fields, reduced_size, bias=False),
+                                        nn.ReLU(),
+                                        nn.Linear(reduced_size, num_fields, bias=False),
+                                        nn.ReLU())
+
+    def forward(self, feature_emb):
+        Z = torch.mean(feature_emb, dim=-1, out=None)
+        A = self.excitation(Z)
+        V = feature_emb * A.unsqueeze(-1)
+        return V
+
+
+class DINAttentionLayer(nn.Module):
+    def __init__(self, 
+                 embedding_dim=64,
+                 attention_units=[32], 
+                 hidden_activations="ReLU",
+                 final_activation=None,
+                 dice_alpha=0.,
+                 dropout_rate=0,
+                 batch_norm=False):
+        super(DINAttentionLayer, self).__init__()
+        self.embedding_dim = embedding_dim
+        if isinstance(hidden_activations, str) and hidden_activations.lower() == "dice":
+            hidden_activations = [Dice(units, alpha=dice_alpha) for units in attention_units]
+        self.attention_layer = MLP_Layer(input_dim=4 * embedding_dim,
+                                         output_dim=1,
+                                         hidden_units=attention_units,
+                                         hidden_activations=hidden_activations,
+                                         final_activation=final_activation,
+                                         dropout_rates=dropout_rate,
+                                         batch_norm=batch_norm, 
+                                         use_bias=True)
+
+    def forward(self, query_item, history_sequence):
+        # query_item: b x emd
+        # history_sequence: b x len x emb
+        seq_len = history_sequence.size(1)
+        query_item = query_item.unsqueeze(1).expand(-1, seq_len, -1)
+        attention_input = torch.cat([query_item, history_sequence, query_item - history_sequence, 
+                                     query_item * history_sequence], dim=-1) # b x len x 4*emb
+        attention_weight = self.attention_layer(attention_input.view(-1, 4 * self.embedding_dim))
+        attention_weight = attention_weight.view(-1, seq_len) # b x len
+        # mask = history_sequence.sum(dim=-1) != 0
+        # attention_weight = attention_weight * mask.float()
+        output = (attention_weight.unsqueeze(-1) * history_sequence).sum(dim=1) # mask by all zeros
+        return output
+
+
+
+
+        

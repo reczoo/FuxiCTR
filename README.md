@@ -1,6 +1,6 @@
 # FuxiCTR
 
-This repo is the latest dev version of the official release at [huawei-noah/benchmark/FuxiCTR](https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR).
+This repo is the community dev version of the official release at [huawei-noah/benchmark/FuxiCTR](https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR).
 
 Click-through rate (CTR) prediction is an critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with stunning features in configurability, tunability, and reproducibility. It also supports the building of the [BARS-CTR-Prediction](https://openbenchmark.github.io/ctr-prediction) benchmark, which aims for open benchmarking for CTR prediction.
 
@@ -34,17 +34,19 @@ Click-through rate (CTR) prediction is an critical task for many industrial appl
 |RecSys'19 | [FiBiNET](./fuxictr/pytorch/models/FiBiNET.py) | [FiBiNET: Combining Feature Importance and Bilinear feature Interaction for Click-Through Rate Prediction](https://arxiv.org/abs/1905.09433) | :heavy_check_mark: |
 |WWW'19 | [FGCNN](./fuxictr/pytorch/models/FGCNN.py) | [Feature Generation by Convolutional Neural Network for Click-Through Rate Prediction](https://arxiv.org/abs/1904.04447) | :heavy_check_mark: |
 | AAAI'19| [HFM/HFM+](./fuxictr/pytorch/models/HFM.py) | [Holographic Factorization Machines for Recommendation](https://ojs.aaai.org//index.php/AAAI/article/view/4448)  | :heavy_check_mark: |
-| Neural Networks'20 | [ONN](./fuxictr/pytorch/models/ONN.py)  | [Operation-aware Neural Networks for User Response Prediction](https://arxiv.org/pdf/1904.12579)  | :heavy_check_mark: |
+| NeuralNetworks'20 | [ONN](./fuxictr/pytorch/models/ONN.py)  | [Operation-aware Neural Networks for User Response Prediction](https://arxiv.org/pdf/1904.12579)  | :heavy_check_mark: |
 | AAAI'20 | [AFN/AFN+](./fuxictr/pytorch/models/AFN.py) | [Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions](https://ojs.aaai.org/index.php/AAAI/article/view/5768) | :heavy_check_mark: |
 | AAAI'20  | [LorentzFM](./fuxictr/pytorch/models/LorentzFM.py) | [Learning Feature Interactions with Lorentzian Factorization](https://arxiv.org/abs/1911.09821) | :heavy_check_mark: |
 | WSDM'20 | [InterHAt](./fuxictr/pytorch/models/InterHAt.py) | [Interpretable Click-through Rate Prediction through Hierarchical Attention](https://dl.acm.org/doi/10.1145/3336191.3371785) | :heavy_check_mark: |
 | DLP-KDD'20 | [FLEN](./fuxictr/pytorch/models/FLEN.py) | [FLEN: Leveraging Field for Scalable CTR Prediction](https://arxiv.org/abs/1911.04690) | :heavy_check_mark: |
+| CIKM'20 | [DeepIM](./fuxictr/pytorch/models/DeepIM.py) | [Deep Interaction Machine: A Simple but Effective Model for High-order Feature Interactions](https://dl.acm.org/doi/abs/10.1145/3340531.3412077) | :heavy_check_mark: |
 | WWW'21 | [FmFM](./fuxictr/pytorch/models/FmFM.py) | [FM^2: Field-matrixed Factorization Machines for Recommender Systems](https://arxiv.org/abs/2102.12994) | :heavy_check_mark: |
+| WWW'21 | [DCN-V2](./fuxictr/pytorch/models/DCNv2.py) | [DCN V2: Improved Deep & Cross Network and Practical Lessons for Web-scale Learning to Rank Systems](https://arxiv.org/abs/2008.13535) | :heavy_check_mark: |
 
 
 ## Installation
 
-Please follow [the guide for installation](./tutorials/v1.0/0_install_fuxictr.ipynb). In particular, FuxiCTR has the following dependent requirements. 
+Please follow [the guide for installation](./tutorials/v1.1/install_fuxictr.ipynb). In particular, FuxiCTR has the following dependent requirements. 
 
 + python 3.6
 + pytorch v1.0/v1.1
@@ -58,15 +60,21 @@ Please follow [the guide for installation](./tutorials/v1.0/0_install_fuxictr.ip
 
 ## Get Started
 
-1. [Run the demo to understand the overall workflow](./tutorials/v1.0/1_run_the_demo.ipynb)
+1. [Run the demo to understand the overall workflow](./tutorials/v1.1/run_the_demo.ipynb)
 
-2. [Run a model with dataset and model config files](./tutorials/v1.0/2_run_model_with_config_file.ipynb)
+2. [Run a model with dataset and model config files](./tutorials/v1.1/run_model_with_config_file.ipynb)
 
-3. [Run a model with h5 data as input](./tutorials/v1.0/3_run_model_with_h5_input.ipynb)
+3. [Preprocess raw csv data to h5 data](./demo/preprocess_h5_demo.py)
 
-4. [How to make configurations?](./tutorials/v1.0/4_how_to_make_configurations.ipynb)
+3. [Run a model with h5 data as input](./tutorials/v1.1/run_model_with_h5_input.ipynb)
 
-5. [Tune the model hyper-parameters via grid search](./tutorials/v1.0/5_tune_model_via_grid_search.ipynb)
+4. [How to make configurations?](./tutorials/v1.1/how_to_make_configurations.ipynb)
+
+5. [Tune the model hyper-parameters via grid search](./tutorials/v1.1/tune_model_via_grid_search.ipynb)
+
+6. [Run a model with sequence features](./demo/DeepFM_with_sequence_feature.py)
+
+7. [Run a model with pretrained embeddings](./demo/DeepFM_with_pretrained_emb.py)
 
 
 ## Code Structure

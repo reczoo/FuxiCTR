@@ -1,16 +1,28 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2021. Peking University. All rights reserved.
+#
+# Authors: Shuai Yang <Peking University>
+#          Jieming Zhu <Huawei Noah's Ark Lab>
+#          
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import torch
 from torch import nn
 from .base_model import BaseModel
-from ..layers import EmbeddingDictLayer, DNN_Layer, InnerProductLayer_v2, LR_Layer
+from ..layers import EmbeddingDictLayer, MLP_Layer, InnerProductLayer, LR_Layer
 
 class FLEN(BaseModel):
     def __init__(self, 
@@ -19,7 +31,6 @@ class FLEN(BaseModel):
                  gpu=-1, 
                  task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  embedding_dim=10, 
                  dnn_hidden_units=[64, 64, 64], 
                  dnn_activations="ReLU", 
@@ -36,9 +47,9 @@ class FLEN(BaseModel):
                                    **kwargs)
         self.embedding_layer = EmbeddingDictLayer(feature_map, embedding_dim)
         self.lr_layer = LR_Layer(feature_map, final_activation=None)
-        self.mf_interaction = InnerProductLayer_v2(num_fields=3, output="element_wise")
-        self.fm_interaction = InnerProductLayer_v2(output="bi_vector")
-        self.dnn = DNN_Layer(input_dim=embedding_dim * feature_map.num_fields,
+        self.mf_interaction = InnerProductLayer(num_fields=3, output="elementwise_product")
+        self.fm_interaction = InnerProductLayer(output="Bi_interaction_pooling")
+        self.dnn = MLP_Layer(input_dim=embedding_dim * feature_map.num_fields,
                              output_dim=None, 
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
@@ -53,7 +64,7 @@ class FLEN(BaseModel):
         self.w_F = nn.Linear(dnn_hidden_units[-1] + embedding_dim + 1, 1, bias=False)
         self.final_activation = self.get_final_activation(task)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.apply(self.init_weights)
             
     def forward(self, inputs):
         """
@@ -75,6 +86,5 @@ class FLEN(BaseModel):
         y_pred = self.w_F(torch.cat([h_FwBI, h_L], dim=-1))
         if self.final_activation is not None:
             y_pred = self.final_activation(y_pred)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"loss": loss, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict

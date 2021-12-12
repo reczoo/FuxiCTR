@@ -1,18 +1,26 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import numpy as np
 from torch import nn
 import torch
 from .base_model import BaseModel
-from ..layers import EmbeddingLayer_v2, FGCNN_Layer, InnerProductLayer_v2, DNN_Layer
-
+from ..layers import EmbeddingLayer, InnerProductLayer, MLP_Layer
+from ..torch_utils import set_activation
 
 class FGCNN(BaseModel):
     def __init__(self, 
@@ -21,7 +29,6 @@ class FGCNN(BaseModel):
                  gpu=-1, 
                  task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  embedding_dim=10, 
                  share_embedding=False,
                  channels=[14, 16, 18, 20],
@@ -35,7 +42,6 @@ class FGCNN(BaseModel):
                  dnn_batch_norm=False, 
                  embedding_regularizer=None, 
                  net_regularizer=None,
-                 embedding_dropout=0,
                  net_dropout=0,
                  **kwargs):
         super(FGCNN, self).__init__(feature_map, 
@@ -45,13 +51,9 @@ class FGCNN(BaseModel):
                                     net_regularizer=net_regularizer,
                                     **kwargs)
         self.share_embedding = share_embedding
-        self.embedding_layer = EmbeddingLayer_v2(feature_map, 
-                                                 embedding_dim, 
-                                                 embedding_dropout)
+        self.embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
         if not self.share_embedding:
-            self.fg_embedding_layer = EmbeddingLayer_v2(feature_map, 
-                                                        embedding_dim, 
-                                                        embedding_dropout)
+            self.fg_embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
         num_fields = feature_map.num_fields
         channels, kernel_heights, pooling_sizes, recombined_channels \
             = self.validate_input(channels, 
@@ -71,8 +73,8 @@ class FGCNN(BaseModel):
                                                            channels, 
                                                            pooling_sizes, 
                                                            recombined_channels)
-        self.inner_product_layer = InnerProductLayer_v2(total_features, output="dot_vector")
-        self.dnn = DNN_Layer(input_dim=input_dim,
+        self.inner_product_layer = InnerProductLayer(total_features, output="inner_product")
+        self.dnn = MLP_Layer(input_dim=input_dim,
                              output_dim=1, 
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
@@ -80,7 +82,7 @@ class FGCNN(BaseModel):
                              dropout_rates=net_dropout,
                              batch_norm=dnn_batch_norm)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.apply(self.init_weights)
 
     def compute_input_dim(self, 
                           embedding_dim, 
@@ -122,15 +124,65 @@ class FGCNN(BaseModel):
         if not self.share_embedding:
             feature_emb2 = self.fg_embedding_layer(X)
         else:
-            feature_emb2 = feature_emb.clone()
+            feature_emb2 = feature_emb
         conv_in = torch.unsqueeze(feature_emb2, 1) # shape (bs, 1, field, emb)
         new_feature_emb = self.fgcnn_layer(conv_in)
         combined_feature_emb = torch.cat([feature_emb, new_feature_emb], dim=1)
         inner_product_vec = self.inner_product_layer(combined_feature_emb)
         dense_input = torch.cat([combined_feature_emb.flatten(start_dim=1), inner_product_vec], dim=1)
         y_pred = self.dnn(dense_input)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"y_pred": y_pred, "loss": loss}
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict
 
 
+class FGCNN_Layer(nn.Module):
+    """
+    Input X: tensor of shape (batch_size, 1, num_fields, embedding_dim)
+    """
+    def __init__(self, 
+                 num_fields, 
+                 embedding_dim,
+                 channels=[3], 
+                 kernel_heights=[3], 
+                 pooling_sizes=[2],
+                 recombined_channels=[2],
+                 activation="Tanh",
+                 batch_norm=True):
+        super(FGCNN_Layer, self).__init__()
+        self.embedding_dim = embedding_dim
+        conv_list = []
+        recombine_list = []
+        self.channels = [1] + channels # input channel = 1
+        input_height = num_fields
+        for i in range(1, len(self.channels)):
+            in_channel = self.channels[i - 1]
+            out_channel = self.channels[i]
+            kernel_height = kernel_heights[i - 1]
+            pooling_size = pooling_sizes[i - 1]
+            recombined_channel = recombined_channels[i - 1]
+            conv_layer = [nn.Conv2d(in_channel, out_channel, 
+                                    kernel_size=(kernel_height, 1), 
+                                    padding=(int((kernel_height - 1) / 2), 0))] \
+                       + ([nn.BatchNorm2d(out_channel)] if batch_norm else []) \
+                       + [set_activation(activation),
+                          nn.MaxPool2d((pooling_size, 1), padding=(input_height % pooling_size, 0))]
+            conv_list.append(nn.Sequential(*conv_layer))
+            input_height = int(np.ceil(input_height / pooling_size))
+            input_dim =  input_height * embedding_dim * out_channel
+            output_dim = input_height * embedding_dim * recombined_channel
+            recombine_layer = nn.Sequential(nn.Linear(input_dim, output_dim),
+                                            set_activation(activation))
+            recombine_list.append(recombine_layer)
+        self.conv_layers = nn.ModuleList(conv_list)
+        self.recombine_layers = nn.ModuleList(recombine_list)
+
+    def forward(self, X):
+        conv_out = X
+        new_feature_list = []
+        for i in range(len(self.channels) - 1):
+            conv_out = self.conv_layers[i](conv_out)
+            flatten_out = torch.flatten(conv_out, start_dim=1)
+            recombine_out = self.recombine_layers[i](flatten_out)
+            new_feature_list.append(recombine_out.reshape(X.size(0), -1, self.embedding_dim))
+        new_feature_emb = torch.cat(new_feature_list, dim=1)
+        return new_feature_emb

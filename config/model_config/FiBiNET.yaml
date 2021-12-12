@@ -72,6 +72,7 @@ FiBiNET_avazu_x4:
     seed: 2019
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
+    bilinear_type: 'interaction'
 
 FiBiNET_kkbox_x4:
     model: FiBiNET
@@ -97,3 +98,4 @@ FiBiNET_kkbox_x4:
     seed: 2019
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
+    bilinear_type: 'interaction'

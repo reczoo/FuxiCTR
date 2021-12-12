@@ -1,11 +1,18 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 from torch import nn
 from .base_model import BaseModel
@@ -19,7 +26,6 @@ class LR(BaseModel):
                  gpu=-1, 
                  task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  regularizer=None, 
                  **kwargs):
         super(LR, self).__init__(feature_map, 
@@ -32,7 +38,7 @@ class LR(BaseModel):
                                  final_activation=self.get_final_activation(task), 
                                  use_bias=True)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.apply(self.init_weights)
 
     def forward(self, inputs):
         """
@@ -40,7 +46,6 @@ class LR(BaseModel):
         """
         X, y = self.inputs_to_device(inputs)
         y_pred = self.lr_layer(X)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"loss": loss, "y_pred": y_pred}
+        return_dict = {"y_pred": y_pred, "y_true": y}
         return return_dict
 

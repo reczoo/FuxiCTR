@@ -42,6 +42,28 @@ CCPM_criteo_x4:
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
 
+CCPM_avazu_test:
+    model: CCPM
+    dataset_id: avazu_test
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    embedding_dropout: 0
+    batch_size: 16
+    embedding_dim: 40
+    channels: [3, 3]
+    kernel_heights: [3, 3]
+    activation: Tanh
+    epochs: 3
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
 CCPM_avazu_x4:
     model: CCPM
     dataset_id: avazu_x4

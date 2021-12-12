@@ -34,6 +34,24 @@ FFM_criteo_x4:
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
 
+FFM_avazu_test:
+    model: FFM
+    dataset_id: avazu_test
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    regularizer: 0
+    embedding_dropout: 0
+    batch_size: 16
+    embedding_dim: 2
+    epochs: 3
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
 FFM_avazu_x4:
     model: FFM
     dataset_id: avazu_x4

@@ -44,6 +44,27 @@ DeepFM_criteo_x4:
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
 
+DeepFM_avazu_test:
+    model: DeepFM
+    dataset_id: avazu_test
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    hidden_units: [32, 32, 32]
+    hidden_activations: relu
+    net_regularizer: 0
+    embedding_regularizer: 0
+    learning_rate: 1.e-3
+    batch_norm: False
+    embedding_dropout: 0
+    net_dropout: 0
+    batch_size: 16
+    embedding_dim: 40
+    epochs: 3
+    shuffle: True
+    seed: 2019
+
 DeepFM_avazu_x4:
     model: DeepFM
     dataset_id: avazu_x4

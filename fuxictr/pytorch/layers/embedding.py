@@ -1,11 +1,18 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 import torch
 from torch import nn
@@ -19,118 +26,22 @@ from . import sequence
 class EmbeddingLayer(nn.Module):
     def __init__(self, 
                  feature_map, 
-                 embedding_dim, 
-                 embedding_dropout=0,
-                 feature_types=["numeric", "categorical", "sequence"]):
-        super(EmbeddingLayer, self).__init__()
-        self._feature_map = feature_map
-        self._feature_types = feature_types
-        self.embedding_layer = nn.ModuleDict()
-        self.seq_encoder_layer = nn.ModuleDict()
-        for feature, feature_spec in self._feature_map.feature_specs.items():
-            if feature_spec["type"] == "numeric" and "numeric" in feature_types:
-                self.embedding_layer.update({feature: nn.Linear(1, embedding_dim, bias=False)})
-            elif feature_spec["type"] == "categorical" and "categorical" in feature_types:
-                self.embedding_layer.update({feature: nn.Embedding(feature_spec["vocab_size"], 
-                                                                   embedding_dim, 
-                                                                   padding_idx=feature_spec["vocab_size"] - 1)})
-            elif feature_spec["type"] == "sequence" and "sequence" in feature_types:
-                self.embedding_layer.update({feature: nn.Embedding(feature_spec["vocab_size"], 
-                                                                   embedding_dim, 
-                                                                   padding_idx=feature_spec["vocab_size"] - 1)})
-                if feature_spec["encoder"] != "":
-                    try:
-                        self.seq_encoder_layer.update({feature: getattr(sequence, feature_spec["encoder"])()})
-                    except:
-                        raise RuntimeError("Sequence encoder={} is not supported.".format(feature_spec["encoder"]))
-                else:
-                    self.seq_encoder_layer.update({feature: sequence.MaskedAveragePooling()})
-
-    def forward(self, X):
-        feature_emb_list = [] 
-        for feature, feature_spec in self._feature_map.feature_specs.items():
-            if feature_spec["type"] == "numeric" and "numeric" in self._feature_types:
-                inp = X[:, feature_spec["index"]].float().view(-1, 1)
-                embedding_vec = self.embedding_layer[feature](inp)
-            elif feature_spec["type"] == "categorical" and "categorical" in self._feature_types:
-                inp = X[:, feature_spec["index"]].long()
-                embedding_vec = self.embedding_layer[feature](inp)
-            elif feature_spec["type"] == "sequence" and "sequence" in self._feature_types:   
-                inp = X[:, feature_spec["index"]].long()
-                seq_embed_matrix = self.embedding_layer[feature](inp)
-                embedding_vec = self.seq_encoder_layer[feature](seq_embed_matrix)
-            feature_emb_list.append(embedding_vec)
-        return feature_emb_list
-
-
-class EmbeddingLayer_v2(nn.Module):
-    def __init__(self, 
-                 feature_map, 
                  embedding_dim,
                  embedding_dropout=0,
-                 feature_types=["numeric", "categorical", "sequence"]):
-        super(EmbeddingLayer_v2, self).__init__()
-        self._feature_map = feature_map
-        self._feature_types = feature_types
-        self.embedding_layer = nn.ModuleDict()
-        self.seq_encoder_layer = nn.ModuleDict()
-        for feature, feature_spec in self._feature_map.feature_specs.items():
-            if feature_spec["type"] == "numeric" and "numeric" in feature_types:
-                self.embedding_layer.update({feature: nn.Linear(1, embedding_dim, bias=False)})
-            elif feature_spec["type"] == "categorical" and "categorical" in feature_types:
-                self.embedding_layer.update({feature: nn.Embedding(feature_spec["vocab_size"], 
-                                                                   embedding_dim, 
-                                                                   padding_idx=feature_spec["vocab_size"] - 1)})
-            elif feature_spec["type"] == "sequence" and "sequence" in feature_types:
-                self.embedding_layer.update({feature: nn.Embedding(feature_spec["vocab_size"], 
-                                                                   embedding_dim, 
-                                                                   padding_idx=feature_spec["vocab_size"] - 1)})
-                if feature_spec["encoder"] != "":
-                    try:
-                        self.seq_encoder_layer.update({feature: getattr(sequence, feature_spec["encoder"])()})
-                    except:
-                        raise RuntimeError("Sequence encoder={} is not supported.".format(feature_spec["encoder"]))
-                else:
-                    self.seq_encoder_layer.update({feature: sequence.MaskedAveragePooling()})
-        self.dropout = nn.Dropout2d(embedding_dropout) if embedding_dropout > 0 else None
-
-    def forward(self, X):
-        feature_emb_list = []
-        for feature, feature_spec in self._feature_map.feature_specs.items():
-            if feature_spec["type"] == "numeric" and "numeric" in self._feature_types:
-                inp = X[:, feature_spec["index"]].float().view(-1, 1)
-                embedding_vec = self.embedding_layer[feature](inp)
-            elif feature_spec["type"] == "categorical" and "categorical" in self._feature_types:
-                inp = X[:, feature_spec["index"]].long()
-                embedding_vec = self.embedding_layer[feature](inp)
-            elif feature_spec["type"] == "sequence" and "sequence" in self._feature_types:   
-                inp = X[:, feature_spec["index"]].long()
-                seq_embed_matrix = self.embedding_layer[feature](inp)
-                embedding_vec = self.seq_encoder_layer[feature](seq_embed_matrix)
-            feature_emb_list.append(embedding_vec)
-        feature_emb = torch.stack(feature_emb_list, dim=1)
-        if self.dropout is not None:
-            feature_emb = self.dropout(feature_emb)
-        return feature_emb
-
-
-class EmbeddingLayer_v3(nn.Module):
-    def __init__(self, 
-                 feature_map, 
-                 embedding_dim,
-                 embedding_dropout=0,
+                 load_pretrain=True,
                  required_feature_columns=[],
                  not_required_feature_columns=[]):
-        super(EmbeddingLayer_v3, self).__init__()
+        super(EmbeddingLayer, self).__init__()
         self.embedding_layer = EmbeddingDictLayer(feature_map, 
                                                   embedding_dim,
-                                                  required_feature_columns,
-                                                  not_required_feature_columns)
+                                                  load_pretrain=load_pretrain,
+                                                  required_feature_columns=required_feature_columns,
+                                                  not_required_feature_columns=not_required_feature_columns)
         self.dropout = nn.Dropout2d(embedding_dropout) if embedding_dropout > 0 else None
 
     def forward(self, X):
         feature_emb_dict = self.embedding_layer(X)
-        feature_emb = torch.stack(self.embedding_layer.dict2list(feature_emb_dict), dim=1)
+        feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict)
         if self.dropout is not None:
             feature_emb = self.dropout(feature_emb)
         return feature_emb
@@ -140,6 +51,8 @@ class EmbeddingDictLayer(nn.Module):
     def __init__(self, 
                  feature_map, 
                  embedding_dim, 
+                 embedding_dim_dict={},
+                 load_pretrain=True,
                  required_feature_columns=[],
                  not_required_feature_columns=[]):
         super(EmbeddingDictLayer, self).__init__()
@@ -153,7 +66,9 @@ class EmbeddingDictLayer(nn.Module):
                 # Set embedding_layer according to share_embedding
                 if "share_embedding" in feature_spec:
                     self.embedding_layer[feature] = self.embedding_layer[feature_spec["share_embedding"]]
-                feat_emb_dim = feature_spec.get("embedding_dim", embedding_dim)
+                feat_emb_dim = embedding_dim_dict.get(feature, embedding_dim)
+                if embedding_dim == 1:
+                    feat_emb_dim = embedding_dim # keep embedding_dim=1 for LR
                 if feature_spec["type"] == "numeric":
                     if feature not in self.embedding_layer:
                         self.embedding_layer[feature] = nn.Linear(1, feat_emb_dim, bias=False)
@@ -163,7 +78,7 @@ class EmbeddingDictLayer(nn.Module):
                         embedding_matrix = nn.Embedding(feature_spec["vocab_size"], 
                                                         feat_emb_dim, 
                                                         padding_idx=padding_idx)
-                        if "pretrained_emb" in feature_spec:
+                        if load_pretrain and "pretrained_emb" in feature_spec:
                             embeddings = self.get_pretrained_embedding(feature_map.data_dir, feature, feature_spec)
                             embedding_matrix = self.set_pretrained_embedding(embedding_matrix, embeddings, 
                                                                              freeze=feature_spec["freeze_emb"],
@@ -175,7 +90,7 @@ class EmbeddingDictLayer(nn.Module):
                         embedding_matrix = nn.Embedding(feature_spec["vocab_size"], 
                                                         feat_emb_dim, 
                                                         padding_idx=padding_idx)
-                        if "pretrained_emb" in feature_spec:
+                        if load_pretrain and "pretrained_emb" in feature_spec:
                             embeddings = self.get_pretrained_embedding(feature_map.data_dir, feature, feature_spec)
                             embedding_matrix = self.set_pretrained_embedding(embedding_matrix, embeddings, 
                                                                              freeze=feature_spec["freeze_emb"],
@@ -218,9 +133,6 @@ class EmbeddingDictLayer(nn.Module):
             embedding_matrix.weight.requires_grad = False
         return embedding_matrix
 
-    def dict2list(self, embedding_dict):
-        return list(embedding_dict.values())
-
     def dict2tensor(self, embedding_dict, feature_source=None, feature_type=None):
         if feature_source is not None:
             if not isinstance(feature_source, list):
@@ -262,18 +174,5 @@ class EmbeddingDictLayer(nn.Module):
         return feature_emb_dict
 
 
-class SENET_Layer(nn.Module):
-    def __init__(self, num_fields, reduction_ratio=3):
-        super(SENET_Layer, self).__init__()
-        reduced_size = max(1, int(num_fields / reduction_ratio))
-        self.excitation = nn.Sequential(nn.Linear(num_fields, reduced_size, bias=False),
-                                        nn.ReLU(),
-                                        nn.Linear(reduced_size, num_fields, bias=False),
-                                        nn.ReLU())
 
-    def forward(self, feature_emb):
-        Z = torch.mean(feature_emb, dim=-1, out=None)
-        A = self.excitation(Z)
-        V = feature_emb * A.unsqueeze(-1)
-        return V
 

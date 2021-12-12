@@ -1,15 +1,5 @@
 #! /bin/sh
 
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
-
-
 cd ../benchmarks
 
 python run_expid.py --expid AFM_test && \
@@ -36,6 +26,13 @@ python run_expid.py --expid NFM_test && \
 python run_expid.py --expid ONN_test && \
 python run_expid.py --expid PNN_test && \
 python run_expid.py --expid WideDeep_test && \
-python run_expid.py --expid xDeepFM_test
+python run_expid.py --expid xDeepFM_test && \
+python run_expid.py --expid FmFM_test && \
+python run_expid.py --expid DCNv2_test && \
+python run_expid.py --expid ONNv2_test && \
+python run_expid.py --expid FFMv2_test && \
+python run_expid.py --expid DeepIM_test
+# python run_expid.py --expid FLEN_test && \
+# python run_expid.py --expid DIN_test
 
 echo "All tests done."

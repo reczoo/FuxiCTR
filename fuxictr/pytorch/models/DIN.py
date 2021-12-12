@@ -1,16 +1,29 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+""" This model implements the paper: Zhou et al., Deep Interest Network for 
+    Click-Through Rate Prediction, KDD'2018.
+    [PDF] https://arxiv.org/pdf/1706.06978.pdf
+    [Code] https://github.com/zhougr1993/DeepInterestNetwork
+"""
 
 import torch
 from torch import nn
 from .base_model import BaseModel
-from ..layers import EmbeddingLayer_v3, EmbeddingDictLayer, DNN_Layer, Dice
+from ..layers import EmbeddingDictLayer, MLP_Layer, DINAttentionLayer
 
 
 class DIN(BaseModel):
@@ -26,7 +39,6 @@ class DIN(BaseModel):
                  attention_final_activation=None,
                  dice_alpha=0,
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)",
                  embedding_dim=10, 
                  net_dropout=0, 
                  batch_norm=False, 
@@ -59,7 +71,7 @@ class DIN(BaseModel):
                                                                  dropout_rate=net_dropout,
                                                                  batch_norm=batch_norm)
                                                for _ in range(len(self.din_history_field))])
-        self.dnn = DNN_Layer(input_dim=feature_map.num_fields * embedding_dim,
+        self.dnn = MLP_Layer(input_dim=feature_map.num_fields * embedding_dim,
                              output_dim=1,
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
@@ -68,7 +80,7 @@ class DIN(BaseModel):
                              batch_norm=batch_norm, 
                              use_bias=True)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.apply(self.init_weights)
 
     def forward(self, inputs):
         X, y = self.inputs_to_device(inputs)
@@ -81,42 +93,9 @@ class DIN(BaseModel):
             feature_emb_dict[din_history_field] = pooled_history_emb
         feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict)
         y_pred = self.dnn(feature_emb.flatten(start_dim=1))
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"loss": loss, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict
 
 
-class DINAttentionLayer(nn.Module):
-    def __init__(self, 
-                 embedding_dim=64,
-                 attention_units=[32], 
-                 hidden_activations="ReLU",
-                 final_activation=None,
-                 dice_alpha=0.,
-                 dropout_rate=0,
-                 batch_norm=False):
-        super(DINAttentionLayer, self).__init__()
-        self.embedding_dim = embedding_dim
-        if isinstance(hidden_activations, str) and hidden_activations.lower() == "dice":
-            hidden_activations = [Dice(units, alpha=dice_alpha) for units in attention_units]
-        self.attention_layer = DNN_Layer(input_dim=4 * embedding_dim,
-                                         output_dim=1,
-                                         hidden_units=attention_units,
-                                         hidden_activations=hidden_activations,
-                                         final_activation=final_activation,
-                                         dropout_rates=dropout_rate,
-                                         batch_norm=batch_norm, 
-                                         use_bias=True)
 
-    def forward(self, query_item, history_sequence):
-        # query_item: b x emd
-        # history_sequence: b x len x emb
-        seq_len = history_sequence.size(1)
-        query_item = query_item.unsqueeze(1).expand(-1, seq_len, -1)
-        attention_input = torch.cat([query_item, history_sequence, query_item - history_sequence, 
-                                     query_item * history_sequence], dim=-1) # b x len x 4*emb
-        attention_weight = self.attention_layer(attention_input.view(-1, 4 * self.embedding_dim))
-        attention_weight = attention_weight.view(-1, seq_len) # b x len
-        output = (attention_weight.unsqueeze(-1) * history_sequence).sum(dim=1) # mask by all zeros
-        return output
 

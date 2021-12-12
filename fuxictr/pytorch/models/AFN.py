@@ -1,16 +1,23 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 from torch import nn
 import torch
 from .base_model import BaseModel
-from ..layers import LR_Layer, EmbeddingLayer, DNN_Layer
+from ..layers import LR_Layer, EmbeddingLayer, MLP_Layer
 
 class AFN(BaseModel):
     def __init__(self, 
@@ -19,9 +26,7 @@ class AFN(BaseModel):
                  gpu=-1, 
                  task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  embedding_dim=10, 
-                 embedding_dropout=0,
                  ensemble_dnn=True,
                  dnn_hidden_units=[64, 64, 64], 
                  dnn_activations="ReLU",
@@ -41,11 +46,9 @@ class AFN(BaseModel):
                                   net_regularizer=net_regularizer,
                                   **kwargs) 
         self.num_fields = feature_map.num_fields
-        self.embedding_layer = EmbeddingLayer(feature_map, 
-                                              embedding_dim, 
-                                              embedding_dropout)
+        self.embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
         self.coefficient_W = nn.Linear(self.num_fields, logarithmic_neurons, bias=False)
-        self.dense_layer = DNN_Layer(input_dim=embedding_dim * logarithmic_neurons,
+        self.dense_layer = MLP_Layer(input_dim=embedding_dim * logarithmic_neurons,
                                      output_dim=1, 
                                      hidden_units=afn_hidden_units,
                                      hidden_activations=afn_activations,
@@ -60,7 +63,7 @@ class AFN(BaseModel):
             self.embedding_layer2 = EmbeddingLayer(feature_map, 
                                                    embedding_dim, 
                                                    embedding_dropout)
-            self.dnn = DNN_Layer(input_dim=embedding_dim * self.num_fields,
+            self.dnn = MLP_Layer(input_dim=embedding_dim * self.num_fields,
                                  output_dim=1, 
                                  hidden_units=dnn_hidden_units,
                                  hidden_activations=dnn_activations,
@@ -71,15 +74,14 @@ class AFN(BaseModel):
             self.fc = nn.Linear(2, 1)
         self.final_activation = self.get_final_activation(task)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
-
+        self.apply(self.init_weights)
+        
     def forward(self, inputs):
         """
         Inputs: [X, y]
         """
         X, y = self.inputs_to_device(inputs)
-        feature_emb_list = self.embedding_layer(X)
-        feature_emb = torch.stack(feature_emb_list, dim=1)
+        feature_emb = self.embedding_layer(X)
         dnn_input = self.logarithmic_net(feature_emb)
         afn_out = self.dense_layer(dnn_input)
         if self.ensemble_dnn:
@@ -92,8 +94,7 @@ class AFN(BaseModel):
 
         if self.final_activation is not None:
             y_pred = self.final_activation(y_pred)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"y_pred": y_pred, "loss": loss}
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict
 
     def logarithmic_net(self, feature_emb):
