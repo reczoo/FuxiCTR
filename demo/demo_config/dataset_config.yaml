@@ -11,3 +11,11 @@ taobao_tiny_data:
                   "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
                   active: True, dtype: str, type: categorical}
     label_col: {name: clk, dtype: float}
+
+
+taobao_tiny_h5:
+    data_root: ../data/
+    data_format: h5
+    train_data: ../data/taobao_tiny_h5/train.h5
+    valid_data: ../data/taobao_tiny_h5/valid.h5
+    test_data: ../data/taobao_tiny_h5/test.h5

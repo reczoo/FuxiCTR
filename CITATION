@@ -1,0 +1,13 @@
+@incollection{FuxiCTR,
+  author    = {Jieming Zhu and
+               Jinyang Liu and
+               Shuai Yang and
+               Qi Zhang and
+               Xiuqiang He},
+  title     = {Open Benchmarking for Click-Through Rate Prediction},
+  booktitle = {The 30th {ACM} International Conference on Information
+               and Knowledge Management (CIKM'21)},
+  pages     = {2759--2769},
+  year      = {2021}
+}
+

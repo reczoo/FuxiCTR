@@ -1,0 +1,106 @@
+{
+    "dataset_id": "taobao_tiny_h5",
+    "num_fields": 14,
+    "num_features": 476,
+    "input_length": 14,
+    "feature_specs": {
+        "userid": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 25,
+            "index": 0
+        },
+        "adgroup_id": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 100,
+            "index": 1
+        },
+        "pid": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 3,
+            "index": 2
+        },
+        "cate_id": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 48,
+            "index": 3
+        },
+        "campaign_id": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 98,
+            "index": 4
+        },
+        "customer": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 97,
+            "index": 5
+        },
+        "brand": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 66,
+            "index": 6
+        },
+        "cms_segid": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 10,
+            "index": 7
+        },
+        "cms_group_id": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 10,
+            "index": 8
+        },
+        "final_gender_code": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 3,
+            "index": 9
+        },
+        "age_level": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 6,
+            "index": 10
+        },
+        "pvalue_level": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 3,
+            "index": 11
+        },
+        "shopping_level": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 4,
+            "index": 12
+        },
+        "occupation": {
+            "source": "",
+            "type": "categorical",
+            "min_categr_count": 1,
+            "vocab_size": 3,
+            "index": 13
+        }
+    }
+}
