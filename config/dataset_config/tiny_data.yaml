@@ -24,7 +24,8 @@ taobao_tiny_x2:
         [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
                  "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
                  active: True, dtype: str, type: categorical},
-         {name: "xxxx", active: True, dtype: str, type: sequence}]
+         {name: "click_sequence", active: True, dtype: str, type: sequence, splitter: "^", max_len: 5,
+          encoder: null, share_embedding: "adgroup_id"}]
     label_col: {name: clk, dtype: float}
 
 
@@ -36,13 +37,9 @@ taobao_tiny_x3:
     test_data: ../data/tiny_data/test_sample.csv
     min_categr_count: 1
     feature_cols:
-        [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
-                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+        [{name: ["userid","cms_segid","cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
                  active: True, dtype: str, type: categorical, source: user},
-         {name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
-                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+         {name: ["adgroup_id","cate_id","campaign_id","customer","brand"], 
                  active: True, dtype: str, type: categorical, source: item},
-         {name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
-                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
-                 active: True, dtype: str, type: categorical, source: context}]
+         {name: "pid", active: True, dtype: str, type: categorical, source: context}]
     label_col: {name: clk, dtype: float}

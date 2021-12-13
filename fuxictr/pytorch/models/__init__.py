@@ -1,3 +1,4 @@
+from .base_model import BaseModel
 from .LR import LR
 from .FM import FM
 from .DNN import DNN

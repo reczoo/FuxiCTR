@@ -18,7 +18,7 @@
 
 import torch
 from torch import nn
-from .activation import Dice
+
 
 class ScaledDotProductAttention(nn.Module):
     """ Scaled Dot-Product Attention 
@@ -129,41 +129,7 @@ class SqueezeExcitationLayer(nn.Module):
         return V
 
 
-class DINAttentionLayer(nn.Module):
-    def __init__(self, 
-                 embedding_dim=64,
-                 attention_units=[32], 
-                 hidden_activations="ReLU",
-                 final_activation=None,
-                 dice_alpha=0.,
-                 dropout_rate=0,
-                 batch_norm=False):
-        super(DINAttentionLayer, self).__init__()
-        self.embedding_dim = embedding_dim
-        if isinstance(hidden_activations, str) and hidden_activations.lower() == "dice":
-            hidden_activations = [Dice(units, alpha=dice_alpha) for units in attention_units]
-        self.attention_layer = MLP_Layer(input_dim=4 * embedding_dim,
-                                         output_dim=1,
-                                         hidden_units=attention_units,
-                                         hidden_activations=hidden_activations,
-                                         final_activation=final_activation,
-                                         dropout_rates=dropout_rate,
-                                         batch_norm=batch_norm, 
-                                         use_bias=True)
 
-    def forward(self, query_item, history_sequence):
-        # query_item: b x emd
-        # history_sequence: b x len x emb
-        seq_len = history_sequence.size(1)
-        query_item = query_item.unsqueeze(1).expand(-1, seq_len, -1)
-        attention_input = torch.cat([query_item, history_sequence, query_item - history_sequence, 
-                                     query_item * history_sequence], dim=-1) # b x len x 4*emb
-        attention_weight = self.attention_layer(attention_input.view(-1, 4 * self.embedding_dim))
-        attention_weight = attention_weight.view(-1, seq_len) # b x len
-        # mask = history_sequence.sum(dim=-1) != 0
-        # attention_weight = attention_weight * mask.float()
-        output = (attention_weight.unsqueeze(-1) * history_sequence).sum(dim=1) # mask by all zeros
-        return output
 
 
 

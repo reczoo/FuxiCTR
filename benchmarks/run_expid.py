@@ -63,7 +63,7 @@ if __name__ == '__main__':
         except:
             raise RuntimeError('Dataset={} not exist!'.format(dataset))
         feature_encoder = ds.FeatureEncoder(**params)
-        if params.get('use_hdf5') and params.get('pickle_feature_encoder') and os.path.exists(feature_encoder.pickle_file):
+        if params.get('use_hdf5') and os.path.exists(feature_encoder.pickle_file):
             feature_encoder = feature_encoder.load_pickle(feature_encoder.pickle_file)
         else: # Build feature_map and transform h5 data
             datasets.build_dataset(feature_encoder, **params)

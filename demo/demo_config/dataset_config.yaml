@@ -33,7 +33,7 @@ taobao_tiny_sequence:
                  "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
                  active: True, dtype: str, type: categorical},
          {name: "click_sequence", active: True, dtype: str, type: sequence, splitter: "^", max_len: 5,
-          encoder: "MaskedAveragePooling"}]
+          encoder: "MaskedAveragePooling", share_embedding: "adgroup_id"}]
     label_col: {name: clk, dtype: float}
 
 

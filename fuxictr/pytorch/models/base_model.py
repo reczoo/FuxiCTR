@@ -59,6 +59,7 @@ class BaseModel(nn.Module):
         self.checkpoint = os.path.abspath(os.path.join(self.model_dir, self.model_id + ".model"))
         self._validation_metrics = kwargs["metrics"]
         self._verbose = kwargs["verbose"]
+        self.evaluate_metrics = evaluate_metrics
 
     def compile(self, optimizer, loss, lr=1e-3):
         try:
@@ -195,9 +196,8 @@ class BaseModel(nn.Module):
     def train_on_epoch(self, data_generator, epoch):
         epoch_loss = 0
         model = self.train()
-        if self._verbose == 0:
-            batch_iterator = data_generator
-        else:
+        batch_iterator = data_generator
+        if self._verbose > 0:
             from tqdm import tqdm
             batch_iterator = tqdm(data_generator, disable=False, file=sys.stdout)
         for batch_index, batch_data in enumerate(batch_iterator):
@@ -227,8 +227,21 @@ class BaseModel(nn.Module):
                 y_true.extend(batch_data[1].data.cpu().numpy().reshape(-1))
             y_pred = np.array(y_pred, np.float64)
             y_true = np.array(y_true, np.float64)
-            val_logs = evaluate_metrics(y_true, y_pred, self._validation_metrics)
+            val_logs = self.evaluate_metrics(y_true, y_pred, self._validation_metrics)
             return val_logs
+
+    def predict_generator(self, data_generator):
+        self.eval()  # set to evaluation mode
+        with torch.no_grad():
+            y_pred = []
+            if self._verbose > 0:
+                from tqdm import tqdm
+                data_generator = tqdm(data_generator, disable=False, file=sys.stdout)
+            for batch_data in data_generator:
+                return_dict = self.forward(batch_data)
+                y_pred.extend(return_dict["y_pred"].data.cpu().numpy().reshape(-1))
+            y_pred = np.array(y_pred, np.float64)
+            return y_pred
 
     def to_device(self):
         self.to(device=self.device)

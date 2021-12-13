@@ -31,8 +31,8 @@ python run_expid.py --expid FmFM_test && \
 python run_expid.py --expid DCNv2_test && \
 python run_expid.py --expid ONNv2_test && \
 python run_expid.py --expid FFMv2_test && \
-python run_expid.py --expid DeepIM_test
-# python run_expid.py --expid FLEN_test && \
-# python run_expid.py --expid DIN_test
+python run_expid.py --expid DeepIM_test && \
+python run_expid.py --expid FLEN_test && \
+python run_expid.py --expid DIN_test
 
 echo "All tests done."
