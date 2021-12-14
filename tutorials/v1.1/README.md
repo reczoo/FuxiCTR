@@ -1,6 +1,6 @@
 ## Tutorials v1.1
 
-Here are the tutorials for FuxiCTR v1.1
+The tutorials for FuxiCTR v1.1
 
 1. [Run the demo to understand the overall workflow](./run_the_demo.ipynb)
 

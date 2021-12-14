@@ -1,6 +1,6 @@
 ## Tutorials v1.0
 
-Here are the tutorials for FuxiCTR v1.0: https://github.com/xue-pai/FuxiCTR/tree/v1.0.2.post
+The tutorials for FuxiCTR v1.0: https://github.com/xue-pai/FuxiCTR/tree/v1.0.2.post
 
 1. [Run the demo to understand the overall workflow](./1_run_the_demo.ipynb)
 
