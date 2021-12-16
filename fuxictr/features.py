@@ -30,6 +30,7 @@ import logging
 import json
 from collections import defaultdict
 from .preprocess import Tokenizer, Normalizer
+import sklearn.preprocessing as sklearn_preprocess
 
 
 class FeatureMap(object):
@@ -200,12 +201,11 @@ class FeatureEncoder(object):
                 if "share_embedding" in feature_column:
                     self.feature_map.feature_specs[name]["share_embedding"] = feature_column["share_embedding"]
                     tokenizer.set_vocab(self.encoders["{}_tokenizer".format(feature_column["share_embedding"])].vocab)
+                elif self.is_share_embedding_with_sequence(name):
+                    tokenizer.fit_on_texts(feature_values, use_padding=True)
+                    self.feature_map.feature_specs[name]["padding_idx"] = tokenizer.vocab_size - 1
                 else:
-                    if self.is_share_embedding_with_sequence(name):
-                        tokenizer.fit_on_texts(feature_values, use_padding=True)
-                        self.feature_map.feature_specs[name]["padding_idx"] = tokenizer.vocab_size - 1
-                    else:
-                        tokenizer.fit_on_texts(feature_values, use_padding=False)
+                    tokenizer.fit_on_texts(feature_values, use_padding=False)
                 self.encoders[name + "_tokenizer"] = tokenizer
                 self.feature_map.num_features += tokenizer.vocab_size
                 self.feature_map.feature_specs[name]["vocab_size"] = tokenizer.vocab_size
@@ -222,7 +222,8 @@ class FeatureEncoder(object):
             elif encoder == "numeric_bucket":
                 num_buckets = feature_column.get("num_buckets", num_buckets)
                 qtf = sklearn_preprocess.QuantileTransformer(n_quantiles=num_buckets + 1)
-                qtf.fit(feature_values)
+                qtf.fit(feature_values.reshape(-1, 1))
+                self.encoders[name + "_quantiler"] = qtf
                 boundaries = qtf.quantiles_[1:-1]
                 self.feature_map.feature_specs[name]["vocab_size"] = num_buckets
                 self.feature_map.num_features += num_buckets
@@ -279,11 +280,12 @@ class FeatureEncoder(object):
                 data_arrays.append(numeric_array) 
             elif feature_type == "categorical":
                 encoder = feature_spec.get("encoder", "")
+                data = ddf.loc[:, feature].values
                 if encoder == "":
-                    data_arrays.append(self.encoders.get(feature + "_tokenizer") \
-                                                    .encode_category(ddf.loc[:, feature].values))
+                    data_arrays.append(self.encoders.get(feature + "_tokenizer").encode_category(data))
                 elif encoder == "numeric_bucket":
-                    raise NotImplementedError
+                    new_data = self.encoders.get(feature + "_quantiler").fit_transform(data.reshape(-1,1))
+                    data_arrays.append(new_data.squeeze())
                 elif encoder == "hash_bucket":
                     raise NotImplementedError
             elif feature_type == "sequence":
