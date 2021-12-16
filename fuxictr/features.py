@@ -29,7 +29,7 @@ import os
 import logging
 import json
 from collections import defaultdict
-from .preprocess import Tokenizer
+from .preprocess import Tokenizer, Normalizer
 
 
 class FeatureMap(object):
