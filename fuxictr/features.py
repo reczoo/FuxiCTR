@@ -275,7 +275,7 @@ class FeatureEncoder(object):
                 numeric_array = ddf.loc[:, feature].fillna(0).apply(lambda x: float(x)).values
                 normalizer = self.encoders.get(feature + "_normalizer")
                 if normalizer:
-                     numeric_array = normalizer.normalize(numeric_array)
+                    numeric_array = normalizer.normalize(numeric_array)
                 data_arrays.append(numeric_array) 
             elif feature_type == "categorical":
                 encoder = feature_spec.get("encoder", "")
