@@ -1,0 +1,22 @@
+ONNv2_base:
+    model: ONNv2
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    hidden_units: [64, 64, 64]
+    hidden_activations: relu
+    net_dropout: 0
+    batch_norm: False
+    batch_size: 10000
+    embedding_dim: 2
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+

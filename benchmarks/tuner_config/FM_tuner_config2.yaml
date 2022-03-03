@@ -1,0 +1,18 @@
+base_config: ../config/ # the location of base config
+base_expid: FM_test # the expid of default hyper-parameters
+dataset_id: taobao_tiny_h5 # the dataset_id used
+
+dataset_config: # if dataset_config is present, lookup dataset_id in this config file
+  taobao_tiny_h5:
+      data_root: ../data/
+      data_format: h5
+      train_data: ../data/taobao_tiny_h5/train.h5
+      valid_data: ../data/taobao_tiny_h5/valid.h5
+      test_data: ../data/taobao_tiny_h5/test.h5
+
+tuner_space:
+    model_root: './tuner_config/' # the value will override the default value in FM_test
+    embedding_dim: [16, 8] # the values in the list will be grid-searched
+    regularizer: [0, 1.e-6] # the values in the list will be grid-searched
+    learning_rate: 1.e-3 # it is equivalent to [1.e-3]
+    batch_size: 128 # the value will override the default value in FM_test

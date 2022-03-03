@@ -1,11 +1,18 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 import os
 import logging
@@ -14,6 +21,7 @@ import yaml
 import glob
 import json
 from collections import OrderedDict
+
 
 def load_config(config_dir, experiment_id):
     params = dict()
@@ -32,14 +40,19 @@ def load_config(config_dir, experiment_id):
                 found_params[experiment_id] = config_dict[experiment_id]
         if len(found_params) == 2:
             break
-    # Update base setting first so that values can be overrided when conflict 
+    if experiment_id not in found_params:
+        raise ValueError("expid={} not found in config".format(experiment_id))
+    # Update base settings first so that values can be overrided when conflict 
     # with experiment_id settings
     params.update(found_params.get('Base', {}))
     params.update(found_params.get(experiment_id))
-    if 'dataset_id' not in params:
-        raise RuntimeError('experiment_id={} is not valid in config.'.format(experiment_id))
     params['model_id'] = experiment_id
-    dataset_id = params['dataset_id']
+    dataset_params = load_dataset_config(config_dir, params['dataset_id'])
+    params.update(dataset_params)
+    return params
+
+
+def load_dataset_config(config_dir, dataset_id):
     dataset_configs = glob.glob(os.path.join(config_dir, 'dataset_config.yaml'))
     if not dataset_configs:
         dataset_configs = glob.glob(os.path.join(config_dir, 'dataset_config/*.yaml'))
@@ -47,19 +60,20 @@ def load_config(config_dir, experiment_id):
         with open(config, 'r') as cfg:
             config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
             if dataset_id in config_dict:
-                params.update(config_dict[dataset_id])
-                break
-    return params
+                return config_dict[dataset_id]
+    raise RuntimeError('dataset_id={} is not found in config.'.format(dataset_id))
 
-def set_logger(params):
-    dataset_id = params['dataset_id']
-    model_id = params['model_id']
-    log_dir = os.path.join(params['model_root'], dataset_id)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-    log_file = os.path.join(log_dir, model_id + '.log')
 
-    # logs may not show in the file without the two lines
+def set_logger(params, log_file=None):
+    if log_file is None:
+        dataset_id = params['dataset_id']
+        model_id = params['model_id']
+        log_dir = os.path.join(params['model_root'], dataset_id)
+        log_file = os.path.join(log_dir, model_id + '.log')
+    log_dir = os.path.dirname(log_file)
+    os.makedirs(log_dir, exist_ok=True)
+
+    # logs will not show in the file without the two lines.
     for handler in logging.root.handlers[:]: 
         logging.root.removeHandler(handler)
         
