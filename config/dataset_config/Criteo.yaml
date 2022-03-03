@@ -5,7 +5,7 @@ criteo_x4:
     train_data: ../data/Criteo/Criteo_x4/train.csv
     valid_data: ../data/Criteo/Criteo_x4/valid.csv
     test_data: ../data/Criteo/Criteo_x4/test.csv
-    min_categr_count: 2
+    min_categr_count: 10
     data_block_size: -1
     feature_cols:
         - {name: [I1,I2,I3,I4,I5,I6,I7,I8,I9,I10,I11,I12,I13],
