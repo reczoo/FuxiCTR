@@ -12,12 +12,12 @@ DIN_base:
     embedding_dim: 40
     dnn_hidden_units: [500, 500, 500]
     dnn_activations: relu
-    attention_units: [64]
-    attention_activations: "Dice"
-    attention_final_activation: null
-    din_query_field: item_id
-    din_history_field: click_history
-    embedding_dropout: 0
+    attention_hidden_units: [64]
+    attention_hidden_activations: "Dice"
+    attention_output_activation: null
+    attention_dropout: 0
+    din_target_field: adgroup_id
+    din_sequence_field: click_sequence
     net_dropout: 0
     batch_norm: False
     epochs: 100

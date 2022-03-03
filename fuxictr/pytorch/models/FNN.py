@@ -1,19 +1,28 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import torch
 from torch import nn
 import numpy as np
 import logging
 import shutil
-from .base_model import BaseModel
-from ..layers import EmbeddingLayer_v3, DNN_Layer, InnerProductLayer_v2
+from fuxictr.pytorch.models import BaseModel
+from fuxictr.pytorch.layers import EmbeddingLayer, MLP_Layer, InnerProductLayer
+
 
 class FNN(BaseModel):
     def __init__(self, 
@@ -22,7 +31,6 @@ class FNN(BaseModel):
                  gpu=-1, 
                  task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  embedding_dim=10, 
                  hidden_units=[64, 64, 64], 
                  hidden_activations="ReLU", 
@@ -40,23 +48,23 @@ class FNN(BaseModel):
                                   **kwargs)
         self.dnn_embedding_regularizer = dnn_embedding_regularizer
         self.fm_embedding_regularizer = fm_embedding_regularizer
-        # A trick for quick one-hot encoding in LR
-        self.lr_embedding_layer = EmbeddingLayer_v3(feature_map, 1)
+        self.lr_embedding_layer = EmbeddingLayer(feature_map, 1) # A trick for quick one-hot encoding in LR
         self.bias = nn.Parameter(torch.zeros(1), requires_grad=True)
-        self.fm_embedding_layer = EmbeddingLayer_v3(feature_map, embedding_dim)
-        self.inner_product_layer = InnerProductLayer_v2(output="sum")
-        self.dnn = DNN_Layer(input_dim=(embedding_dim + 1) * feature_map.num_fields + 1,
+        self.fm_embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
+        self.inner_product_layer = InnerProductLayer(output="product_sum_pooling")
+        self.dnn = MLP_Layer(input_dim=(embedding_dim + 1) * feature_map.num_fields + 1,
                              output_dim=1, 
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             final_activation=None, 
+                             output_activation=None, 
                              dropout_rates=net_dropout, 
                              batch_norm=batch_norm, 
                              use_bias=True)
-        self.final_activation = self.get_final_activation(task)
+        self.output_activation = self.get_output_activation(task)
         self.learning_rate = learning_rate
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.reset_parameters()
+        self.model_to_device()
             
     def forward(self, inputs):
         """
@@ -74,10 +82,9 @@ class FNN(BaseModel):
             flat_emb = torch.cat([lr_weights, feature_emb], dim=-1).flatten(start_dim=1)
             y_pred = self.dnn(torch.cat([self.bias.repeat(flat_emb.size(0), 1), flat_emb], dim=-1))
             self._embedding_regularizer = self.dnn_embedding_regularizer
-        if self.final_activation is not None:
-            y_pred = self.final_activation(y_pred)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"loss": loss, "y_pred": y_pred}
+        if self.output_activation is not None:
+            y_pred = self.output_activation(y_pred)
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict
 
     def fit_generator(self, data_generator, epochs=1, validation_data=None,
@@ -100,7 +107,7 @@ class FNN(BaseModel):
             k += 1
             logging.info("************ Epoch=1 start ************")
             for epoch in range(epochs):
-                epoch_loss = self.train_on_epoch(data_generator, epoch)
+                epoch_loss = self.train_one_epoch(data_generator, epoch)
                 logging.info("Train loss: {:.6f}".format(epoch_loss))
                 logging.info("************ Epoch={} end ************".format(epoch + 1))
                 if self._stop_training:

@@ -1,19 +1,29 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-# Copyright (C) 2018. Github developer `pengshuang` for ScaledDotProductAttention implementation. 
+# Copyright (C) 2018. pengshuang@Github for ScaledDotProductAttention.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import torch
 from torch import nn
 
 
 class ScaledDotProductAttention(nn.Module):
-    """ Scaled Dot-Product Attention """
+    """ Scaled Dot-Product Attention 
+    Ref: https://zhuanlan.zhihu.com/p/47812375
+    """
     def __init__(self, dropout_rate=0.):
         super(ScaledDotProductAttention, self).__init__()
         self.dropout = None
@@ -103,3 +113,25 @@ class MultiHeadSelfAttention(MultiHeadAttention):
         return output
 
 
+class SqueezeExcitationLayer(nn.Module):
+    def __init__(self, num_fields, reduction_ratio=3):
+        super(SqueezeExcitationLayer, self).__init__()
+        reduced_size = max(1, int(num_fields / reduction_ratio))
+        self.excitation = nn.Sequential(nn.Linear(num_fields, reduced_size, bias=False),
+                                        nn.ReLU(),
+                                        nn.Linear(reduced_size, num_fields, bias=False),
+                                        nn.ReLU())
+
+    def forward(self, feature_emb):
+        Z = torch.mean(feature_emb, dim=-1, out=None)
+        A = self.excitation(Z)
+        V = feature_emb * A.unsqueeze(-1)
+        return V
+
+
+
+
+
+
+
+        

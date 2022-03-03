@@ -1,16 +1,24 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
 import torch
 from torch import nn
-from .base_model import BaseModel
-from ..layers import EmbeddingLayer_v3, DNN_Layer, FM_Layer_v2
+from fuxictr.pytorch.models import BaseModel
+from fuxictr.pytorch.layers import EmbeddingLayer, MLP_Layer, FM_Layer
+
 
 class DeepFM(BaseModel):
     def __init__(self, 
@@ -19,7 +27,6 @@ class DeepFM(BaseModel):
                  gpu=-1, 
                  task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  embedding_dim=10, 
                  hidden_units=[64, 64, 64], 
                  hidden_activations="ReLU", 
@@ -34,19 +41,20 @@ class DeepFM(BaseModel):
                                      embedding_regularizer=embedding_regularizer, 
                                      net_regularizer=net_regularizer,
                                      **kwargs)
-        self.embedding_layer = EmbeddingLayer_v3(feature_map, embedding_dim)
-        self.fm_layer = FM_Layer_v2(feature_map, final_activation=None, use_bias=False)
-        self.dnn = DNN_Layer(input_dim=embedding_dim * feature_map.num_fields,
+        self.embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
+        self.fm_layer = FM_Layer(feature_map, output_activation=None, use_bias=False)
+        self.dnn = MLP_Layer(input_dim=embedding_dim * feature_map.num_fields,
                              output_dim=1, 
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             final_activation=None, 
+                             output_activation=None, 
                              dropout_rates=net_dropout, 
                              batch_norm=batch_norm, 
                              use_bias=True)
-        self.final_activation = self.get_final_activation(task)
+        self.output_activation = self.get_output_activation(task)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.reset_parameters()
+        self.model_to_device()
             
     def forward(self, inputs):
         """
@@ -56,8 +64,7 @@ class DeepFM(BaseModel):
         feature_emb = self.embedding_layer(X)
         y_pred = self.fm_layer(X, feature_emb)
         y_pred += self.dnn(feature_emb.flatten(start_dim=1))
-        if self.final_activation is not None:
-            y_pred = self.final_activation(y_pred)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {"loss": loss, "y_pred": y_pred}
+        if self.output_activation is not None:
+            y_pred = self.output_activation(y_pred)
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict

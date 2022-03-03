@@ -13,7 +13,6 @@ FNN_base:
     embedding_dim: 40
     hidden_units: [500, 500, 500]
     hidden_activations: relu
-    embedding_dropout: 0
     net_dropout: 0
     batch_norm: False
     epochs: 100
