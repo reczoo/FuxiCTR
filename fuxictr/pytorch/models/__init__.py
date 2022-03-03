@@ -31,3 +31,5 @@ from .DIN import DIN
 from .DeepIM import DeepIM
 from .FLEN import FLEN
 from .InterHAt import InterHAt
+from .MaskNet import MaskNet
+from .DESTINE import DESTINE
