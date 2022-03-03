@@ -1,16 +1,24 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import torch
 from torch import nn
-from .base_model import BaseModel
-from ..layers import DNN_Layer, EmbeddingLayer, SENET_Layer, BilinearInteractionLayer, LR_Layer
+from fuxictr.pytorch.models import BaseModel
+from fuxictr.pytorch.layers import MLP_Layer, EmbeddingLayer, SqueezeExcitationLayer, BilinearInteractionLayer, LR_Layer
 
 
 class FiBiNET(BaseModel):
@@ -26,7 +34,6 @@ class FiBiNET(BaseModel):
                  hidden_activations="ReLU",
                  reduction_ratio=3,
                  bilinear_type="field_interaction",
-                 embedding_dropout=0,
                  net_dropout=0, 
                  batch_norm=False, 
                  embedding_regularizer=None, 
@@ -38,39 +45,38 @@ class FiBiNET(BaseModel):
                                       embedding_regularizer=embedding_regularizer, 
                                       net_regularizer=net_regularizer,
                                       **kwargs)
-        self.embedding_layer = EmbeddingLayer(feature_map, embedding_dim, embedding_dropout)
+        self.embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
         num_fields = feature_map.num_fields
-        self.senet_layer = SENET_Layer(num_fields, reduction_ratio)
+        self.senet_layer = SqueezeExcitationLayer(num_fields, reduction_ratio)
         self.bilinear_interaction = BilinearInteractionLayer(num_fields, embedding_dim, bilinear_type)
-        self.lr_layer = LR_Layer(feature_map, final_activation=None, use_bias=False)
+        self.lr_layer = LR_Layer(feature_map, output_activation=None, use_bias=False)
         input_dim = num_fields * (num_fields - 1) * embedding_dim
-        self.dnn = DNN_Layer(input_dim=input_dim,
+        self.dnn = MLP_Layer(input_dim=input_dim,
                              output_dim=1, 
                              hidden_units=hidden_units, 
                              hidden_activations=hidden_activations,
-                             final_activation=None,
+                             output_activation=None,
                              dropout_rates=net_dropout, 
                              batch_norm=batch_norm, 
                              use_bias=True)
-        self.final_activation = self.get_final_activation(task)
+        self.output_activation = self.get_output_activation(task)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
-        self.init_weights(embedding_initializer=embedding_initializer)
+        self.reset_parameters()
+        self.model_to_device()
 
     def forward(self, inputs):
         """
         Inputs: [X, y]
         """
         X, y = self.inputs_to_device(inputs)
-        feature_emb_list = self.embedding_layer(X) # list of b x embedding_dim
-        feature_emb = torch.stack(feature_emb_list, dim=1)
+        feature_emb = self.embedding_layer(X) # list of b x embedding_dim
         senet_emb = self.senet_layer(feature_emb)
         bilinear_p = self.bilinear_interaction(feature_emb)
         bilinear_q = self.bilinear_interaction(senet_emb)
         comb_out = torch.flatten(torch.cat([bilinear_p, bilinear_q], dim=1), start_dim=1)
         dnn_out = self.dnn(comb_out)
         y_pred = self.lr_layer(X) + dnn_out
-        if self.final_activation is not None:
-            y_pred = self.final_activation(y_pred)
-        loss = self.loss_with_reg(y_pred, y)
-        return_dict = {'y_pred': y_pred, 'loss':loss}
+        if self.output_activation is not None:
+            y_pred = self.output_activation(y_pred)
+        return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict

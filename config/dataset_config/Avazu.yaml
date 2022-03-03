@@ -6,6 +6,7 @@ avazu_x4:
     valid_data: ../data/Avazu/Avazu_x4/valid.csv
     test_data: ../data/Avazu/Avazu_x4/test.csv
     min_categr_count: 2
+    data_block_size: -1
     feature_cols:
         - {name: id, active: False, dtype: str, type: categorical}
         - {name: hour, active: True, dtype: str, type: categorical, preprocess: convert_hour}

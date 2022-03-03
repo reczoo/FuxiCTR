@@ -1,0 +1,28 @@
+DCNv2_base:
+    model: DCNv2
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    model_structure: parallel
+    use_low_rank_mixture: False
+    low_rank: 32
+    num_experts: 4
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    stacked_dnn_hidden_units: [500, 500, 500]
+    parallel_dnn_hidden_units: [500, 500, 500]
+    dnn_activations: relu
+    num_cross_layers: 3
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2019
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+

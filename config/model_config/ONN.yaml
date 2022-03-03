@@ -10,7 +10,6 @@ ONN_base:
     net_regularizer: 0
     hidden_units: [64, 64, 64]
     hidden_activations: relu
-    embedding_dropout: 0
     net_dropout: 0
     batch_norm: False
     batch_size: 10000
@@ -20,3 +19,4 @@ ONN_base:
     seed: 2019
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
+

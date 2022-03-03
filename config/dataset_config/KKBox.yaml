@@ -1,11 +1,12 @@
 ### KKBox dataset
-kkbox_x1:
+kkbox_x4:
     data_root: ../data/KKBox/
     data_format: csv
-    train_data: ../data/KKBox/KKBox_x1/train.csv
-    valid_data: ../data/KKBox/KKBox_x1/valid.csv
-    test_data: ../data/KKBox/KKBox_x1/test.csv
+    train_data: ../data/KKBox/KKBox_x4/train.csv
+    valid_data: ../data/KKBox/KKBox_x4/valid.csv
+    test_data: ../data/KKBox/KKBox_x4/test.csv
     min_categr_count: 10
+    data_block_size: -1
     feature_cols:
         - {name: ["msno","song_id","source_system_tab","source_screen_name","source_type","city","gender",
                   "registered_via","language"], active: True, dtype: str, type: categorical}

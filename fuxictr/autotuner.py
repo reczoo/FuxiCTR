@@ -1,11 +1,23 @@
+# =========================================================================
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2021. The Chinese University of Hong Kong. All rights reserved.
+#
+# Authors: Jinyang Liu <The Chinese University of Hong Kong>
+#          Jieming Zhu <Huawei Noah's Ark Lab>
+#          
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
 
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
 
 import itertools
 import subprocess
@@ -17,10 +29,8 @@ import glob
 import hashlib
 from .utils import load_config, print_to_json
 
-
 # add this line to avoid weird characters in yaml files
 yaml.Dumper.ignore_aliases = lambda *args : True
-
 
 def load_model_config(config_dir, experiment_id):
     params = dict()
@@ -156,20 +166,23 @@ def grid_search(version, config_dir, gpu_list, expid_tag=None):
     if expid_tag is not None:
         experiment_id_list = [expid for expid in experiment_id_list if str(expid_tag) in expid]
         assert len(experiment_id_list) > 0, "tag={} does not match any expid!".format(expid_tag)
-    idle_gpus = list(gpu_list)
+    gpu_list = list(gpu_list)
+    idle_queue = list(range(len(gpu_list)))
     processes = dict()
     while len(experiment_id_list) > 0:
-        if len(idle_gpus) > 0:
-            gpu_id = idle_gpus.pop(0)
+        if len(idle_queue) > 0:
+            idle_idx = idle_queue.pop(0)
+            gpu_id = gpu_list[idle_idx]
             expid = experiment_id_list.pop(0)
             cmd = "python -u run_expid.py --version {} --config {} --expid {} --gpu {}"\
                   .format(version, config_dir, expid, gpu_id)
             # print("Run cmd:", cmd)
             p = subprocess.Popen(cmd.split())
-            processes[gpu_id] = p
+            processes[idle_idx] = p
         else:
-            time.sleep(3)
-            for gpu_id, p in processes.items():
+            time.sleep(5)
+            for idle_idx, p in processes.items():
                 if p.poll() is not None: # terminated
-                    idle_gpus.append(gpu_id)
+                    idle_queue.append(idle_idx)
     [p.wait() for p in processes.values()]
+
