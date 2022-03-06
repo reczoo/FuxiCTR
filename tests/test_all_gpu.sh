@@ -1,14 +1,5 @@
 #! /bin/sh
 
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the MIT license.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE. See the MIT License for more details.
-
 cd ../benchmarks
 
 python run_expid.py --expid AFM_test --gpu 0 && \
@@ -36,5 +27,14 @@ python run_expid.py --expid ONN_test --gpu 0 && \
 python run_expid.py --expid PNN_test --gpu 0 && \
 python run_expid.py --expid WideDeep_test --gpu 0 && \
 python run_expid.py --expid xDeepFM_test --gpu 0
+python run_expid.py --expid FmFM_test --gpu 0 && \
+python run_expid.py --expid DCNv2_test --gpu 0 && \
+python run_expid.py --expid ONNv2_test --gpu 0 && \
+python run_expid.py --expid FFMv2_test --gpu 0 && \
+python run_expid.py --expid DeepIM_test --gpu 0 && \
+python run_expid.py --expid FLEN_test --gpu 0 && \
+python run_expid.py --expid DIN_test --gpu 0 && \
+python run_expid.py --expid DESTINE_test --gpu 0 && \
+python run_expid.py --expid MaskNet_test --gpu 0 
 
 echo "All tests done."
