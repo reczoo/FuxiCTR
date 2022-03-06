@@ -757,3 +757,60 @@ DIN_test:
     seed: 2019
     monitor: 'AUC'
     monitor_mode: 'max'
+
+DESTINE_test:
+    model: DESTINE
+    dataset_id: taobao_tiny
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    attention_dim: 4
+    num_heads: 2
+    attention_layers: 2
+    dnn_hidden_units: [64, 32]
+    dnn_activations: relu
+    att_dropout: 0
+    net_dropout: 0
+    relu_before_att: False
+    use_scale: True
+    use_wide: False
+    residual_mode: "each_layer"
+    batch_norm: True
+    epochs: 1
+    shuffle: True
+    seed: 2021
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+MaskNet_test:
+    model: MaskNet
+    dataset_id: taobao_tiny
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    dnn_hidden_units: [64, 32]
+    dnn_hidden_activations: relu
+    model_type: SerialMaskNet
+    parallel_num_blocks: 1
+    parallel_block_dim: 64
+    reduction_ratio: 1
+    emb_layernorm: True
+    net_layernorm: True
+    net_dropout: 0
+    epochs: 1
+    shuffle: True
+    seed: 2021
+    monitor: 'AUC'
+    monitor_mode: 'max'
