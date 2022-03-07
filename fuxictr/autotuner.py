@@ -151,7 +151,7 @@ def load_experiment_ids(config_dir):
             experiment_id_list += config_dict.keys()
     return sorted(experiment_id_list)
 
-def run_all(version, config_dir, gpu_list, expid_tag=None):
+def grid_search(version, config_dir, gpu_list, expid_tag=None):
     experiment_id_list = load_experiment_ids(config_dir)
     if expid_tag is not None:
         experiment_id_list = [expid for expid in experiment_id_list if str(expid_tag) in expid]
