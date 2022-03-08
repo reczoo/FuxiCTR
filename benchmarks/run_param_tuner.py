@@ -27,5 +27,5 @@ if __name__ == '__main__':
 
     # generate parameter space combinations
     config_dir = autotuner.enumerate_params(args['config'])
-    autotuner.run_all(version, config_dir, gpu_list, tag)
+    autotuner.grid_search(version, config_dir, gpu_list, tag)
 
