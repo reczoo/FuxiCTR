@@ -121,7 +121,7 @@ class FGCNN(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         if not self.share_embedding:
             feature_emb2 = self.fg_embedding_layer(X)
@@ -133,7 +133,7 @@ class FGCNN(BaseModel):
         inner_product_vec = self.inner_product_layer(combined_feature_emb)
         dense_input = torch.cat([combined_feature_emb.flatten(start_dim=1), inner_product_vec], dim=1)
         y_pred = self.dnn(dense_input)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
 

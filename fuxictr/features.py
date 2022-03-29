@@ -35,14 +35,15 @@ import sklearn.preprocessing as sklearn_preprocess
 
 class FeatureMap(object):
     def __init__(self, dataset_id, data_dir, version="pytorch"):
-        self.data_dir = data_dir # used in embedding layer for pretrained emb
+        self.data_dir = data_dir  # used in embedding layer for pretrained emb
         self.dataset_id = dataset_id
         self.version = version
         self.num_fields = 0
         self.num_features = 0
         self.input_length = 0
         self.feature_specs = OrderedDict()
-        
+        self.sample_weights = 0
+
     def set_feature_index(self):
         logging.info("Set feature index...")
         idx = 0
@@ -75,6 +76,7 @@ class FeatureMap(object):
         self.num_features = feature_map.get("num_features", None)
         self.input_length = feature_map.get("input_length", None)
         self.feature_specs = OrderedDict(feature_map["feature_specs"])
+        self.sample_weights = feature_map.get("sample_weights", None)
 
     def save(self, json_file):
         logging.info("Save feature_map to json: " + json_file)
@@ -86,17 +88,20 @@ class FeatureMap(object):
         feature_map["num_features"] = self.num_features
         feature_map["input_length"] = self.input_length
         feature_map["feature_specs"] = self.feature_specs
+        feature_map["sample_weights"] = self.sample_weights
+
         with open(json_file, "w") as fd:
             json.dump(feature_map, fd, indent=4)
 
 
 class FeatureEncoder(object):
-    def __init__(self, 
-                 feature_cols=[], 
-                 label_col={}, 
-                 dataset_id=None, 
-                 data_root="../data/", 
-                 version="pytorch", 
+    def __init__(self,
+                 feature_cols,
+                 label_col,
+                 weight_col=None,
+                 dataset_id=None,
+                 data_root="../data/",
+                 version="pytorch",
                  **kwargs):
         logging.info("Set up feature encoder...")
         self.data_dir = os.path.join(data_root, dataset_id)
@@ -104,6 +109,7 @@ class FeatureEncoder(object):
         self.json_file = os.path.join(self.data_dir, "feature_map.json")
         self.feature_cols = self._complete_feature_cols(feature_cols)
         self.label_col = label_col
+        self.weight_col = weight_col
         self.version = version
         self.feature_map = FeatureMap(dataset_id, self.data_dir, version)
         self.encoders = dict()
@@ -124,7 +130,10 @@ class FeatureEncoder(object):
     def read_csv(self, data_path):
         logging.info("Reading file: " + data_path)
         all_cols = self.feature_cols + [self.label_col]
-        dtype_dict = dict((x["name"], eval(x["dtype"]) if isinstance(x["dtype"], str) else x["dtype"]) 
+        if self.weight_col is not None:
+            all_cols.append(self.weight_col)
+
+        dtype_dict = dict((x["name"], eval(x["dtype"]) if isinstance(x["dtype"], str) else x["dtype"])
                           for x in all_cols)
         ddf = pd.read_csv(data_path, dtype=dtype_dict, memory_map=True)
         return ddf
@@ -132,6 +141,11 @@ class FeatureEncoder(object):
     def preprocess(self, ddf, fill_na=True):
         logging.info("Preprocess feature columns...")
         all_cols = [self.label_col] + self.feature_cols[::-1]
+        active_cols = [self.label_col["name"]] + [col["name"] for col in self.feature_cols if col["active"]]
+        if self.weight_col is not None:
+            all_cols.append(self.weight_col)
+            active_cols.append(self.weight_col["name"])
+
         for col in all_cols:
             name = col["name"]
             if fill_na and name in ddf.columns and ddf[name].isnull().values.any():
@@ -139,7 +153,7 @@ class FeatureEncoder(object):
             if "preprocess" in col and col["preprocess"] != "":
                 preprocess_fn = getattr(self, col["preprocess"])
                 ddf[name] = preprocess_fn(ddf, name)
-        active_cols = [self.label_col["name"]] + [col["name"] for col in self.feature_cols if col["active"]]
+
         ddf = ddf.loc[:, active_cols]
         return ddf
 
@@ -157,14 +171,14 @@ class FeatureEncoder(object):
         data_array = self.transform(ddf)
         return data_array
 
-    def fit(self, ddf, min_categr_count=1, num_buckets=10, **kwargs):           
+    def fit(self, ddf, min_categr_count=1, num_buckets=10, **kwargs):
         logging.info("Fit feature encoder...")
         self.feature_map.num_fields = 0
         for col in self.feature_cols:
             if col["active"]:
                 logging.info("Processing column: {}".format(col))
                 name = col["name"]
-                self.fit_feature_col(col, ddf[name].values, 
+                self.fit_feature_col(col, ddf[name].values,
                                      min_categr_count=min_categr_count,
                                      num_buckets=num_buckets)
                 self.feature_map.num_fields += 1
@@ -172,7 +186,7 @@ class FeatureEncoder(object):
         self.save_pickle(self.pickle_file)
         self.feature_map.save(self.json_file)
         logging.info("Set feature encoder done.")
-        
+
     def fit_feature_col(self, feature_column, feature_values, min_categr_count=1, num_buckets=10):
         name = feature_column["name"]
         feature_type = feature_column["type"]
@@ -196,7 +210,7 @@ class FeatureEncoder(object):
             if encoder != "":
                 self.feature_map.feature_specs[name]["encoder"] = encoder
             if encoder == "":
-                tokenizer = Tokenizer(min_freq=min_categr_count, 
+                tokenizer = Tokenizer(min_freq=min_categr_count,
                                       na_value=feature_column.get("na_value", ""))
                 if "share_embedding" in feature_column:
                     self.feature_map.feature_specs[name]["share_embedding"] = feature_column["share_embedding"]
@@ -211,12 +225,12 @@ class FeatureEncoder(object):
                     self.feature_map.feature_specs[name]["pretrained_emb"] = "pretrained_{}.h5".format(name)
                     self.feature_map.feature_specs[name]["freeze_emb"] = feature_column.get("freeze_emb", True)
                     tokenizer.load_pretrained_embedding(name,
-                                                        feature_column["pretrained_emb"], 
+                                                        feature_column["pretrained_emb"],
                                                         feature_column["embedding_dim"],
                                                         os.path.join(self.data_dir, "pretrained_{}.h5".format(name)),
                                                         feature_dtype=feature_column.get("dtype"),
                                                         freeze_emb=feature_column.get("freeze_emb", True))
-                if tokenizer.use_padding: # update to account pretrained keys
+                if tokenizer.use_padding:  # update to account pretrained keys
                     self.feature_map.feature_specs[name]["padding_idx"] = tokenizer.vocab_size - 1
                 self.encoders[name + "_tokenizer"] = tokenizer
                 self.feature_map.num_features += tokenizer.vocab_size
@@ -242,11 +256,11 @@ class FeatureEncoder(object):
             na_value = feature_column.get("na_value", "")
             max_len = feature_column.get("max_len", 0)
             padding = feature_column.get("padding", "post")
-            tokenizer = Tokenizer(min_freq=min_categr_count, splitter=splitter, 
+            tokenizer = Tokenizer(min_freq=min_categr_count, splitter=splitter,
                                   na_value=na_value, max_len=max_len, padding=padding)
             if "share_embedding" in feature_column:
                 if feature_column.get("max_len") is None:
-                    tokenizer.fit_on_texts(feature_values, use_padding=True) # Have to get max_len even share_embedding
+                    tokenizer.fit_on_texts(feature_values, use_padding=True)  # Have to get max_len even share_embedding
                 self.feature_map.feature_specs[name]["share_embedding"] = feature_column["share_embedding"]
                 tokenizer.set_vocab(self.encoders["{}_tokenizer".format(feature_column["share_embedding"])].vocab)
             else:
@@ -256,7 +270,7 @@ class FeatureEncoder(object):
                 self.feature_map.feature_specs[name]["pretrained_emb"] = "pretrained_{}.h5".format(name)
                 self.feature_map.feature_specs[name]["freeze_emb"] = feature_column.get("freeze_emb", True)
                 tokenizer.load_pretrained_embedding(name,
-                                                    feature_column["pretrained_emb"], 
+                                                    feature_column["pretrained_emb"],
                                                     feature_column["embedding_dim"],
                                                     os.path.join(self.data_dir, "pretrained_{}.h5".format(name)),
                                                     feature_dtype=feature_column.get("dtype"),
@@ -280,23 +294,31 @@ class FeatureEncoder(object):
                 normalizer = self.encoders.get(feature + "_normalizer")
                 if normalizer:
                     numeric_array = normalizer.normalize(numeric_array)
-                data_arrays.append(numeric_array) 
+                data_arrays.append(numeric_array)
             elif feature_type == "categorical":
                 encoder = feature_spec.get("encoder", "")
                 if encoder == "":
                     data_arrays.append(self.encoders.get(feature + "_tokenizer") \
-                                                    .encode_category(ddf.loc[:, feature].values))
+                                       .encode_category(ddf.loc[:, feature].values))
                 elif encoder == "numeric_bucket":
                     raise NotImplementedError
                 elif encoder == "hash_bucket":
                     raise NotImplementedError
             elif feature_type == "sequence":
                 data_arrays.append(self.encoders.get(feature + "_tokenizer") \
-                                                .encode_sequence(ddf.loc[:, feature].values))
+                                   .encode_sequence(ddf.loc[:, feature].values))
+
         label_name = self.label_col["name"]
         if ddf[label_name].dtype != np.float64:
             ddf.loc[:, label_name] = ddf.loc[:, label_name].apply(lambda x: float(x))
-        data_arrays.append(ddf.loc[:, label_name].values) # add the label column at last
+        data_arrays.append(ddf.loc[:, label_name].values)  # add the label column at last
+
+        if self.weight_col is not None:
+            weight_name = self.weight_col["name"]
+            if ddf[weight_name].dtype != np.float64:
+                ddf.loc[:, weight_name] = ddf.loc[:, weight_name].apply(lambda x: float(x))
+            data_arrays.append(ddf.loc[:, weight_name].values)  # add the weight column at last
+
         data_arrays = [item.reshape(-1, 1) if item.ndim == 1 else item for item in data_arrays]
         data_array = np.hstack(data_arrays)
         return data_array
@@ -324,9 +346,6 @@ class FeatureEncoder(object):
         if not os.path.exists(os.path.dirname(pickle_file)):
             os.makedirs(os.path.dirname(pickle_file))
         pickle.dump(self, open(pickle_file, "wb"))
-        
 
     def load_json(self, json_file):
         self.feature_map.load(json_file)
-
-

@@ -21,7 +21,7 @@ import numpy as np
 import gc
 import glob
 
-    
+
 def save_hdf5(data_array, data_path, key="data"):
     logging.info("Saving data to h5: " + data_path)
     if not os.path.exists(os.path.dirname(data_path)):
@@ -41,7 +41,7 @@ def load_hdf5(data_path, key=None, verbose=True):
     return data_array
 
 
-def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0, 
+def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0,
                      test_size=0, split_type="sequential"):
     num_samples = len(train_ddf)
     train_size = num_samples
@@ -65,17 +65,17 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     return train_ddf, valid_ddf, test_ddf
 
 
-def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None, valid_size=0, 
+def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None, valid_size=0,
                   test_size=0, split_type="sequential", **kwargs):
     """ Build feature_map and transform h5 data """
     # Load csv data
     train_ddf = feature_encoder.read_csv(train_data)
     valid_ddf = feature_encoder.read_csv(valid_data) if valid_data else None
     test_ddf = feature_encoder.read_csv(test_data) if test_data else None
-    
+
     # Split data for train/validation/test
     if valid_size > 0 or test_size > 0:
-        train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf, 
+        train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf,
                                                           valid_size, test_size, split_type)
     # fit and transform train_ddf
     train_ddf = feature_encoder.preprocess(train_ddf)
@@ -84,7 +84,8 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
     if block_size > 0:
         block_id = 0
         for idx in range(0, len(train_array), block_size):
-            save_hdf5(train_array[idx:(idx + block_size), :], os.path.join(feature_encoder.data_dir, 'train_part_{}.h5'.format(block_id)))
+            save_hdf5(train_array[idx:(idx + block_size), :],
+                      os.path.join(feature_encoder.data_dir, 'train_part_{}.h5'.format(block_id)))
             block_id += 1
     else:
         save_hdf5(train_array, os.path.join(feature_encoder.data_dir, 'train.h5'))
@@ -98,7 +99,8 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         if block_size > 0:
             block_id = 0
             for idx in range(0, len(valid_array), block_size):
-                save_hdf5(valid_array[idx:(idx + block_size), :], os.path.join(feature_encoder.data_dir, 'valid_part_{}.h5'.format(block_id)))
+                save_hdf5(valid_array[idx:(idx + block_size), :],
+                          os.path.join(feature_encoder.data_dir, 'valid_part_{}.h5'.format(block_id)))
                 block_id += 1
         else:
             save_hdf5(valid_array, os.path.join(feature_encoder.data_dir, 'valid.h5'))
@@ -112,7 +114,8 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         if block_size > 0:
             block_id = 0
             for idx in range(0, len(test_array), block_size):
-                save_hdf5(test_array[idx:(idx + block_size), :], os.path.join(feature_encoder.data_dir, 'test_part_{}.h5'.format(block_id)))
+                save_hdf5(test_array[idx:(idx + block_size), :],
+                          os.path.join(feature_encoder.data_dir, 'test_part_{}.h5'.format(block_id)))
                 block_id += 1
         else:
             save_hdf5(test_array, os.path.join(feature_encoder.data_dir, 'test.h5'))
@@ -124,7 +127,7 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
 def h5_generator(feature_map, stage="both", train_data=None, valid_data=None, test_data=None,
                  batch_size=32, shuffle=True, **kwargs):
     logging.info("Loading data...")
-    if kwargs.get("data_block_size", 0) > 0: 
+    if kwargs.get("data_block_size", 0) > 0:
         from ..pytorch.data_generator import DataBlockGenerator as DataGenerator
     else:
         from ..pytorch.data_generator import DataGenerator
@@ -132,6 +135,8 @@ def h5_generator(feature_map, stage="both", train_data=None, valid_data=None, te
     train_gen = None
     valid_gen = None
     test_gen = None
+
+    with_weights = feature_map.sample_weights
     if stage in ["both", "train"]:
         train_blocks = glob.glob(train_data)
         valid_blocks = glob.glob(valid_data)
@@ -140,8 +145,10 @@ def h5_generator(feature_map, stage="both", train_data=None, valid_data=None, te
             train_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
         if len(valid_blocks) > 1:
             valid_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
-        train_gen = DataGenerator(train_blocks, batch_size=batch_size, shuffle=shuffle, **kwargs)
-        valid_gen = DataGenerator(valid_blocks, batch_size=batch_size, shuffle=False, **kwargs)
+        train_gen = DataGenerator(train_blocks, batch_size=batch_size, shuffle=shuffle, with_weights=with_weights,
+                                  **kwargs)
+        valid_gen = DataGenerator(valid_blocks, batch_size=batch_size, shuffle=False, with_weights=with_weights,
+                                  **kwargs)
         logging.info("Train samples: total/{:d}, pos/{:.0f}, neg/{:.0f}, ratio/{:.2f}%, blocks/{:.0f}" \
                      .format(train_gen.num_samples, train_gen.num_positives, train_gen.num_negatives,
                              100. * train_gen.num_positives / train_gen.num_samples, train_gen.num_blocks))
@@ -157,7 +164,8 @@ def h5_generator(feature_map, stage="both", train_data=None, valid_data=None, te
         if len(test_blocks) > 0:
             if len(test_blocks) > 1:
                 test_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
-            test_gen = DataGenerator(test_blocks, batch_size=batch_size, shuffle=False, **kwargs)
+            test_gen = DataGenerator(test_blocks, batch_size=batch_size, shuffle=False, with_weights=with_weights,
+                                     **kwargs)
             logging.info("Test samples: total/{:d}, pos/{:.0f}, neg/{:.0f}, ratio/{:.2f}%, blocks/{:.0f}" \
                          .format(test_gen.num_samples, test_gen.num_positives, test_gen.num_negatives,
                                  100. * test_gen.num_positives / test_gen.num_samples, test_gen.num_blocks))
@@ -171,5 +179,3 @@ def h5_generator(feature_map, stage="both", train_data=None, valid_data=None, te
 
 def tfrecord_generator():
     raise NotImplementedError()
-
-

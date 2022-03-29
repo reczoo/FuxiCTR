@@ -93,7 +93,7 @@ class DESTINE(BaseModel):
         self.model_to_device()
     
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         cross_X = feature_emb
         for self_attn in self.self_attns:
@@ -107,7 +107,7 @@ class DESTINE(BaseModel):
             y_pred += self.dnn(feature_emb.flatten(start_dim=1))
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
         

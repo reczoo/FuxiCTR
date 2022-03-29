@@ -89,7 +89,7 @@ class DCNv2(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         flat_feature_emb = feature_emb.flatten(start_dim=1)
         cross_out = self.crossnet(flat_feature_emb)
@@ -105,7 +105,7 @@ class DCNv2(BaseModel):
         y_pred = self.fc(final_out)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
 

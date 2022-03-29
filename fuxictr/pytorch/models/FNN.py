@@ -70,7 +70,7 @@ class FNN(BaseModel):
         """
         Inputs: [X,y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         lr_weights = self.lr_embedding_layer(X)
         feature_emb = self.fm_embedding_layer(X)
         if self._pretrain: # FM branch
@@ -84,7 +84,7 @@ class FNN(BaseModel):
             self._embedding_regularizer = self.dnn_embedding_regularizer
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def fit_generator(self, data_generator, epochs=1, validation_data=None,

@@ -46,14 +46,14 @@ class LorentzFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X) # bs x field x dim
         inner_product = self.inner_product_layer(feature_emb) # bs x (field x (field - 1) / 2)
         zeroth_components = self.get_zeroth_components(feature_emb) # batch * field
         y_pred = self.triangle_pooling(inner_product, zeroth_components) 
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def get_zeroth_components(self, feature_emb):

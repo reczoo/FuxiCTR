@@ -91,7 +91,7 @@ class DIN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb_dict = self.embedding_layer(X)
         for idx, (target_field, sequence_field) in enumerate(zip(self.din_target_field, 
                                                                  self.din_sequence_field)):
@@ -106,7 +106,7 @@ class DIN(BaseModel):
                 feature_emb_dict[field] = field_emb
         feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict)
         y_pred = self.dnn(feature_emb.flatten(start_dim=1))
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def concat_embedding(self, field, feature_emb_dict):

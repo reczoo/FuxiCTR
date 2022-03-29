@@ -77,12 +77,12 @@ class MaskNet(BaseModel):
         self.model_to_device()
     
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         if self.emb_norm is not None:
             feature_emb = self.emb_norm(feature_emb)
         y_pred = self.mask_net(feature_emb.flatten(start_dim=1))
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
         
 

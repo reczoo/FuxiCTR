@@ -65,7 +65,7 @@ class FwFM(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         inner_product_vec = self.inner_product_layer(feature_emb)
         poly2_part = self.interaction_weight_layer(inner_product_vec)
@@ -80,6 +80,6 @@ class FwFM(BaseModel):
         y_pred = poly2_part + linear_part # bias added in poly2_part
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 

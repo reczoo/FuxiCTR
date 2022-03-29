@@ -61,7 +61,7 @@ class FmFM(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         left_emb = torch.index_select(feature_emb, 1, self.triu_index[:, 0])
         right_emb = torch.index_select(feature_emb, 1, self.triu_index[:, 1])
@@ -73,6 +73,6 @@ class FmFM(BaseModel):
         y_pred += self.lr_layer(X)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 

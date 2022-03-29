@@ -57,7 +57,7 @@ class CCPM(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         conv_in = torch.unsqueeze(feature_emb, 1) # shape (bs, 1, field, emb)
         conv_out = self.conv_layer(conv_in)
@@ -65,7 +65,7 @@ class CCPM(BaseModel):
         y_pred = self.fc(flatten_out)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
 

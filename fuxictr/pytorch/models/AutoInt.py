@@ -80,7 +80,7 @@ class AutoInt(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         attention_out = self.self_attention(feature_emb)
         attention_out = torch.flatten(attention_out, start_dim=1)
@@ -91,6 +91,6 @@ class AutoInt(BaseModel):
             y_pred += self.lr_layer(X)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 

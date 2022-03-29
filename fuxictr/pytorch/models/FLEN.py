@@ -72,7 +72,7 @@ class FLEN(BaseModel):
         """
         Inputs: [X,y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb_dict = self.embedding_layer(X)
         emb_user = self.embedding_layer.dict2tensor(feature_emb_dict, feature_source="user")
         emb_item = self.embedding_layer.dict2tensor(feature_emb_dict, feature_source="item")
@@ -88,5 +88,5 @@ class FLEN(BaseModel):
         y_pred = self.w_F(torch.cat([h_FwBI, h_L], dim=-1))
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict

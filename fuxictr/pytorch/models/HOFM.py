@@ -67,7 +67,7 @@ class HOFM(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         y_pred = self.lr_layer(X)
         if self.reuse_embedding:
             feature_emb = self.embedding_layer(X)
@@ -77,7 +77,7 @@ class HOFM(BaseModel):
             y_pred += order_i_out
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def high_order_interaction(self, feature_emb, order_i):

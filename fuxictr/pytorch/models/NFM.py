@@ -62,12 +62,12 @@ class NFM(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         y_pred = self.lr_layer(X)
         feature_emb = self.embedding_layer(X)
         bi_pooling_vec = self.bi_pooling_layer(feature_emb)
         y_pred += self.dnn(bi_pooling_vec)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict

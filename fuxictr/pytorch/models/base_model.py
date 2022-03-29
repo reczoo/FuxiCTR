@@ -67,7 +67,8 @@ class BaseModel(nn.Module):
 
     def add_loss(self, inputs, reduction="mean"):
         return_dict = self.forward(inputs)
-        loss = self.loss_fn(return_dict["y_pred"], return_dict["y_true"], reduction=reduction)
+        loss = self.loss_fn(return_dict["y_pred"], return_dict["y_true"], weight=return_dict["weight"],
+                            reduction=reduction)
         return loss
 
     def add_regularization(self):
@@ -117,11 +118,13 @@ class BaseModel(nn.Module):
         self.apply(reset_param)
         
     def inputs_to_device(self, inputs):
-        X, y = inputs
+        X, y, weight = inputs
         X = X.to(self.device)
         y = y.float().view(-1, 1).to(self.device)
+        weight = weight.float().view(-1, 1).to(self.device)
+
         self.batch_size = y.size(0)
-        return X, y
+        return X, y, weight
 
     def model_to_device(self):
         self.to(device=self.device)

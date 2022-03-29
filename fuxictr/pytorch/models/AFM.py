@@ -57,7 +57,7 @@ class AFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         elementwise_product = self.product_layer(feature_emb) # bs x f(f-1)/2 x dim
         if self.use_attention:
@@ -71,5 +71,5 @@ class AFM(BaseModel):
         y_pred = self.lr_layer(X) + afm_out
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict

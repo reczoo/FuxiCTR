@@ -63,7 +63,7 @@ class ONN(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         field_aware_emb_list = [each_layer(X) for each_layer in self.embedding_layers] # list of emb tensors
         # copy_embedding
         copy_embedding = field_aware_emb_list[0].flatten(start_dim=1)
@@ -73,7 +73,7 @@ class ONN(BaseModel):
         y_pred = self.dnn(dnn_input)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def field_aware_interaction(self, field_aware_emb_list):

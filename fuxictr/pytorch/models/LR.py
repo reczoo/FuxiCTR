@@ -45,8 +45,8 @@ class LR(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         y_pred = self.lr_layer(X)
-        return_dict = {"y_pred": y_pred, "y_true": y}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 

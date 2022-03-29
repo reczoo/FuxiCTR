@@ -66,7 +66,7 @@ class xDeepFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X) # list of b x embedding_dim
         lr_logit = self.lr_layer(X)
         cin_logit = self.cin(feature_emb)
@@ -77,7 +77,7 @@ class xDeepFM(BaseModel):
             y_pred = lr_logit + cin_logit # only LR + CIN
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
 

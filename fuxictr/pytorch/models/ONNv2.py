@@ -65,7 +65,7 @@ class ONNv2(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         field_wise_embedding = self.embedding_layer(X).view(-1, self.num_fields, self.num_fields, self.embedding_dim)
         copy_embedding = torch.masked_select(field_wise_embedding, self.diag_mask.unsqueeze(-1)).view(self.batch_size, -1)
         ffm_out = self.ffm_interaction(field_wise_embedding)
@@ -73,7 +73,7 @@ class ONNv2(BaseModel):
         y_pred = self.dnn(dnn_input)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def ffm_interaction(self, field_wise_embedding):

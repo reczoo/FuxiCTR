@@ -79,7 +79,7 @@ class InterHAt(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         X0 = self.embedding_layer(X)
         X1 = self.feedforward(self.multi_head_attention(X0))
         X_p = X1
@@ -94,7 +94,7 @@ class InterHAt(BaseModel):
         y_pred = self.mlp(u_f)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
 

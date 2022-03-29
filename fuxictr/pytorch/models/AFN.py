@@ -80,7 +80,7 @@ class AFN(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         dnn_input = self.logarithmic_net(feature_emb)
         afn_out = self.dense_layer(dnn_input)
@@ -93,7 +93,7 @@ class AFN(BaseModel):
 
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def logarithmic_net(self, feature_emb):

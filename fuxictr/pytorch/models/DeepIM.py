@@ -62,14 +62,14 @@ class DeepIM(BaseModel):
         """
         Inputs: [X,y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         y_pred = self.im_layer(feature_emb)
         if self.dnn is not None:
             y_pred += self.dnn(feature_emb.flatten(start_dim=1))
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
 

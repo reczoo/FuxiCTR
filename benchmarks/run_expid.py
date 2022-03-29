@@ -16,8 +16,10 @@
 
 
 import os
+
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 import sys
+
 sys.path.append('../')
 from fuxictr import datasets
 from datetime import datetime
@@ -31,14 +33,13 @@ import logging
 import os
 from pathlib import Path
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', type=str, default='pytorch', help='The model version.')
     parser.add_argument('--config', type=str, default='../config/', help='The config directory.')
     parser.add_argument('--expid', type=str, default='FM_test', help='The experiment id to run.')
     parser.add_argument('--gpu', type=int, default=-1, help='The gpu index, -1 for cpu')
-    
+
     args = vars(parser.parse_args())
     experiment_id = args['expid']
     params = load_config(args['config'], experiment_id)
@@ -51,21 +52,21 @@ if __name__ == '__main__':
     # preporcess the dataset
     dataset = params['dataset_id'].split('_')[0].lower()
     data_dir = os.path.join(params['data_root'], params['dataset_id'])
-    if params.get("data_format") == 'h5': # load data from h5
+    if params.get("data_format") == 'h5':  # load data from h5
         feature_map = FeatureMap(params['dataset_id'], data_dir, params['version'])
         json_file = os.path.join(os.path.join(params['data_root'], params['dataset_id']), "feature_map.json")
         if os.path.exists(json_file):
             feature_map.load(json_file)
         else:
             raise RuntimeError('feature_map not exist!')
-    else: # load data from csv
+    else:  # load data from csv
         try:
             feature_encoder = getattr(datasets, dataset).FeatureEncoder(**params)
         except:
             feature_encoder = FeatureEncoder(**params)
         if os.path.exists(feature_encoder.json_file):
             feature_encoder.feature_map.load(feature_encoder.json_file)
-        else: # Build feature_map and transform h5 data
+        else:  # Build feature_map and transform h5 data
             datasets.build_dataset(feature_encoder, **params)
         params["train_data"] = os.path.join(data_dir, 'train*.h5')
         params["valid_data"] = os.path.join(data_dir, 'valid*.h5')
@@ -100,11 +101,11 @@ if __name__ == '__main__':
         test_result = model.evaluate_generator(test_gen)
     else:
         test_gen = {}
-    
+
     # save the results to csv
     result_file = Path(args['config']).name.replace(".yaml", "") + '.csv'
     with open(result_file, 'a+') as fw:
         fw.write(' {},[command] python {},[exp_id] {},[dataset_id] {},[train] {},[val] {},[test] {}\n' \
-            .format(datetime.now().strftime('%Y%m%d-%H%M%S'), 
-                    ' '.join(sys.argv), experiment_id, params['dataset_id'],
-                    "N.A.", print_to_list(valid_result), print_to_list(test_result)))
+                 .format(datetime.now().strftime('%Y%m%d-%H%M%S'),
+                         ' '.join(sys.argv), experiment_id, params['dataset_id'],
+                         "N.A.", print_to_list(valid_result), print_to_list(test_result)))

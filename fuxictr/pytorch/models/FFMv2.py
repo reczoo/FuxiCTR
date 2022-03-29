@@ -51,14 +51,14 @@ class FFMv2(BaseModel):
         """
         Inputs: [X, y]
         """
-        X, y = self.inputs_to_device(inputs)
+        X, y, weight = self.inputs_to_device(inputs)
         lr_out = self.lr_layer(X)
         field_wise_embedding = self.embedding_layer(X).view(-1, self.num_fields, self.num_fields - 1, self.embedding_dim)
         ffm_out = self.ffm_interaction(field_wise_embedding)
         y_pred = lr_out + ffm_out
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        return_dict = {"y_true": y, "y_pred": y_pred, "weight": weight}
         return return_dict
 
     def ffm_interaction(self, field_wise_embedding):
