@@ -1,4 +1,4 @@
-pytorch==1.0
+torch==1.7
 PyYAML>=5.1
 pandas
 scikit-learn

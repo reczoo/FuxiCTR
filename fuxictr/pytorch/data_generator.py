@@ -27,9 +27,10 @@ class Dataset(data.Dataset):
         self.darray = darray
         
     def __getitem__(self, index):
-        X = self.darray[index, 0:-1]
+        X = self.darray[index, 0:-2]
         y = self.darray[index, -1]
-        return X, y
+        weight = self.darray[index, -2]
+        return X, y, weight
     
     def __len__(self):
         return self.darray.shape[0]

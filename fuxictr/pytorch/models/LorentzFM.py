@@ -74,5 +74,5 @@ class LorentzFM(BaseModel):
         p, q = zip(*list(combinations(range(num_fields), 2)))
         u0, v0 = zeroth_components[:, p], zeroth_components[:, q]  # batch * (f(f-1)/2)
         score_tensor = 1 + torch.div(1 - inner_product - u0 - v0, u0 * v0) # batch * (f(f-1)/2)
-        output = torch.sum(score_tensor, dim=1) # batch * 1
+        output = torch.unsqueeze(torch.sum(score_tensor, dim=1), 1) # batch * 1
         return output

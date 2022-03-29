@@ -1,0 +1,92 @@
+{
+    "dataset_id": "taobao_tiny_x3",
+    "num_fields": 14,
+    "num_features": 471,
+    "input_length": 14,
+    "feature_specs": {
+        "userid": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 25,
+            "index": 0
+        },
+        "cms_segid": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 10,
+            "index": 1
+        },
+        "cms_group_id": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 10,
+            "index": 2
+        },
+        "final_gender_code": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 3,
+            "index": 3
+        },
+        "age_level": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 6,
+            "index": 4
+        },
+        "pvalue_level": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 3,
+            "index": 5
+        },
+        "shopping_level": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 4,
+            "index": 6
+        },
+        "occupation": {
+            "source": "user",
+            "type": "categorical",
+            "vocab_size": 3,
+            "index": 7
+        },
+        "adgroup_id": {
+            "source": "item",
+            "type": "categorical",
+            "vocab_size": 95,
+            "index": 8
+        },
+        "cate_id": {
+            "source": "item",
+            "type": "categorical",
+            "vocab_size": 48,
+            "index": 9
+        },
+        "campaign_id": {
+            "source": "item",
+            "type": "categorical",
+            "vocab_size": 98,
+            "index": 10
+        },
+        "customer": {
+            "source": "item",
+            "type": "categorical",
+            "vocab_size": 97,
+            "index": 11
+        },
+        "brand": {
+            "source": "item",
+            "type": "categorical",
+            "vocab_size": 66,
+            "index": 12
+        },
+        "pid": {
+            "source": "context",
+            "type": "categorical",
+            "vocab_size": 3,
+            "index": 13
+        }
+    }
+}
