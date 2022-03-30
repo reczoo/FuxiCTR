@@ -122,7 +122,6 @@ class BaseModel(nn.Module):
         X = X.to(self.device)
         y = y.float().view(-1, 1).to(self.device)
         weight = weight.float().view(-1, 1).to(self.device)
-
         self.batch_size = y.size(0)
         return X, y, weight
 
@@ -221,20 +220,23 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             y_pred = []
             y_true = []
+            weight = []
             if self._verbose > 0:
                 from tqdm import tqdm
                 data_generator = tqdm(data_generator, disable=False, file=sys.stdout)
             for batch_data in data_generator:
                 return_dict = self.forward(batch_data)
                 y_pred.extend(return_dict["y_pred"].data.cpu().numpy().reshape(-1))
+                weight.extend(return_dict["weight"].data.cpu().numpy().reshape(-1))
                 y_true.extend(batch_data[1].data.cpu().numpy().reshape(-1))
             y_pred = np.array(y_pred, np.float64)
             y_true = np.array(y_true, np.float64)
-            val_logs = self.evaluate_metrics(y_true, y_pred, self._validation_metrics)
+            weight = np.array(weight, np.float64)
+            val_logs = self.evaluate_metrics(y_true, y_pred, weight, self._validation_metrics)
             return val_logs
 
-    def evaluate_metrics(self, y_true, y_pred, metrics):
-        return evaluate_metrics(y_true, y_pred, metrics)
+    def evaluate_metrics(self, y_true, y_pred, weight, metrics):
+        return evaluate_metrics(y_true, y_pred, weight, metrics)
 
     def predict_generator(self, data_generator):
         self.eval()  # set to evaluation mode

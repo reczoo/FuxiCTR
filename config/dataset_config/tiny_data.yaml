@@ -43,3 +43,18 @@ taobao_tiny_x3:
                  active: True, dtype: str, type: categorical, source: item},
          {name: "pid", active: True, dtype: str, type: categorical, source: context}]
     label_col: {name: clk, dtype: float}
+
+
+taobao_tiny_weighted:
+    data_root: ../data/
+    data_format: csv
+    train_data: ../data/tiny_weighted_data/train_sample.csv
+    valid_data: ../data/tiny_weighted_data/valid_sample.csv
+    test_data: ../data/tiny_weighted_data/test_sample.csv
+    min_categr_count: 1
+    feature_cols:
+      [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+               "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"],
+        active: True, dtype: str, type: categorical}]
+    label_col: {name: clk, dtype: float}
+    weight_col: {name: weight, dtype: float}

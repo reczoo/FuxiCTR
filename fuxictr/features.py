@@ -145,6 +145,7 @@ class FeatureEncoder(object):
         if self.weight_col is not None:
             all_cols.append(self.weight_col)
             active_cols.append(self.weight_col["name"])
+            self.feature_map.sample_weights = 1
 
         for col in all_cols:
             name = col["name"]
