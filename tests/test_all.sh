@@ -17,7 +17,7 @@ python run_expid.py --expid FiGNN_test && \
 python run_expid.py --expid FM_test && \
 python run_expid.py --expid FNN_test && \
 python run_expid.py --expid FwFM_test && \
-#python run_expid.py --expid HFM_test && \
+python run_expid.py --expid HFM_test && \
 python run_expid.py --expid HOFM_test && \
 python run_expid.py --expid InterHAt_test && \
 python run_expid.py --expid LorentzFM_test && \
