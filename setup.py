@@ -16,7 +16,7 @@ setuptools.setup(
     packages=setuptools.find_packages(
         exclude=["tests", "data", "docs", "demo"]),
     include_package_data=True,
-    python_requires="==3.6.*",
+    python_requires=">=3.7.*",
     install_requires=["pandas", "numpy", "h5py", "PyYAML>=5.1", "scikit-learn", "tqdm"],
     extras_require={
         "cpu": ["pytorch==1.7.*"],
