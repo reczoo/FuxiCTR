@@ -1,15 +1,15 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/xue-pai/FuxiCTR/main/docs/logo.png"/>
+<img src="https://cdn.jsdelivr.net/gh/xue-pai/FuxiCTR@main/docs/logo.png" alt="Logo"/>
 </div>
 
 <div align="center">
-<a href="https://github.com/xue-pai/FuxiCTR#tutorials--%E4%B8%AD%E6%96%87%E6%95%99%E7%A8%8B"><img src="https://img.shields.io/badge/tutorials-passing-green" style="max-width: 100%;"></a>
-<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/pyversions/fuxictr.svg" style="max-width: 100%;"></a>
-<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/pytorch-1.0/1.1-blue" style="max-width: 100%;"></a>
-<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/v/fuxictr.svg" style="max-width: 100%;"></a>
-<a href="https://pepy.tech/project/fuxictr"><img src="https://pepy.tech/badge/fuxictr" style="max-width: 100%;"></a>
-<a href="https://github.com/xue-pai/FuxiCTR/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xue-pai/fuxictr.svg" style="max-width: 100%;"></a>
-<a href="https://github.com/xue-pai/FuxiCTR/blob/main/docs/wechat.jpg"><img src="https://img.shields.io/badge/chat-wechat-brightgreen?style=flat" style="max-width: 100%;"></a>
+<a href="https://github.com/xue-pai/FuxiCTR#tutorials--%E4%B8%AD%E6%96%87%E6%95%99%E7%A8%8B"><img src="https://img.shields.io/badge/tutorials-passing-green" style="max-width: 100%;" alt="Tutorials"></a>
+<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/pyversions/fuxictr.svg" style="max-width: 100%;" alt="Python version"></a>
+<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/pytorch-1.0/1.1-blue" style="max-width: 100%;" alt="Pytorch version"></a>
+<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/v/fuxictr.svg" style="max-width: 100%;" alt="Pypi version"></a>
+<a href="https://pepy.tech/project/fuxictr"><img src="https://pepy.tech/badge/fuxictr" style="max-width: 100%;" alt="Downloads"></a>
+<a href="https://github.com/xue-pai/FuxiCTR/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xue-pai/fuxictr.svg" style="max-width: 100%;" alt="License"></a>
+<a href="https://cdn.jsdelivr.net/gh/xue-pai/FuxiCTR@main/docs/wechat.jpg"><img src="https://img.shields.io/badge/chat-wechat-brightgreen?style=flat" style="max-width: 100%;" alt="Wechat QR code"></a>
 </div>
 <hr/>
 
@@ -67,7 +67,7 @@ This repo is the community dev version of the official release at [huawei-noah/b
 | 24 | NeuralNetworks'20 | [ONN](./fuxictr/pytorch/models/ONN.py)  | [Operation-aware Neural Networks for User Response Prediction](https://arxiv.org/pdf/1904.12579)  | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/ONN) |
 | 25 | AAAI'20 | [AFN/AFN+](./fuxictr/pytorch/models/AFN.py) | [Adaptive Factorization Network: Learning Adaptive-Order Feature Interactions](https://ojs.aaai.org/index.php/AAAI/article/view/5768) | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/AFN) |
 | 26 | AAAI'20  | [LorentzFM](./fuxictr/pytorch/models/LorentzFM.py) | [Learning Feature Interactions with Lorentzian Factorization](https://arxiv.org/abs/1911.09821) :triangular_flag_on_post:**eBay** | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/LorentzFM) |
-| 27 | WSDM'20 | [InterHAt](./fuxictr/pytorch/models/InterHAt.py) | [Interpretable Click-through Rate Prediction through Hierarchical Attention](https://dl.acm.org/doi/10.1145/3336191.3371785) :triangular_flag_on_post:**NEC Lab, Google** | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/InterHAt) |
+| 27 | WSDM'20 | [InterHAt](./fuxictr/pytorch/models/InterHAt.py) | [Interpretable Click-through Rate Prediction through Hierarchical Attention](https://dl.acm.org/doi/10.1145/3336191.3371785) :triangular_flag_on_post:**NEC Labs, Google** | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/InterHAt) |
 | 28 | DLP-KDD'20 | [FLEN](./fuxictr/pytorch/models/FLEN.py) | [FLEN: Leveraging Field for Scalable CTR Prediction](https://arxiv.org/abs/1911.04690) :triangular_flag_on_post:**Tencent** | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/FLEN) |  
 | 29 | CIKM'20 | [DeepIM](./fuxictr/pytorch/models/DeepIM.py) | [Deep Interaction Machine: A Simple but Effective Model for High-order Feature Interactions](https://dl.acm.org/doi/abs/10.1145/3340531.3412077) :triangular_flag_on_post:**Alibaba, RealAI** | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/DeepIM) |
 | 30 | WWW'21 | [FmFM](./fuxictr/pytorch/models/FmFM.py) | [FM^2: Field-matrixed Factorization Machines for Recommender Systems](https://arxiv.org/abs/2102.12994) :triangular_flag_on_post:**Yahoo** | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/FmFM) |
@@ -122,9 +122,9 @@ Please follow [the guide for installation](./tutorials/v1.1/install_fuxictr.ipyn
 
 
 ## Discussion
-Welcome to join our [WeChat group](https://gitee.com/xpai/Images/raw/master/1637915312191.jpg) for any questions and discussions.
+Welcome to join our WeChat group for any question and discussion.
 
-![](./docs/wechat.jpg)
+![Scan QR code](https://cdn.jsdelivr.net/gh/xue-pai/FuxiCTR@main/docs/wechat.jpg)
 
 ## Join Us
 We have open positions for internships and full-time jobs. If you are interested in research and practice in recommender systems, please send your CV to jamie.zhu@huawei.com.
