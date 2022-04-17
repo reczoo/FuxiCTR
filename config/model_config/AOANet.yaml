@@ -1,0 +1,23 @@
+AOANet_base:
+    model: AOANet
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 4096
+    embedding_dim: 40
+    dnn_hidden_units: [64, 64, 64]
+    dnn_hidden_activations: "ReLU"
+    num_interaction_layers: 3
+    num_subspaces: 4
+    batch_norm: False
+    net_dropout: 0
+    epochs: 100
+    shuffle: True
+    seed: 2022
+    monitor: 'AUC'
+    monitor_mode: 'max'

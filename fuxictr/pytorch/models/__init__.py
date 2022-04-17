@@ -33,3 +33,8 @@ from .FLEN import FLEN
 from .InterHAt import InterHAt
 from .MaskNet import MaskNet
 from .DESTINE import DESTINE
+from .DSSM import DSSM
+from .DLRM import DLRM
+from .SAM import SAM
+from .EDCN import EDCN
+from .AOANet import AOANet

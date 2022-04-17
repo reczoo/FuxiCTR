@@ -1,0 +1,25 @@
+DLRM_base:
+    model: DLRM
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 4096
+    embedding_dim: 40
+    top_mlp_units: [64, 64, 64]
+    bottom_mlp_units: [64, 64, 64]
+    top_mlp_activations: ReLU
+    bottom_mlp_activations: ReLU
+    top_mlp_dropout: 0
+    bottom_mlp_dropout: 0    
+    interaction_op: dot
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2022
+    monitor: 'AUC'
+    monitor_mode: 'max'

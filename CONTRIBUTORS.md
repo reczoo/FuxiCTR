@@ -4,7 +4,7 @@ Contributions are always welcome. If you are interested in contributing to FuxiC
 
 + You want to implement a new feature:
 
-  In general, we accept any features that fit the scope of this package. A good starting place is [the project plan page](https://github.com/xue-pai/FuxiCTR/projects) that shows the current milestones. All contributions must go through pull requests and will be reviewed by the committers. If you are unsure about this or need help on the design/implementation of your feature, post an issue about this.
+  In general, we accept any features that fit the scope of this package. A good starting place is [the project plan page](https://github.com/xue-pai/FuxiCTR/projects) that shows the current milestones. All contributions must go through pull requests and will be reviewed by the committers. **To avoid redudant efforts, please first open a feature request and propose your design if you want to implement a new feature. After discussing with the committers, you could start the implememntation and send out a PR.**
 
 + You want to fix a bug:
 

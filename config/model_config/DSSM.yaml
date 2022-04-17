@@ -1,0 +1,24 @@
+DSSM_base:
+    model: DSSM
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 4096
+    embedding_dim: 40
+    user_tower_units: [64, 64, 64]
+    item_tower_units: [64, 64, 64]
+    user_tower_activations: "ReLU"
+    item_tower_activations: "ReLU"
+    user_tower_dropout: 0 
+    item_tower_dropout: 0 
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 2022
+    monitor: 'AUC'
+    monitor_mode: 'max'
