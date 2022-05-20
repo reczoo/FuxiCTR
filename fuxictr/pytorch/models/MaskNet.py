@@ -69,7 +69,7 @@ class MaskNet(BaseModel):
                                             dropout_rates=net_dropout,
                                             layer_norm=net_layernorm)
         if emb_layernorm:
-            self.emb_norm = nn.LayerNorm([feature_map.num_fields, embedding_dim])
+            self.emb_norm = nn.LayerNorm(embedding_dim)
         else:
             self.emb_norm = None
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)

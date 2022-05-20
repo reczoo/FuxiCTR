@@ -11,3 +11,20 @@
   year      = {2021}
 }
 
+@incollection{BARS,
+  author    = {Jieming Zhu and
+               Kelong Mao and
+               Quanyu Dai and
+               Liangcai Su and
+               Rong Ma and
+               Jinyang Liu and
+               Guohao Cai and
+               Zhicheng Dou and
+               Xi Xiao and
+               Rui Zhang},
+  title     = {BARS: Towards Open Benchmarking for Recommender Systems},
+  booktitle = {The 45th International ACM SIGIR Conference on Research 
+               and Development in Information Retrieval (SIGIR'22)},
+  year      = {2022}
+}
+

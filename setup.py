@@ -5,7 +5,7 @@ with open("README.md", "r") as fd:
 
 setuptools.setup(
     name="fuxictr",
-    version="1.2.0",
+    version="1.2.1",
     author="zhujiem",
     author_email="zhujiem@users.noreply.github.com",
     description="A configurable, tunable, and reproducible library for CTR prediction",

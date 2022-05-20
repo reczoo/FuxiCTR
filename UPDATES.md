@@ -9,6 +9,10 @@
 
 ## FuxiCTR v1.2
 
+### FuxiCTR v1.2.1, 2022-05-21
++ Fix layernorm bug in MaskNet
++ Refine demos and docs
+
 ### FuxiCTR v1.2.0, 2022-04-17
 + Add DSSM/DLRM/EDCN/AOANet/SAM models
 
@@ -29,7 +33,6 @@
 + Fix the defect in loading pretrained embeddings (no impact on Criteo/Avazu results)
 + Remove the unnecessary config of embedding_dropout because it does not help after some attempts
 + Add embedding_hooks of dense layers on pretrained embeddings
-
 
 
 ## FuxiCTR v1.0
