@@ -40,6 +40,7 @@ class EDCN(BaseModel):
                  num_cross_layers=3,
                  hidden_activations="ReLU",
                  bridge_type="hadamard_product",
+                 use_regulation_module=False,
                  temperature=1,
                  net_dropout=0,
                  batch_norm=False,
@@ -67,7 +68,8 @@ class EDCN(BaseModel):
         self.regulation_modules = nn.ModuleList([RegulationModule(feature_map.num_fields, 
                                                                   embedding_dim,
                                                                   tau=temperature,
-                                                                  use_bn=batch_norm) \
+                                                                  use_bn=batch_norm,
+                                                                  use_regulation=use_regulation_module) \
                                                  for _ in range(num_cross_layers)])
         self.fc = nn.Linear(hidden_dim * 3, 1)
         self.output_activation = self.get_output_activation(task)
@@ -129,21 +131,27 @@ class BridgeModule(nn.Module):
             
 
 class RegulationModule(nn.Module):
-    def __init__(self, num_fields, embedding_dim, tau=1, use_bn=False):
+    def __init__(self, num_fields, embedding_dim, tau=1, use_bn=False, use_regulation=True):
         super(RegulationModule, self).__init__()
-        self.tau = tau
-        self.embedding_dim = embedding_dim
-        self.use_bn = use_bn
-        self.g1 = nn.Parameter(torch.ones(num_fields))
-        self.g2 = nn.Parameter(torch.ones(num_fields))
-        if self.use_bn:
-            self.bn1 = nn.BatchNorm1d(num_fields * embedding_dim)
-            self.bn2 = nn.BatchNorm1d(num_fields * embedding_dim)
+        self.use_regulation = use_regulation
+        if self.use_regulation:
+            self.tau = tau
+            self.embedding_dim = embedding_dim
+            self.use_bn = use_bn
+            self.g1 = nn.Parameter(torch.ones(num_fields))
+            self.g2 = nn.Parameter(torch.ones(num_fields))
+            if self.use_bn:
+                self.bn1 = nn.BatchNorm1d(num_fields * embedding_dim)
+                self.bn2 = nn.BatchNorm1d(num_fields * embedding_dim)
     
     def forward(self, X):
-        g1 = (self.g1 / self.tau).softmax(dim=-1).unsqueeze(-1).repeat(1, self.embedding_dim).view(1, -1)
-        g2 = (self.g2 / self.tau).softmax(dim=-1).unsqueeze(-1).repeat(1, self.embedding_dim).view(1, -1)
-        out1, out2 = g1 * X, g2 * X
-        if self.use_bn:
-            out1, out2 = self.bn1(out1), self.bn2(out2)
-        return out1, out2
+        if self.use_regulation:
+            g1 = (self.g1 / self.tau).softmax(dim=-1).unsqueeze(-1).repeat(1, self.embedding_dim).view(1, -1)
+            g2 = (self.g2 / self.tau).softmax(dim=-1).unsqueeze(-1).repeat(1, self.embedding_dim).view(1, -1)
+            out1, out2 = g1 * X, g2 * X
+            if self.use_bn:
+                out1, out2 = self.bn1(out1), self.bn2(out2)
+            return out1, out2
+        else:
+            return X, X
+        

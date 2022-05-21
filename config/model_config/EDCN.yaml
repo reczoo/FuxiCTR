@@ -13,6 +13,7 @@ EDCN_base:
     num_cross_layers: 3
     hidden_activations: ReLU
     bridge_type: "hadamard_product"
+    use_regulation_module: False
     temperature: 1
     batch_norm: False
     net_dropout: 0

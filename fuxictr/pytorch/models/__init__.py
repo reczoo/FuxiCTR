@@ -6,7 +6,6 @@ from .WideDeep import WideDeep
 from .DeepFM import DeepFM
 from .FwFM import FwFM
 from .PNN import PNN
-from .FNN import FNN
 from .NFM import NFM
 from .DCN import DCN
 from .DCNv2 import DCNv2
