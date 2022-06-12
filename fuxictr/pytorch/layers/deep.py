@@ -28,7 +28,7 @@ class MLP_Layer(nn.Module):
                  hidden_units=[], 
                  hidden_activations="ReLU",
                  output_activation=None, 
-                 dropout_rates=[], 
+                 dropout_rates=0.0, 
                  batch_norm=False, 
                  use_bias=True):
         super(MLP_Layer, self).__init__()

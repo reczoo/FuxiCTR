@@ -46,6 +46,7 @@ class DLRM(BaseModel):
                                    embedding_regularizer=embedding_regularizer, 
                                    net_regularizer=net_regularizer,
                                    **kwargs)
+        self.feature_map = feature_map
         self.dense_feats = [feat for feat, feature_spec in feature_map.feature_specs.items() \
                             if feature_spec["type"] == "numeric"]
         self.embedding_layer = EmbeddingLayer(feature_map, 
@@ -67,7 +68,6 @@ class DLRM(BaseModel):
             self.interact = InnerProductLayer(num_fields=n_fields, output="inner_product")
             top_input_dim = (n_fields * (n_fields - 1)) // 2 + embedding_dim * int(len(self.dense_feats) > 0)
         elif self.interaction_op == "cat":
-            self.interact = nn.Flatten(start_dim=1)
             top_input_dim = n_fields * embedding_dim
         else:
             raise ValueError("interaction_op={} not supported.".format(self.interaction_op))
@@ -89,13 +89,16 @@ class DLRM(BaseModel):
         X, y = self.inputs_to_device(inputs)
         feat_emb = self.embedding_layer(X)
         if len(self.dense_feats) > 0:
-            dense_x = torch.cat([X[k] for k in self.dense_feats], dim=-1)
+            feature_indexes = [self.feature_map.feature_specs[f]["index"] for f in self.dense_feats]
+            dense_x = torch.cat([X[:, idx].float().view(-1, 1) for idx in feature_indexes], dim=-1)
             dense_emb = self.bottom_mlp(dense_x)
             feat_emb = torch.cat([feat_emb, dense_emb.unsqueeze(1)], dim=1)
-        interact_out = self.interact(feat_emb)
+        if self.interaction_op == "dot":
+            interact_out = self.interact(feat_emb)
+        else:
+            interact_out = feat_emb.flatten(start_dim=1)
         if self.interaction_op == "dot" and len(self.dense_feats) > 0:
             interact_out = torch.cat([interact_out, dense_emb], dim=-1)
         y_pred = self.top_mlp(interact_out)
         return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict
-

@@ -79,7 +79,7 @@ class DSSM(BaseModel):
         item_emb = self.embedding_layer.dict2tensor(feat_emb_dict, feature_source="item")
         user_out = self.user_tower(user_emb.flatten(start_dim=1))
         item_out = self.item_tower(item_emb.flatten(start_dim=1))
-        y_pred = (user_out * item_out).sum(dim=-1)
+        y_pred = (user_out * item_out).sum(dim=-1, keepdim=True)
         if self.output_activation is not None:
             y_pred = self.output_activation(y_pred)
         return_dict = {"y_true": y, "y_pred": y_pred}

@@ -1,4 +1,5 @@
 # =========================================================================
+# Copyright (C) 2022 FuxiCTR Authors. All rights reserved.
 # Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,8 +69,9 @@ class MaskNet(BaseModel):
                                             reduction_ratio=reduction_ratio,
                                             dropout_rates=net_dropout,
                                             layer_norm=net_layernorm)
+        self.num_fields = feature_map.num_fields
         if emb_layernorm:
-            self.emb_norm = nn.LayerNorm(embedding_dim)
+            self.emb_norm = nn.ModuleList(nn.LayerNorm(embedding_dim) for _ in range(self.num_fields))
         else:
             self.emb_norm = None
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
@@ -80,8 +82,11 @@ class MaskNet(BaseModel):
         X, y = self.inputs_to_device(inputs)
         feature_emb = self.embedding_layer(X)
         if self.emb_norm is not None:
-            feature_emb = self.emb_norm(feature_emb)
-        y_pred = self.mask_net(feature_emb.flatten(start_dim=1))
+            feat_list = feature_emb.chunk(self.num_fields, dim=1)
+            V_hidden = torch.cat([self.emb_norm[i](feat) for i, feat in enumerate(feat_list)], dim=1)
+        else:
+            V_hidden = feature_emb
+        y_pred = self.mask_net(feature_emb.flatten(start_dim=1), V_hidden.flatten(start_dim=1))
         return_dict = {"y_true": y, "y_pred": y_pred}
         return return_dict
         
@@ -113,12 +118,12 @@ class SerialMaskNet(nn.Module):
         if len(fc_layers) > 0:
             self.fc = nn.Sequential(*fc_layers)
 
-    def forward(self, X):
-        v_out = X
+    def forward(self, V_emb, V_hidden):
+        v_out = V_hidden
         for idx in range(len(self.hidden_units) - 1):
-            v_out = self.mask_blocks[idx](X, v_out)
+            v_out = self.mask_blocks[idx](V_emb, v_out)
         if self.fc is not None:
-            v_out = self.fc(v_out)   
+            v_out = self.fc(v_out)
         return v_out
 
 
@@ -143,10 +148,10 @@ class ParallelMaskNet(nn.Module):
                               output_activation=output_activation,
                               dropout_rates=dropout_rates)
 
-    def forward(self, X):
+    def forward(self, V_emb, V_hidden):
         block_out = []
         for i in range(self.num_blocks):
-            block_out.append(self.mask_blocks[i](X, X))
+            block_out.append(self.mask_blocks[i](V_emb, V_hidden))
         concat_out = torch.cat(block_out, dim=-1)
         v_out = self.dnn(concat_out)
         return v_out
@@ -167,24 +172,7 @@ class MaskBlock(nn.Module):
             hidden_layers.append(nn.Dropout(p=dropout_rate))
         self.hidden_layer = nn.Sequential(*hidden_layers)
 
-    def forward(self, X, H):
-        v_mask = self.mask_layer(X)
-        v_out = self.hidden_layer(v_mask * H)
+    def forward(self, V_emb, V_hidden):
+        V_mask = self.mask_layer(V_emb)
+        v_out = self.hidden_layer(V_mask * V_hidden)
         return v_out
-        
-        
-        
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
