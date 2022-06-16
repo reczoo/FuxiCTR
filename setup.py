@@ -1,11 +1,11 @@
 import setuptools
 
-with open("README.md", "r") as fd:
+with open("README.md", "r", encoding="utf-8") as fd:
     long_description = fd.read()
 
 setuptools.setup(
     name="fuxictr",
-    version="1.2.1",
+    version="1.2.2",
     author="zhujiem",
     author_email="zhujiem@users.noreply.github.com",
     description="A configurable, tunable, and reproducible library for CTR prediction",

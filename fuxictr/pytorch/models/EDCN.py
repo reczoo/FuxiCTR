@@ -88,7 +88,7 @@ class EDCN(BaseModel):
         for i in range(len(self.cross_layers)):
             if i > 0:
                 cross_i, deep_i = self.regulation_modules[i](bridge_i)
-            cross_i = self.cross_layers[i](cross_0, cross_i)
+            cross_i = cross_i + self.cross_layers[i](cross_0, cross_i)
             deep_i = self.dense_layers[i](deep_i)
             bridge_i = self.bridge_modules[i](cross_i, deep_i)
         y_pred = self.fc(torch.cat([cross_i, deep_i, bridge_i], dim=-1))
