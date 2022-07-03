@@ -112,7 +112,8 @@ class DESTINE(BaseModel):
 
         
 class DisentangledSelfAttention(nn.Module):
-    """ Disentangle self-attention for DESTINE. The implementation totally follows the original code:
+    """ Disentangle self-attention for DESTINE. The implementation is a bit different from what is 
+        described in the paper, but exactly follows the code from the authors:
         https://github.com/CRIPAC-DIG/DESTINE/blob/c68e182aa220b444df73286e5e928e8a072ba75e/layers/activation.py#L90
     """
     def __init__(self, embedding_dim, attention_dim=64, num_heads=1, dropout_rate=0.1,
@@ -147,11 +148,11 @@ class DisentangledSelfAttention(nn.Module):
             key = key.relu()
             value = value.relu()
 
-        # split by heads
+        # split heads to [batch * num_heads, num_fields, head_dim]
         batch_size = query.size(0)
-        query = query.view(batch_size * self.num_heads, -1, self.head_dim)
-        key = key.view(batch_size * self.num_heads, -1, self.head_dim)
-        value = value.view(batch_size * self.num_heads, -1, self.head_dim)
+        query = torch.cat(query.split(split_size=self.head_dim, dim=2), dim=0)
+        key = torch.cat(key.split(split_size=self.head_dim, dim=2), dim=0)
+        value = torch.cat(value.split(split_size=self.head_dim, dim=2), dim=0)
 
         # whiten
         mu_query = query - query.mean(dim=1, keepdim=True)
@@ -169,7 +170,7 @@ class DisentangledSelfAttention(nn.Module):
         if self.dropout is not None:
             attn_weights = self.dropout(attn_weights)
         output = torch.bmm(attn_weights, value)
-        output = output.view(batch_size, -1, self.attention_dim)
+        output = torch.cat(output.split(batch_size, dim=0), dim=2)
 
         if self.W_res is not None:
             output += self.W_res(residual)

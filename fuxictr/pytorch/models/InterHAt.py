@@ -31,7 +31,7 @@ class InterHAt(BaseModel):
                  hidden_dim=None,
                  order=2,
                  num_heads=1,
-                 attention_dim=10,
+                 attention_dim=32,
                  hidden_units=[64, 64],
                  hidden_activations="relu",
                  batch_norm=False,
@@ -98,65 +98,48 @@ class InterHAt(BaseModel):
         return return_dict
 
 
-class MultiHeadAttention(nn.Module):
-    """ Multi-head attention module """
-
+class MultiHeadSelfAttention(nn.Module):
     def __init__(self, input_dim, attention_dim=None, num_heads=1, dropout_rate=0., 
                  use_residual=True, use_scale=False, layer_norm=False):
-        super(MultiHeadAttention, self).__init__()
+        super(MultiHeadSelfAttention, self).__init__()
         if attention_dim is None:
-            attention_dim = input_dim // num_heads
-        self.attention_dim = attention_dim
-        self.output_dim = num_heads * attention_dim
+            attention_dim = input_dim
+        assert attention_dim % num_heads == 0, \
+               "attention_dim={} is not divisible by num_heads={}".format(attention_dim, num_heads)
+        self.head_dim = attention_dim // num_heads
         self.num_heads = num_heads
         self.use_residual = use_residual
-        self.scale = attention_dim ** 0.5 if use_scale else None
-        self.W_q = nn.Linear(input_dim, self.output_dim, bias=False)
-        self.W_k = nn.Linear(input_dim, self.output_dim, bias=False)
-        self.W_v = nn.Linear(input_dim, self.output_dim, bias=False)
-        if input_dim != self.output_dim:
-            self.W_res = nn.Linear(self.output_dim, input_dim, bias=False)
-        else:
-            self.W_res = None
-        self.dot_product_attention = ScaledDotProductAttention(dropout_rate)
+        self.scale = self.head_dim ** 0.5 if use_scale else None
+        self.W_q = nn.Linear(input_dim, attention_dim, bias=False)
+        self.W_k = nn.Linear(input_dim, attention_dim, bias=False)
+        self.W_v = nn.Linear(input_dim, attention_dim, bias=False)
+        self.W_res = nn.Linear(attention_dim, input_dim)
+        self.dot_attention = ScaledDotProductAttention(dropout_rate)
         self.layer_norm = nn.LayerNorm(input_dim) if layer_norm else None
-        self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
 
-    def forward(self, query, key, value, mask=None):
-        residual = query
+    def forward(self, X):
+        residual = X
         
         # linear projection
-        query = self.W_q(query)
-        key = self.W_k(key)
-        value = self.W_v(value)
+        query = self.W_q(X)
+        key = self.W_k(X)
+        value = self.W_v(X)
         
         # split by heads
         batch_size = query.size(0)
-        query = query.view(batch_size * self.num_heads, -1, self.attention_dim)
-        key = key.view(batch_size * self.num_heads, -1, self.attention_dim)
-        value = value.view(batch_size * self.num_heads, -1, self.attention_dim)
-        if mask:
-            mask = mask.repeat(self.num_heads, 1, 1)
+        query = query.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        key = key.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        value = value(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
         # scaled dot product attention
-        output, attention = self.dot_product_attention(query, key, value, self.scale, mask)
+        output, attention = self.dot_attention(query, key, value, scale=self.scale)
         # concat heads
-        output = output.view(batch_size, -1, self.output_dim)
-        # final linear projection
-        if self.W_res is not None:
-            output = self.W_res(output)
+        output = output.transpose(1, 2).contiguous().view(batch_size, -1, self.num_heads * self.head_dim)
+        output = self.W_res(output)
         output = output.relu()
-        if self.dropout is not None:
-            output = self.dropout(output)
         if self.use_residual:
             output = output + residual
         if self.layer_norm is not None:
             output = self.layer_norm(output)
-        return output, attention
-
-
-class MultiHeadSelfAttention(MultiHeadAttention):
-    def forward(self, X):
-        output, attention = super(MultiHeadSelfAttention, self).forward(X, X, X)
         return output
 
 
