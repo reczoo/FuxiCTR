@@ -129,7 +129,7 @@ class MultiHeadSelfAttention(nn.Module):
         batch_size = query.size(0)
         query = query.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
         key = key.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        value = value(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        value = value.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
         # scaled dot product attention
         output, attention = self.dot_attention(query, key, value, scale=self.scale)
         # concat heads
