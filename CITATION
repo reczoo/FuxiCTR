@@ -13,13 +13,11 @@
 
 @incollection{BARS,
   author    = {Jieming Zhu and
-               Kelong Mao and
                Quanyu Dai and
                Liangcai Su and
                Rong Ma and
                Jinyang Liu and
                Guohao Cai and
-               Zhicheng Dou and
                Xi Xiao and
                Rui Zhang},
   title     = {BARS: Towards Open Benchmarking for Recommender Systems},

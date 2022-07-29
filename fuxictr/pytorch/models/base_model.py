@@ -132,6 +132,7 @@ class BaseModel(nn.Module):
             epoch = round(float(self._total_batches) / self._batches_per_epoch, 2)
             val_logs = self.evaluate_generator(self.valid_gen)
             self.checkpoint_and_earlystop(epoch, val_logs)
+            self.train()
             logging.info("--- {}/{} batches finished ---".format(batch + 1, self._batches_per_epoch))
 
     def lr_decay(self, factor=0.1, min_lr=1e-6):
