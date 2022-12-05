@@ -36,7 +36,7 @@ class ScaledDotProductAttention(nn.Module):
         if scale:
             scores = scores / scale
         if mask:
-            scores = scores.masked_fill_(mask, -1e-10)
+            scores = scores.masked_fill_(mask == 0, -1.e9) # set masked (zero) positions to -inf
         attention = scores.softmax(dim=-1)
         if self.dropout is not None:
             attention = self.dropout(attention)
