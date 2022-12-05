@@ -39,6 +39,7 @@ python run_expid.py --expid DSSM_test && \
 python run_expid.py --expid AOANet_test && \
 python run_expid.py --expid DLRM_test && \
 python run_expid.py --expid SAM_test && \
-python run_expid.py --expid EDCN_test
+python run_expid.py --expid EDCN_test && \
+python run_expid.py --expid FinalMLP_test
 
 echo "All tests done."
