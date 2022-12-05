@@ -865,4 +865,32 @@ EDCN_test:
     seed: 2022
     monitor: 'AUC'
     monitor_mode: 'max'
-    
+
+FinalMLP_test:
+    model: FinalMLP
+    dataset_id: taobao_tiny
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam 
+    learning_rate: 1.e-3
+    embedding_regularizer: 5.e-2
+    net_regularizer: 0 
+    batch_size: 4096
+    embedding_dim: 10
+    dnn1_hidden_units: [400,400,400]
+    dnn1_activations: relu
+    dnn1_dropout: 0
+    dnn1_batch_norm: False
+    dnn2_hidden_units: [400,400,400]
+    dnn2_activations: relu
+    dnn2_dropout: 0
+    dnn2_batch_norm: False
+    use_feature_selection: True 
+    selection_hidden_units: [400,400]
+    bilinear_group: 1
+    epochs: 100 
+    shuffle: True 
+    seed: 2021
+    monitor: 'AUC'
+    monitor_mode: 'max'
