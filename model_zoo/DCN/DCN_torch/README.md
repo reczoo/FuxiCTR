@@ -10,20 +10,19 @@ DCN is a CTR prediction model that learns explicit and bounded-degree cross feat
 
 **Model structure:**
 
-<div align="center" width="100%">
-    <img width="65%" src="../../../docs/img/DCN.PNG">
+<div align="center">
+    <img width="50%" src="../../../docs/img/DCN.PNG">
 </div>
 
 **Key components:**
 
 + *CrossNet*: The component provides explicit feature crossing with bounded degree.
   
-  $x_{l+1} = x_0x_l^Tw + b + x_l$
+  $$x_{l+1} = x_0x_l^Tw + b + x_l$$
 
 + *Dynamic embedding size*: It provides a formula to compute the embedding size of each feature field. 
-
-        $emb\_dim = 6\times(vocab\_size)^{1/4}
-$
+  
+  $$emb\_dim = 6\times(vocab\_size)^{1/4}$$
 
 ### Configuration
 
@@ -40,7 +39,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 | learning_rate          | float           | 1.0e-3                    | learning rate                                                                                                                                                                                                     |
 | embedding_regularizer  | float/str       | 0                         | regularization weight for embedding matrix: L2 regularization is applied by default. Other optional examples: ```"l2(1.e-3)"```, ```"l1(1.e-3)"```, ```"l1_l2(1.e-3, 1.e-3)"```.                                  |
 | net_regularizer        | float/str       | 0                         | regularization weight for network parameters: L2 regularization is applied by default. Other optional examples: ```"l2(1.e-3)"```, ```"l1(1.e-3)"```, ```"l1_l2(1.e-3, 1.e-3)"```.                                |
-| batch_size             | int             | 10000                     | batch size, usually large for CTR prediction task                                                                                                                                                                 |
+| batch_size             | int             | 10000                     | batch size, usually a large number for CTR prediction task                                                                                                                                                        |
 | embedding_dim          | int             | 32                        | embedding dimension of features. Note that field-wise embedding_dim can be specified in ```feature_specs```.                                                                                                      |
 | dnn_hidden_units       | list            | [1024, 512, 256]          | hidden units in DNN                                                                                                                                                                                               |
 | dnn_activations        | str/list        | "relu"                    | activation function in DNN. Particularly, layer-wise activations can be specified as a list, e.g., ["relu",  "leakyrelu", "sigmoid"]                                                                              |
@@ -84,9 +83,9 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 
 The model is tested with the following dependencies.
 
-+ fuxictr v2.0
++ fuxictr==2.0.0
 
-+ pytorch v1.11
++ pytorch==1.11
 
 **Get started:**
 

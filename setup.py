@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/xue-pai/FuxiCTR",
     download_url='https://github.com/xue-pai/FuxiCTR/tags',
     packages=setuptools.find_packages(
-        exclude=["tests", "data", "docs", "demo"]),
+        exclude=["model_zoo", "tests", "data", "docs", "demo"]),
     include_package_data=True,
     python_requires=">=3.6",
     install_requires=["pandas", "numpy", "h5py", "PyYAML>=5.1", "scikit-learn", "tqdm"],
