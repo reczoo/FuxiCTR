@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 import torch
 from torch import nn
 from fuxictr.pytorch.models import BaseModel
-from fuxictr.pytorch.layers import EmbeddingLayer, MLP_Layer
+from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class DNN(BaseModel):
@@ -25,9 +25,7 @@ class DNN(BaseModel):
                  feature_map, 
                  model_id="DNN", 
                  gpu=-1, 
-                 task="binary_classification", 
                  learning_rate=1e-3, 
-                 embedding_initializer="torch.nn.init.normal_(std=1e-4)", 
                  embedding_dim=10, 
                  hidden_units=[64, 64, 64], 
                  hidden_activations="ReLU", 
@@ -42,15 +40,15 @@ class DNN(BaseModel):
                                   embedding_regularizer=embedding_regularizer, 
                                   net_regularizer=net_regularizer,
                                   **kwargs)
-        self.embedding_layer = EmbeddingLayer(feature_map, embedding_dim)
-        self.dnn = MLP_Layer(input_dim=embedding_dim * feature_map.num_fields,
+        self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
+        self.mlp = MLP_Block(input_dim=feature_map.sum_emb_out_dim(),
                              output_dim=1, 
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             output_activation=self.get_output_activation(task),
-                             dropout_rates=net_dropout, 
+                             output_activation=self.output_activation,
+                             dropout_rates=net_dropout,
                              batch_norm=batch_norm)
-        self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
+        self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
             
@@ -58,8 +56,9 @@ class DNN(BaseModel):
         """
         Inputs: [X,y]
         """
-        X, y = self.inputs_to_device(inputs)
-        feature_emb = self.embedding_layer(X)
-        y_pred = self.dnn(feature_emb.flatten(start_dim=1))
-        return_dict = {"y_true": y, "y_pred": y_pred}
+        X = self.get_inputs(inputs)
+        feature_emb = self.embedding_layer(X, dynamic_emb_dim=True)
+        y_pred = self.mlp(feature_emb.flatten(start_dim=1))
+        return_dict = {"y_pred": y_pred}
         return return_dict
+        

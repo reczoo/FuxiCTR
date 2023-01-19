@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fd:
 
 setuptools.setup(
     name="fuxictr",
-    version="1.2.2.post",
+    version="2.0.0",
     author="zhujiem",
     author_email="zhujiem@users.noreply.github.com",
     description="A configurable, tunable, and reproducible library for CTR prediction",
@@ -16,12 +16,8 @@ setuptools.setup(
     packages=setuptools.find_packages(
         exclude=["tests", "data", "docs", "demo"]),
     include_package_data=True,
-    python_requires="==3.6.*",
+    python_requires=">=3.6",
     install_requires=["pandas", "numpy", "h5py", "PyYAML>=5.1", "scikit-learn", "tqdm"],
-    extras_require={
-        "cpu": ["pytorch==1.0.*"],
-        "gpu": ["pytorch==1.0.*"],
-    },
     classifiers=(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
@@ -29,7 +25,7 @@ setuptools.setup(
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Software Development',

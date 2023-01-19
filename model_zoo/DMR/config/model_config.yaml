@@ -1,0 +1,76 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 3
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    ordered_features: null
+    feature_specs: null
+
+DMR_test:
+    model: DMR
+    dataset_id: tiny_seq
+    loss: 'binary_crossentropy'
+    metrics: ['AUC', 'logloss']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 8
+    embedding_dim: 8
+    dnn_hidden_units: [64, 32]
+    dnn_activations: "PReLU"
+    net_dropout: 0
+    batch_norm: True
+    target_field: adgroup_id
+    sequence_field: click_sequence
+    neg_seq_field: null
+    context_field: null
+    attention_hidden_units: [80, 40]
+    attention_activation: "Sigmoid"
+    attention_dropout: 0
+    aux_loss_beta: 0
+    use_pos_emb: True
+    pos_emb_dim: 2
+    epochs: 1
+    shuffle: True
+    seed: 20222023
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+DMR_default: # This is a config template
+    model: DMR
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['AUC', 'logloss']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 8192
+    embedding_dim: 16
+    dnn_hidden_units: [1024, 512, 256]
+    dnn_activations: "PReLU"
+    net_dropout: 0
+    batch_norm: True
+    target_field: adgroup_id
+    sequence_field: click_sequence
+    neg_seq_field: null
+    context_field: null
+    attention_hidden_units: [80, 40]
+    attention_activation: "Sigmoid"
+    attention_dropout: 0
+    aux_loss_beta: 0
+    use_pos_emb: True
+    pos_emb_dim: 2
+    epochs: 100
+    shuffle: True
+    seed: 20222023
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'

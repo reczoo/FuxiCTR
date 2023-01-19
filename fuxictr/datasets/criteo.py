@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
 # limitations under the License.
 # =========================================================================
 
-import pandas as pd
+
 import numpy as np
-import os
-from ..features import FeatureEncoder as BaseFeatureEncoder
-from datetime import datetime, date
+from fuxictr.preprocess import FeatureProcessor as BaseFeatureProcessor
 
 
-class FeatureEncoder(BaseFeatureEncoder):
+class FeatureProcessor(BaseFeatureProcessor):
     def convert_to_bucket(self, df, col_name):
         def _convert_to_bucket(value):
             if value > 2:
@@ -30,4 +28,8 @@ class FeatureEncoder(BaseFeatureEncoder):
                 value = int(value)
             return value
         return df[col_name].map(_convert_to_bucket).astype(int)
+
+
+	
+
 

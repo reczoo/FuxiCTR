@@ -1,0 +1,1 @@
+from .FiGNN import *

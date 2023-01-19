@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
 # limitations under the License.
 # =========================================================================
 
-import pandas as pd
-import numpy as np
-import os
-from ..features import FeatureEncoder as BaseFeatureEncoder
+
+from fuxictr.preprocess import FeatureProcessor as BaseFeatureProcessor
 from datetime import datetime, date
 
 
-class FeatureEncoder(BaseFeatureEncoder):
+class FeatureProcessor(BaseFeatureProcessor):
     def convert_weekday(self, df, col_name):
         def _convert_weekday(timestamp):
             dt = date(int('20' + timestamp[0:2]), int(timestamp[2:4]), int(timestamp[4:6]))

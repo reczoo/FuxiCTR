@@ -1,10 +1,6 @@
 # =========================================================================
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
-# Copyright (C) 2021. The Chinese University of Hong Kong. All rights reserved.
-#
-# Authors: Jinyang Liu <The Chinese University of Hong Kong>
-#          Jieming Zhu <Huawei Noah's Ark Lab>
-#          
+# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -27,7 +23,7 @@ import numpy as np
 import time
 import glob
 import hashlib
-from .utils import load_config, print_to_json
+from .utils import print_to_json
 
 # add this line to avoid weird characters in yaml files
 yaml.Dumper.ignore_aliases = lambda *args : True
@@ -77,10 +73,7 @@ def enumerate_params(config_file, exclude_expid=[]):
             tune_dict[k] = [v]
     experiment_id = config_dict["base_expid"]
     if "model_config" in config_dict:
-        model_dict = dict()
-        if 'Base' in config_dict["model_config"]:
-            model_dict.update(config_dict["model_config"]['Base'])
-        model_dict.update(config_dict["model_config"][experiment_id])
+        model_dict = config_dict["model_config"][experiment_id]
     else:
         base_config_dir = config_dict.get("base_config", os.path.dirname(config_file))
         model_dict = load_model_config(base_config_dir, experiment_id)
@@ -114,7 +107,7 @@ def enumerate_params(config_file, exclude_expid=[]):
         if dataset_params["data_format"] == "h5":
             dataset_para_combs[dataset_id] = dataset_params
         else:
-            hash_id = hashlib.md5(print_to_json(dataset_params).encode("utf-8")).hexdigest()[0:8]
+            hash_id = hashlib.md5("".join(sorted(print_to_json(dataset_params))).encode("utf-8")).hexdigest()[0:8]
             dataset_para_combs[dataset_id + "_{}".format(hash_id)] = dataset_params
 
     # dump dataset para combinations to config file
@@ -135,10 +128,10 @@ def enumerate_params(config_file, exclude_expid=[]):
                                                  dataset_para_combs.keys())):
         para_dict = item[0]
         para_dict["dataset_id"] = item[1]
-        random_number = ""
-        if para_dict["debug"]:
-            random_number = str(np.random.randint(1e8)) # add a random number to avoid duplicate during debug
-        hash_id = hashlib.md5((print_to_json(para_dict) + random_number).encode("utf-8")).hexdigest()[0:8]
+        random_str = ""
+        if para_dict["debug_mode"]:
+            random_str = "{:06d}".format(np.random.randint(1e6)) # add a random number to avoid duplicate during debug
+        hash_id = hashlib.md5(("".join(sorted(print_to_json(para_dict))) + random_str).encode("utf-8")).hexdigest()[0:8]
         hash_expid = experiment_id + "_{:03d}_{}".format(idx + 1, hash_id)
         if hash_expid not in exclude_expid:
             merged_param_combs[hash_expid] = para_dict.copy()
@@ -161,11 +154,11 @@ def load_experiment_ids(config_dir):
             experiment_id_list += config_dict.keys()
     return sorted(experiment_id_list)
 
-def grid_search(version, config_dir, gpu_list, expid_tag=None):
+def grid_search(config_dir, gpu_list, expid_tag=None, script='run_expid.py'):
     experiment_id_list = load_experiment_ids(config_dir)
     if expid_tag is not None:
         experiment_id_list = [expid for expid in experiment_id_list if str(expid_tag) in expid]
-        assert len(experiment_id_list) > 0, "tag={} does not match any expid!".format(expid_tag)
+        assert len(experiment_id_list) > 0, "tag={} does not match any expid."
     gpu_list = list(gpu_list)
     idle_queue = list(range(len(gpu_list)))
     processes = dict()
@@ -174,15 +167,13 @@ def grid_search(version, config_dir, gpu_list, expid_tag=None):
             idle_idx = idle_queue.pop(0)
             gpu_id = gpu_list[idle_idx]
             expid = experiment_id_list.pop(0)
-            cmd = "python -u run_expid.py --version {} --config {} --expid {} --gpu {}"\
-                  .format(version, config_dir, expid, gpu_id)
-            # print("Run cmd:", cmd)
+            cmd = "python -u {} --config {} --expid {} --gpu {}"\
+                    .format(script, config_dir, expid, gpu_id)
             p = subprocess.Popen(cmd.split())
             processes[idle_idx] = p
         else:
-            time.sleep(5)
+            time.sleep(3)
             for idle_idx, p in processes.items():
                 if p.poll() is not None: # terminated
                     idle_queue.append(idle_idx)
     [p.wait() for p in processes.values()]
-

@@ -1,0 +1,61 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 3
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    ordered_features: null
+    feature_specs: null
+
+PPNet_test:
+    model: PPNet
+    dataset_id: tiny_h5
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    gate_features: ["userid", "adgroup_id", "pid"]
+    gate_hidden_dim: 64
+    hidden_units: [64, 64, 64]
+    hidden_activations: ReLU
+    net_dropout: 0
+    batch_norm: False
+    epochs: 1
+    shuffle: True
+    seed: 20222023
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+PPNet_default: # This is a config template
+    model: PPNet
+    dataset_id: tiny_h5
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    gate_features: ["userid", "adgroup_id", "pid"]
+    gate_hidden_dim: 64
+    hidden_units: [64, 64, 64]
+    hidden_activations: ReLU
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 20222023
+    monitor: 'AUC'
+    monitor_mode: 'max'
+

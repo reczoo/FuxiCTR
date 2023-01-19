@@ -1,0 +1,9 @@
+### Tiny data for tests only
+tiny_seq:
+    data_root: ../../data/
+    data_format: h5
+    train_data: ../../data/tiny_seq/train.h5
+    valid_data: ../../data/tiny_seq/valid.h5
+    test_data: ../../data/tiny_seq/test.h5
+
+

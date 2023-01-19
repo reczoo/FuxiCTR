@@ -1,0 +1,148 @@
+{
+    "dataset_id": "tiny_seq",
+    "num_fields": 15,
+    "total_features": 485,
+    "input_length": 19,
+    "labels": [
+        "clk"
+    ],
+    "features": [
+        {
+            "userid": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 25,
+                "vocab_size": 26
+            }
+        },
+        {
+            "adgroup_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 95,
+                "vocab_size": 96
+            }
+        },
+        {
+            "pid": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 3,
+                "vocab_size": 4
+            }
+        },
+        {
+            "cate_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 48,
+                "vocab_size": 49
+            }
+        },
+        {
+            "campaign_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 98,
+                "vocab_size": 99
+            }
+        },
+        {
+            "customer": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 97,
+                "vocab_size": 98
+            }
+        },
+        {
+            "brand": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 66,
+                "vocab_size": 67
+            }
+        },
+        {
+            "cms_segid": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 10,
+                "vocab_size": 11
+            }
+        },
+        {
+            "cms_group_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 10,
+                "vocab_size": 11
+            }
+        },
+        {
+            "final_gender_code": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 3,
+                "vocab_size": 4
+            }
+        },
+        {
+            "age_level": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 6,
+                "vocab_size": 7
+            }
+        },
+        {
+            "pvalue_level": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 3,
+                "vocab_size": 4
+            }
+        },
+        {
+            "shopping_level": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 4,
+                "vocab_size": 5
+            }
+        },
+        {
+            "occupation": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "oov_idx": 3,
+                "vocab_size": 4
+            }
+        },
+        {
+            "click_sequence": {
+                "source": "",
+                "type": "sequence",
+                "share_embedding": "adgroup_id",
+                "padding_idx": 0,
+                "oov_idx": 95,
+                "vocab_size": 96,
+                "max_len": 5
+            }
+        }
+    ]
+}

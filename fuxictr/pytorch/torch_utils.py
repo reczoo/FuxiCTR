@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2021. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import numpy as np
 import torch
 from torch import nn
 import random
+from functools import partial
+import h5py
+import re
 
 
 def seed_everything(seed=1029):
@@ -48,18 +51,17 @@ def get_optimizer(optimizer, params, lr):
         raise NotImplementedError("optimizer={} is not supported.".format(optimizer))
     return optimizer
 
-def get_loss_fn(loss):
+def get_loss(loss):
     if isinstance(loss, str):
         if loss in ["bce", "binary_crossentropy", "binary_cross_entropy"]:
             loss = "binary_cross_entropy"
     try:
         loss_fn = getattr(torch.functional.F, loss)
     except:
-        try:
-            from . import losses
-            loss_fn = getattr(losses, loss)
+        try: 
+            loss_fn = eval("losses." + loss)
         except:
-            raise NotImplementedError("loss={} is not supported.".format(loss))
+            raise NotImplementedError("loss={} is not supported.".format(loss))       
     return loss_fn
 
 def get_regularizer(reg):
@@ -80,15 +82,62 @@ def get_regularizer(reg):
             raise NotImplementedError("regularizer={} is not supported.".format(reg))
     return reg_pair
 
-def get_activation(activation):
+def get_activation(activation, hidden_units=None):
     if isinstance(activation, str):
+        if activation.lower() in ["prelu", "dice"]:
+            assert type(hidden_units) == int
         if activation.lower() == "relu":
             return nn.ReLU()
         elif activation.lower() == "sigmoid":
             return nn.Sigmoid()
         elif activation.lower() == "tanh":
             return nn.Tanh()
+        elif activation.lower() == "softmax":
+            return nn.Softmax(dim=-1)
+        elif activation.lower() == "prelu":
+            return nn.PReLU(hidden_units, init=0.1)
+        elif activation.lower() == "dice":
+            from fuxictr.pytorch.layers.activations import Dice
+            return Dice(hidden_units)
         else:
             return getattr(nn, activation)()
-    else:
-        return activation
+    elif isinstance(activation, list):
+        if hidden_units is not None:
+            assert len(activation) == len(hidden_units)
+            return [get_activation(act, units) for act, units in zip(activation, hidden_units)]
+        else:
+            return [get_activation(act) for act in activation]
+    return activation
+
+def get_initializer(initializer):
+    if isinstance(initializer, str):
+        try:
+            initializer = eval(initializer)
+        except:
+            raise ValueError("initializer={} is not supported."\
+                             .format(initializer))
+    return initializer
+
+def save_init_embs(model, data_path="init_embs.h5"):
+    emb_dict = dict()
+    for k, v in model.state_dict().items():
+        if "embedding_layers" in k:
+            if v.size(-1) > 1:
+                f_name = re.findall(r"embedding_layers.(.*).weight", k)[0]
+                emb_dict[f_name] = v.cpu().numpy()
+    with h5py.File(data_path, 'w') as hf:
+        for key, arr in emb_dict.items():
+            hf.create_dataset(key, data=arr)
+
+def load_init_embs(model, data_path="init_embs.h5"):
+    state_dict = model.state_dict()
+    f_name_dict = dict()
+    for k in state_dict.keys():
+        if "embedding_layers" in k and state_dict[k].size(-1) > 1:
+            f_name = re.findall(r"embedding_layers.(.*).weight", k)[0]
+            f_name_dict[f_name] = k
+    with h5py.File(data_path, 'r') as hf:
+        for key in hf.keys():
+            if key in f_name_dict:
+                state_dict[f_name_dict[key]] = torch.from_numpy(hf[key][:])
+    model.load_state_dict(state_dict)
