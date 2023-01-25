@@ -1,6 +1,7 @@
 ## DCN
 
-**Index:**  [Overview](#Overview) | [Configuration](#Configuration) | [Implementation](#Implementation) | [Discussion](#Discussion)
+| [Overview](#Overview) | [Configuration](#Configuration) | [Implementation](#Implementation) | [Discussion](#Discussion) |
+| :--: | :--: | :--: | :--: |
 
 ### Overview
 
@@ -11,7 +12,7 @@ DCN is a CTR prediction model that learns explicit and bounded-degree cross feat
 **Model structure:**
 
 <div align="center">
-    <img width="50%" src="../../../docs/img/DCN.PNG">
+    <img width="50%" src="https://cdn.jsdelivr.net/gh/xue-pai/FuxiCTR@main/docs/img/DCN.PNG">
 </div>
 
 **Key components:**

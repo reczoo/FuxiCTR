@@ -1,5 +1,4 @@
-## DMIN
+## DMR
 
-Zhibo Xiao, Luwei Yang, Wen Jiang, Yi Wei, Yi Hu, Hao Wang. Deep Multi-Interest Network for Click-through Rate Prediction, in CIKM 2020.
-
+Ze Lyu, Yu Dong, Chengfu Huo, Weijun Ren. Deep Match to Rank Model for Personalized Click-Through Rate Prediction, in AAAI 2020.
 
