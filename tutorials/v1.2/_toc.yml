@@ -1,0 +1,24 @@
+format: jb-book
+root: index
+parts:
+- caption: Tutorials
+  chapters:
+  - file: install_fuxictr.ipynb
+  - file: run_the_demo.ipynb
+  - file: run_model_with_config_file.ipynb
+  - url: https://github.com/xue-pai/FuxiCTR/tree/v1.2.0/demo/preprocess_h5_demo.py
+    title: Preprocess raw csv data to h5 data
+  - file: run_model_with_h5_input.ipynb
+  - file: how_to_make_configurations.ipynb
+  - file: tune_model_via_grid_search.ipynb
+  - url: https://github.com/xue-pai/FuxiCTR/tree/v1.2.0/demo/DeepFM_with_sequence_feature.py
+    title: Run a model with sequence features
+  - url: https://github.com/xue-pai/FuxiCTR/tree/v1.2.0/demo/DeepFM_with_pretrained_emb.py
+    title: Run a model with pretrained embeddings
+
+- caption: 中文教程
+  chapters:
+  - url: https://zhuanlan.zhihu.com/p/437373335
+    title: CTR模型的高效、高性能实现（一）
+  - url: https://zhuanlan.zhihu.com/p/453385054
+    title: CTR模型的高效、高性能实现（二）

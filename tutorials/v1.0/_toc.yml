@@ -1,0 +1,11 @@
+format: jb-book
+root: index
+parts:
+- caption: Tutorials
+  chapters:
+  - file: install_fuxictr.ipynb
+  - file: run_the_demo.ipynb
+  - file: run_model_with_config_file.ipynb
+  - file: run_model_with_h5_input.ipynb
+  - file: how_to_make_configurations.ipynb
+  - file: tune_model_via_grid_search.ipynb
