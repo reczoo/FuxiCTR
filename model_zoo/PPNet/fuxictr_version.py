@@ -1,4 +1,3 @@
-import sys
-sys.path.append('../../')
+# pip install -U fuxictr
 import fuxictr
-print(f"fuxictr.__version__={fuxictr.__version__}")
+assert fuxictr.__version__ >= "2.0.0"

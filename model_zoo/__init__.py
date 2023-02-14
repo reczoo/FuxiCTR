@@ -23,7 +23,6 @@ from .FFM.src import FFM, FFMv2
 from .FGCNN.src import FGCNN
 from .FiBiNET.src import FiBiNET
 from .FiGNN.src import FiGNN
-from .FINAL.src import FINAL
 from .FinalMLP.src import FinalMLP
 from .FLEN.src import FLEN
 from .FM.src import FM

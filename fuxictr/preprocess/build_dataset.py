@@ -79,48 +79,52 @@ def transform_h5(feature_encoder, ddf, filename, preprocess=False, block_size=0)
 
 
 def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None, valid_size=0, 
-                  test_size=0, split_type="sequential", **kwargs):
+                  test_size=0, split_type="sequential", data_block_size=0, **kwargs):
     """ Build feature_map and transform h5 data """
-    
-    # Load csv data
-    train_ddf = feature_encoder.read_csv(train_data, **kwargs)
-    valid_ddf = None
-    test_ddf = None
 
-    # Split data for train/validation/test
-    if valid_size > 0 or test_size > 0:
-        valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
-        test_ddf = feature_encoder.read_csv(test_data, **kwargs)
-        train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf, 
-                                                          valid_size, test_size, split_type)
-    
-    # fit and transform train_ddf
-    train_ddf = feature_encoder.preprocess(train_ddf)
-    feature_encoder.fit(train_ddf, **kwargs)
-    block_size = int(kwargs.get("data_block_size", 0)) # Num of samples in a data block
-    transform_h5(feature_encoder, train_ddf, 'train', preprocess=False, block_size=block_size)
-    del train_ddf
-    gc.collect()
+    feature_map_json = os.path.join(feature_encoder.data_dir, "feature_map.json")
+    if os.path.exists(feature_map_json):
+        logging.warn("Skip rebuilding {}. Please delete it manually if rebuilding is required." \
+                     .format(feature_map_json))
+    else:
+        # Load csv data
+        train_ddf = feature_encoder.read_csv(train_data, **kwargs)
+        valid_ddf = None
+        test_ddf = None
 
-    # Transfrom valid_ddf
-    if valid_ddf is None and (valid_data is not None):
-        valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
-    if valid_ddf is not None:
-        transform_h5(feature_encoder, valid_ddf, 'valid', preprocess=True, block_size=block_size)
-        del valid_ddf
+        # Split data for train/validation/test
+        if valid_size > 0 or test_size > 0:
+            valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
+            test_ddf = feature_encoder.read_csv(test_data, **kwargs)
+            train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf, 
+                                                            valid_size, test_size, split_type)
+        
+        # fit and transform train_ddf
+        train_ddf = feature_encoder.preprocess(train_ddf)
+        feature_encoder.fit(train_ddf, **kwargs)
+        transform_h5(feature_encoder, train_ddf, 'train', preprocess=False, block_size=data_block_size)
+        del train_ddf
         gc.collect()
 
-    # Transfrom test_ddf
-    if test_ddf is None and (test_data is not None):
-        test_ddf = feature_encoder.read_csv(test_data, **kwargs)
-    if test_ddf is not None:
-        transform_h5(feature_encoder, test_ddf, 'test', preprocess=True, block_size=block_size)
-        del test_ddf
-        gc.collect()
-    logging.info("Transform csv data to h5 done.")
+        # Transfrom valid_ddf
+        if valid_ddf is None and (valid_data is not None):
+            valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
+        if valid_ddf is not None:
+            transform_h5(feature_encoder, valid_ddf, 'valid', preprocess=True, block_size=data_block_size)
+            del valid_ddf
+            gc.collect()
+
+        # Transfrom test_ddf
+        if test_ddf is None and (test_data is not None):
+            test_ddf = feature_encoder.read_csv(test_data, **kwargs)
+        if test_ddf is not None:
+            transform_h5(feature_encoder, test_ddf, 'test', preprocess=True, block_size=data_block_size)
+            del test_ddf
+            gc.collect()
+        logging.info("Transform csv data to h5 done.")
     
     # Return processed data splits
-    if block_size > 0:
+    if data_block_size > 0:
         return os.path.join(feature_encoder.data_dir, "train/*.h5"), \
                os.path.join(feature_encoder.data_dir, "valid/*.h5"), \
                os.path.join(feature_encoder.data_dir, "test/*.h5")

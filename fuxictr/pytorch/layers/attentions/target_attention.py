@@ -19,7 +19,7 @@ import torch
 from torch import nn
 from .dot_product_attention import ScaledDotProductAttention
 from ..activations import Dice
-from ..mlp_block import MLP_Block
+from ..blocks.mlp_block import MLP_Block
 
 
 class DIN_Attention(nn.Module):

@@ -1,5 +1,3 @@
-pytorch>=1.10
-tensorflow>=2.1
 PyYAML>=5.1
 pandas
 scikit-learn

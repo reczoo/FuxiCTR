@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2023. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -64,10 +64,23 @@ def load_config(config_dir, experiment_id):
     assert dataset_id_found, "dataset_id={} is not found in config.".format(dataset_id)
     return params
 
+def load_dataset_config(config_dir, dataset_id):
+    dataset_configs = glob.glob(os.path.join(config_dir, 'dataset_config.yaml'))
+    if not dataset_configs:
+        dataset_configs = glob.glob(os.path.join(config_dir, 'dataset_config/*.yaml'))
+    for config in dataset_configs:
+        with open(config, 'r') as cfg:
+            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
+            if dataset_id in config_dict:
+                data_config = config_dict[dataset_id]
+                data_config["dataset_id"] = dataset_id
+                return data_config
+    raise RuntimeError('dataset_id={} is not found in config.'.format(dataset_id))
+
 def set_logger(params):
     dataset_id = params['dataset_id']
-    model_id = params['model_id']
-    log_dir = os.path.join(params['model_root'], dataset_id)
+    model_id = params.get('model_id', '')
+    log_dir = os.path.join(params.get('model_root', './checkpoints'), dataset_id)
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, model_id + '.log')
 

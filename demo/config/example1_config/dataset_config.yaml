@@ -1,0 +1,14 @@
+### Tiny data for demo only
+tiny_example1:
+    data_root: ../data/
+    data_format: csv
+    train_data: ../data/tiny_csv/train_sample.csv
+    valid_data: ../data/tiny_csv/valid_sample.csv
+    test_data: ../data/tiny_csv/test_sample.csv
+    min_categr_count: 1
+    feature_cols:
+        [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
+                 "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
+                 active: True, dtype: str, type: categorical}]
+    label_col: {name: clk, dtype: float}
+

@@ -98,7 +98,7 @@ class FeatureMap(object):
             if feature_spec["type"] == "meta":
                 continue
             if len(feature_source) == 0 or feature_spec.get("source") in feature_source:
-                total_dim += feature_spec.get("emb_output_dim", 
+                total_dim += feature_spec.get("emb_output_dim",
                                               feature_spec.get("embedding_dim", 
                                                                self.default_emb_dim))
         return total_dim

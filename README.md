@@ -9,7 +9,7 @@
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/v/fuxictr.svg" style="max-width: 100%;" alt="Pypi version"></a>
 <a href="https://pepy.tech/project/fuxictr"><img src="https://pepy.tech/badge/fuxictr" style="max-width: 100%;" alt="Downloads"></a>
 <a href="https://github.com/xue-pai/FuxiCTR/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xue-pai/fuxictr.svg" style="max-width: 100%;" alt="License"></a>
-<a href="https://openbenchmark.github.io/BARS/img/wechat.jpg"><img src="https://img.shields.io/badge/chat-wechat-brightgreen?style=flat" style="max-width: 100%;" alt="Wechat QR code"></a>
+<a href="https://fuxictr.github.io/tutorials"><img src="https://img.shields.io/badge/tutorials-passing-brightgreen?style=flat" style="max-width: 100%;" alt="Wechat QR code"></a>
 </div>
 <hr/>
 
@@ -19,13 +19,6 @@
 
 Click-through rate (CTR) prediction is a critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with key features in configurability, tunability, and reproducibility. We hope this project could benefit both researchers and practitioners with the goal of open benchmarking for CTR prediction tasks.
 
-This repo is the community version of the original release at [huawei-noah/benchmark/FuxiCTR](https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR).
-
-*:bell: If you find our code or benchmarks helpful in your research, please kindly cite the following papers.*
-
-> Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
-
-> Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
 
 ## Key Features
 
@@ -37,11 +30,12 @@ This repo is the community version of the original release at [huawei-noah/bench
 
 + **Extensible**: It supports both pytorch and tensorflow models, and can be easily extended to any new models.
 
+
 ## Model Zoo
 
 | No  | Publication       | Model                                    | Paper                                                                                                                                                                                                           | Benchmark                                                                                                       | Version       |
 |:---:|:-----------------:|:----------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |:---------------------------------------------------------------------------------------------------------------:|:-------------:|
-|     |                   |                                          | :point_down:**Feature Interaction Models**                                                                                                                                                         |                                                                                                                 |               |
+|     |                   |                                          | :point_down:**Feature Interaction Models**                                                                                                                                                                      |                                                                                                                 |               |
 | 1   | WWW'07            | [LR](./model_zoo/LR)                     | [Predicting Clicks: Estimating the Click-Through Rate for New Ads](https://dl.acm.org/citation.cfm?id=1242643) :triangular_flag_on_post:**Microsoft**                                                           | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/LR)           | `torch`       |
 | 2   | ICDM'10           | [FM](./model_zoo/FM)                     | [Factorization Machines](https://www.csie.ntu.edu.tw/~b97053/paper/Rendle2010FM.pdf)                                                                                                                            | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/FM)           | `torch`       |
 | 3   | CIKM'13           | [DSSM](./model_zoo/DSSM)                 | [Learning Deep Structured Semantic Models  for Web Search using Clickthrough Data ](https://posenhuang.github.io/papers/cikm2013_DSSM_fullversion.pdf) :triangular_flag_on_post:**Microsoft**                   | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/DSSM)         | `torch`       |
@@ -79,7 +73,7 @@ This repo is the community version of the original release at [huawei-noah/bench
 | 35  | KDD'21            | [AOANet](./model_zoo/AOANet)             | [Architecture and Operation Adaptive Network for Online Recommendations](https://dl.acm.org/doi/10.1145/3447548.3467133) :triangular_flag_on_post:**Didi Chuxing**                                              | [:arrow_upper_right:](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks/AOANet)       | `torch`       |
 | 36  | Blog'21           | [PPNet](./model_zoo/PPNet)               | [Parameter Personalized Net](https://www.jiqizhixin.com/articles/2021-02-03-6) :triangular_flag_on_post:**KuaiShou**                                                                                            |                                                                                                                 | `torch`       |
 | 37  | AAAI'23           | [FinalMLP](./model_zoo/FinalMLP)         | FinalMLP: An Enhanced Two-Stream MLP Model for CTR Prediction :triangular_flag_on_post:**Huawei**                                                                                                               |                                                                                                                 | `torch`       |
-|     |                   |                                          | :point_down:**User Behavior Modeling**                                                                                                                                                             |                                                                                                                 |               |
+|     |                   |                                          | :point_down:**User Behavior Modeling**                                                                                                                                                                          |                                                                                                                 |               |
 | 38  | KDD'18            | [DIN](./model_zoo/DIN)                   | [Deep Interest Network for Click-Through Rate Prediction](https://www.kdd.org/kdd2018/accepted-papers/view/deep-interest-network-for-click-through-rate-prediction) :triangular_flag_on_post:**Alibaba**        |                                                                                                                 | `torch`       |
 | 39  | AAAI'19           | [DIEN](./model_zoo/DIEN)                 | [Deep Interest Evolution Network for Click-Through Rate Prediction](https://arxiv.org/abs/1809.03672) :triangular_flag_on_post:**Alibaba**                                                                      |                                                                                                                 | `torch`       |
 | 40  | DLP-KDD'19        | [BST](./model_zoo/BST)                   | [Behavior Sequence Transformer for E-commerce Recommendation in Alibaba](https://arxiv.org/abs/1905.06874) :triangular_flag_on_post:**Alibaba**                                                                 |                                                                                                                 | `torch`       |
@@ -92,41 +86,54 @@ This repo is the community version of the original release at [huawei-noah/bench
 + :point_right: See [benchmarking configurations and steps](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks).
 + :point_right: See [the BARS benchmark website](https://openbenchmark.github.io/ctr-prediction).
 
-## Dependency
+## Dependencies
 
-FuxiCTR has the following dependent requirements. 
+FuxiCTR has the following dependency requirements. 
 
++ python 3.6+
 + pytorch 1.10+ (required only for torch models)
 + tensorflow 2.1+ (required only for tf models)
-+ python 3.6+
-+ pyyaml 5.1+
-+ scikit-learn
-+ pandas
-+ numpy
-+ h5py
-+ tqdm
 
-## Get Started
+Other required packages can be installed through `pip install -r requirements.txt`.
 
-1. **To run an existing model**: Users can easily run each model in the model zoo following the commands below, which is a demo for running DCN. In addition, users can modify the dataset config and model config files to run on their own datasets or with new hyper-parameters. More details can be found in the [readme file](./model_zoo/DCN/DCN_torch/README.md).
-    ```
-    cd model_zoo/DCN/DCN_torch
-    python run_expid.py --expid DCN_test --gpu 0
-    ```
+## Quick Start
 
-2. **To implement a new model**: The FuxiCTR code structure is modularized, so that every part can be overwritten by users according to their needs. As the workflow shown in the following figure, the orange parts comprise the minimal user code to implement a new customized model. In case that data preprocessing or data loader is not directly applicable, one can overwrite a new one through the [core APIs](https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7). Some examples can also be found in the model zoo.
+1. Run the demo examples
+   
+    Examples are provided in the demo directory to show some basic usage of FuxiCTR. Users can run the examples for quick start and to understand the workflow. 
+   
+   ```
+   cd demo
+   python example1_build_dataset_to_h5.py
+   python example2_DeepFM_with_h5_input.py
+   ```
 
-    <div align="center">
-    <img src="https://cdn.jsdelivr.net/gh/xue-pai/FuxiCTR@main/docs/workflow.jpg" alt="FuxiCTR Workflow"/>
-    </div>
+2. Run an existing model
+   
+    Users can easily run each model in the model zoo following the commands below, which is a demo for running DCN. In addition, users can modify the dataset config and model config files to run on their own datasets or with new hyper-parameters. More details can be found in the [readme file](./model_zoo/DCN/DCN_torch/README.md).
+   
+   ```
+   cd model_zoo/DCN/DCN_torch
+   python run_expid.py --expid DCN_test --gpu 0
+   ```
+
+3. Implement a new model
+   
+    The FuxiCTR code structure is modularized, so that every part can be overwritten by users according to their needs. In many cases, only the model class needs to be implemented for a new customized model. If data preprocessing or data loader is not directly applicable, one can also overwrite a new one through the [core APIs](https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7). A complete example can be found at [model_zoo/FinalMLP](./model_zoo/FinalMLP/), which implements our new model FinalMLP that has been recently published in AAAI 2023. Some other examples are also available in the model zoo.
+
+
+## Citation
+
+*:bell: If you find our code or benchmarks helpful in your research, please kindly cite the following papers.*
+
+> Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
+
+> Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
 
 
 ## Discussion
 
-Welcome to join our WeChat group for any question and discussion.
+Welcome to join our WeChat group for any question and discussion. We also have open positions for internships and full-time jobs. If you are interested in research and practice in recommender systems, please reach out via our WeChat group.
 
-![Scan QR code](https://openbenchmark.github.io/BARS/img/wechat.jpg)
+![Scan QR code](https://openbenchmark.github.io/BARS/_images/wechat.jpg)
 
-## Join Us
-
-We have open positions for internships and full-time jobs. If you are interested in research and practice in recommender systems, please send your CV to jamie.zhu@huawei.com.
