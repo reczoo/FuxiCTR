@@ -23,45 +23,10 @@ import numpy as np
 import time
 import glob
 import hashlib
-from .utils import print_to_json
+from .utils import print_to_json, load_model_config, load_dataset_config
 
 # add this line to avoid weird characters in yaml files
 yaml.Dumper.ignore_aliases = lambda *args : True
-
-def load_model_config(config_dir, experiment_id):
-    params = dict()
-    model_configs = glob.glob(os.path.join(config_dir, "model_config.yaml"))
-    if not model_configs:
-        model_configs = glob.glob(os.path.join(config_dir, "model_config/*.yaml"))
-    found_keys = []
-    for config in model_configs:
-        with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
-            if "Base" in config_dict:
-                params.update(config_dict["Base"])
-                found_keys.append("Base")
-            if experiment_id in config_dict:
-                params.update(config_dict[experiment_id])
-                found_keys.append(experiment_id)
-        if len(found_keys) == 2:
-            break
-    if "dataset_id" not in params:
-        raise RuntimeError("experiment_id={} is not valid in config.".format(experiment_id))
-    params["model_id"] = experiment_id
-    return params
-
-def load_dataset_config(config_dir, dataset_id):
-    params = dict()
-    dataset_configs = glob.glob(os.path.join(config_dir, "dataset_config.yaml"))
-    if not dataset_configs:
-        dataset_configs = glob.glob(os.path.join(config_dir, "dataset_config/*.yaml"))
-    for config in dataset_configs:
-        with open(config, "r") as cfg:
-            config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
-            if dataset_id in config_dict:
-                params.update(config_dict[dataset_id])
-                break
-    return params
 
 def enumerate_params(config_file, exclude_expid=[]):
     with open(config_file, "r") as cfg:

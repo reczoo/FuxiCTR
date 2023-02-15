@@ -4,17 +4,22 @@
 
 [Doing] Add support for saving pb file, exporting embeddings, exporting feature vocab
 
+**FuxiCTR v2.0.1, 2023-02-15**
 
++ Docs
+    - Add fuxictr tutorials
+
++ Fixes
+    - Update demo examples
+    - Fix build_dataset() to skip rebuilding if it already exists
 
 **FuxiCTR v2.0.0, 2023-01-19**
 
-+ Add more models of year 2021-2022.
++ Features
+    - Add more models of year 2021-2022.
+    - Add tensorflow backbone support
+    - Refine code structure to support model development with minimal code
 
-+ Refine code structure to support model development
-
-+ Add tensorflow backbone support
-  
-  
 
 ### FuxiCTR v1.2
 
@@ -32,8 +37,7 @@
 **FuxiCTR v1.2.0, 2022-04-17**
 
 + Add DSSM/DLRM/EDCN/AOANet/SAM models
-  
-  
+
 
 ### FuxiCTR v1.1
 
@@ -53,7 +57,6 @@
 + Fix the defect in loading pretrained embeddings (no impact on Criteo/Avazu results)
 + Remove the unnecessary config of embedding_dropout because it does not help after some attempts
 + Add embedding_hooks of dense layers on pretrained embeddings
-  
   
 
 ### FuxiCTR v1.0

@@ -94,7 +94,7 @@ FuxiCTR has the following dependency requirements.
 + pytorch 1.10+ (required only for torch models)
 + tensorflow 2.1+ (required only for tf models)
 
-Other required packages can be installed through `pip install -r requirements.txt`.
+Other packages can be installed via `pip install -r requirements.txt`.
 
 ## Quick Start
 

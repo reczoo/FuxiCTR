@@ -1,3 +1,4 @@
+fuxictr
 PyYAML>=5.1
 pandas
 scikit-learn
