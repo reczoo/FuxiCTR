@@ -1,0 +1,35 @@
+name: github-pages
+
+# Only run this when the master branch changes
+on:
+  push:
+    branches:
+    - main
+
+# This job installs dependencies, build the book, and pushes it to `gh-pages`
+jobs:
+  deploy-book:
+    runs-on: ubuntu-latest
+    steps:
+    # Install dependencies
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+      with:
+        python-version: 3.7
+    - run: pip install jupyter-book
+
+    # Build the book
+    - name: Build the book
+      run: |
+        jupyter-book build ./docs/tutorials/v2.0
+
+    # Push the book's HTML to github-pages
+    - name: Deploy github-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        personal_token: ${{ secrets.PERSONAL_TOKEN }}
+        external_repository: fuxictr/fuxictr.github.io
+        publish_branch: main
+        publish_dir: ./docs/tutorials/v2.0/_build/html
+        exclude_assets: '_sources'
+        destination_dir: tutorials/v2.0
