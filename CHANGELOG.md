@@ -6,20 +6,21 @@
 
 **FuxiCTR v2.0.1, 2023-02-15**
 
-+ Docs
-    - Add fuxictr tutorials
+Docs
+    + Add fuxictr tutorials
 
-+ Fixes
-    - Update demo examples
-    - Fix build_dataset() to skip rebuilding if it already exists
+Fixes
+    + Update demo examples
+    + Fix build_dataset() to skip rebuilding if it already exists
 
 **FuxiCTR v2.0.0, 2023-01-19**
 
-+ Features
+Features
     - Add more models of year 2021-2022.
     - Add tensorflow backbone support
     - Refine code structure to support model development with minimal code
 
+-------------------------------
 
 ### FuxiCTR v1.2
 
@@ -38,6 +39,7 @@
 
 + Add DSSM/DLRM/EDCN/AOANet/SAM models
 
+-------------------------------
 
 ### FuxiCTR v1.1
 
@@ -58,13 +60,14 @@
 + Remove the unnecessary config of embedding_dropout because it does not help after some attempts
 + Add embedding_hooks of dense layers on pretrained embeddings
   
+-------------------------------
 
 ### FuxiCTR v1.0
 
 **FuxiCTR v1.0.2, 2021-12-01**
 
-Refactor the code and documentation to support reproducing steps on [the BARS benchmark](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks).
++ Refactor the code and documentation to support reproducing steps on [the BARS benchmark](https://github.com/openbenchmark/BARS/tree/master/ctr_prediction/benchmarks).
 
 **FuxiCTR v1.0.1, 2021-10-01**
 
-This is the first release of FuxiCTR, including 28 models: LR, FM, CCPM, FFM, DNN, Wide&Deep, FNN, IPNN, DeepCross, HOFM, DeepFM, NFM, AFM, DCN, FwFM, xDeepFM, DIN, FiGNN, AutoInt+, FiBiNET, FGCNN, HFM+, ONN, AFN+, LorentzFM, InterHAt, FLEN, FmFM. Especially, this version corresponds to the original implementations used for reproducing the experiments in the following paper: *Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He, Open Benchmarking for CTR Prediction, CIKM 2021*.
++ This is the first release of FuxiCTR, including 28 models: LR, FM, CCPM, FFM, DNN, Wide&Deep, FNN, IPNN, DeepCross, HOFM, DeepFM, NFM, AFM, DCN, FwFM, xDeepFM, DIN, FiGNN, AutoInt+, FiBiNET, FGCNN, HFM+, ONN, AFN+, LorentzFM, InterHAt, FLEN, FmFM. Especially, this version corresponds to the original implementations used for reproducing the experiments in the following paper: *Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He, Open Benchmarking for CTR Prediction, CIKM 2021*.

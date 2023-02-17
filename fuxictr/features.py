@@ -48,8 +48,8 @@ class FeatureMap(object):
         self.group_id = feature_map.get("group_id", None)
         self.default_emb_dim = params.get("embedding_dim", None)
         self.features = OrderedDict((k, v) for x in feature_map["features"] for k, v in x.items())
-        if params.get("ordered_features", None):
-            self.features = OrderedDict((x, self.features[x]) for x in params["ordered_features"])
+        if params.get("use_features", None):
+            self.features = OrderedDict((x, self.features[x]) for x in params["use_features"])
         if params.get("feature_specs", None):
             self.update_feature_specs(params["feature_specs"])
         self.set_column_index()

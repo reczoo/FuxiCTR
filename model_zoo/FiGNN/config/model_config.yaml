@@ -8,8 +8,9 @@ Base:
     eval_steps: null
     debug_mode: False
     group_id: null
-    ordered_features: null
+    use_features: null
     feature_specs: null
+    feature_config: null
 
 FiGNN_test:
     model: FiGNN
