@@ -1,0 +1,23 @@
+tiny_mtl:
+  data_root: ../../../data/
+  data_format: csv
+  train_data: ../../../data/tiny_mtl/train.csv
+  valid_data: ../../../data/tiny_mtl/test.csv
+  test_data: ../../../data/tiny_mtl/test.csv
+  min_categr_count: 1
+  feature_cols:
+    [ { name: [ categorical_1,categorical_2,categorical_3,categorical_4,categorical_5,categorical_6,
+                categorical_7,categorical_8,categorical_9,categorical_10,categorical_11,categorical_12,
+                categorical_13,categorical_14,categorical_15,categorical_16 ],
+        active: True, dtype: str, type: categorical },
+      { name: [ numerical_1,numerical_2,numerical_3,numerical_4,numerical_5,numerical_6,numerical_7,numerical_8,
+                numerical_9,numerical_10,numerical_11,numerical_12,numerical_13,numerical_14,numerical_15,numerical_16,
+                numerical_17,numerical_18,numerical_19,numerical_20,numerical_21,numerical_22,numerical_23,numerical_24,
+                numerical_25,numerical_26,numerical_27,numerical_28,numerical_29,numerical_30,numerical_31,numerical_32,
+                numerical_33,numerical_34,numerical_35,numerical_36,numerical_37,numerical_38,numerical_39,numerical_40,
+                numerical_41,numerical_42,numerical_43,numerical_44,numerical_45,numerical_46,numerical_47,numerical_48,
+                numerical_49,numerical_50,numerical_51,numerical_52,numerical_53,numerical_54,numerical_55,numerical_56,
+                numerical_57,numerical_58,numerical_59,numerical_60,numerical_61,numerical_62,numerical_63 ],
+        active: True, dtype: float, type: numeric } ]
+  label_col: [ { name: click, dtype: float },
+               { name: conversion, dtype: float } ]
