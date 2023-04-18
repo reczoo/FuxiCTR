@@ -1,5 +1,4 @@
-fuxictr
-PyYAML>=5.1
+PyYAML
 pandas
 scikit-learn
 numpy

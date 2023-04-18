@@ -64,6 +64,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 | use_features       | None (optional) | None                      | used for feature selection, i.e., only selecting an ordered subset of features as model input                                                                                                              |
 | feature_specs          | dict (optional) | None                      | used for specifying field-wise configurations, such as ```embedding_dim```, ```feature_encoder``` for a specific field.                                                                                           |
 
+
 ### Implementation
 
 **Code structure:**
@@ -73,7 +74,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 │   ├── dataset_config.yaml       # 数据集配置文件
 │   └── model_config.yaml         # 模型配置文件
 ├── src                           # 模型代码文件夹
-│   └── DMR.py                    # 模型代码
+│   └── DCN.py                    # 模型代码
 ├── fuxictr_version.py            # fuxictr加载及版本检查文件
 ├── README.md                     # 使用说明
 ├── requirements.txt              # 依赖文件
