@@ -33,7 +33,7 @@ class DIEN(BaseModel):
                  model_id="DIEN",
                  gpu=-1,
                  dnn_hidden_units=[200, 80],
-                 dnn_activations="Dice",
+                 dnn_activations="ReLU",
                  learning_rate=1e-3,
                  embedding_dim=16,
                  net_dropout=0,
@@ -42,13 +42,14 @@ class DIEN(BaseModel):
                  dien_sequence_field=[("click_history", "cate_history")],
                  dien_neg_seq_field=[("neg_click_history", "neg_cate_history")],
                  gru_type="AUGRU",
+                 enable_sum_pooling=False,
                  attention_dropout=0,
                  attention_type="bilinear_attention",
                  attention_hidden_units=[80, 40],
                  attention_activation="Dice",
                  use_attention_softmax=True,
                  aux_hidden_units=[100, 50],
-                 aux_activation="Sigmoid",
+                 aux_activation="ReLU",
                  aux_loss_alpha=0,
                  embedding_regularizer=None,
                  net_regularizer=None,
@@ -103,22 +104,24 @@ class DIEN(BaseModel):
                                    attention_dropout=attention_dropout))
         feature_dim = feature_dim + feature_map.sum_emb_out_dim() \
                       - embedding_dim * len(list(flatten([self.dien_neg_seq_field])))
-        self.dnn = nn.Sequential(nn.BatchNorm1d(feature_dim) if batch_norm else nn.Identity(),
-                                 MLP_Block(input_dim=feature_dim,
-                                           output_dim=1,
-                                           hidden_units=dnn_hidden_units,
-                                           hidden_activations=dnn_activations,
-                                           output_activation=self.output_activation,
-                                           dropout_rates=net_dropout))
+        self.enable_sum_pooling = enable_sum_pooling
+        if not self.enable_sum_pooling:
+            feature_dim -= embedding_dim * len(list(flatten([self.dien_target_field]))) * 2
+        self.dnn = MLP_Block(input_dim=feature_dim,
+                             output_dim=1,
+                             hidden_units=dnn_hidden_units,
+                             hidden_activations=dnn_activations,
+                             output_activation=self.output_activation,
+                             dropout_rates=net_dropout,
+                             batch_norm=batch_norm)
         if self.aux_loss_alpha > 0:
             self.model_dim = model_dim
-            self.aux_net = nn.Sequential(nn.BatchNorm1d(model_dim * 2) if batch_norm else nn.Identity(),
-                                         MLP_Block(input_dim=model_dim * 2,
-                                                   output_dim=1,
-                                                   hidden_units=aux_hidden_units,
-                                                   hidden_activations=aux_activation,
-                                                   output_activation="Sigmoid",
-                                                   dropout_rates=net_dropout))
+            self.aux_net = MLP_Block(input_dim=model_dim * 2,
+                                     output_dim=1,
+                                     hidden_units=aux_hidden_units,
+                                     hidden_activations=aux_activation,
+                                     output_activation="Sigmoid",
+                                     dropout_rates=net_dropout)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
@@ -131,7 +134,6 @@ class DIEN(BaseModel):
             zip(self.dien_target_field, self.dien_sequence_field)):
             target_emb = self.get_embedding(target_field, feature_emb_dict)
             sequence_emb = self.get_embedding(sequence_field, feature_emb_dict)
-            sum_pool_emb = self.sum_pooling(sequence_emb)
             neg_emb = self.get_embedding(self.dien_neg_seq_field[idx], feature_emb_dict) \
                       if self.aux_loss_alpha > 0 else None
             seq_field = list(flatten([sequence_field]))[0] # pick the first sequence field
@@ -143,7 +145,10 @@ class DIEN(BaseModel):
             h_out = self.interest_evolution(idx, packed_interests, interest_emb, target_emb[non_zero_mask], 
                                             pad_mask[non_zero_mask])
             final_out = self.get_unmasked_tensor(h_out, non_zero_mask)
-            concat_emb += [sum_pool_emb, target_emb * sum_pool_emb, final_out]
+            concat_emb.append(final_out)
+            if self.enable_sum_pooling: # sum pooling of behavior sequence is used in the paper code
+                sum_pool_emb = self.sum_pooling(sequence_emb)
+                concat_emb += [sum_pool_emb, target_emb * sum_pool_emb]
         for feature, emb in feature_emb_dict.items():
             if emb.ndim == 2 and (feature not in flatten([self.dien_neg_seq_field])):
                 concat_emb.append(emb)
@@ -252,10 +257,10 @@ class AttentionLayer(nn.Module):
                                     target_emb * sequence_emb], dim=-1)
             attn_score = self.attn_mlp(din_concat.view(-1, 4 * target_emb.size(-1)))
         attn_score = attn_score.view(-1, seq_len)
-        if mask != None:
+        if mask is not None:
             attn_score = attn_score * mask.float()
         if self.use_attention_softmax:
-            if mask != None:
+            if mask is not None:
                 attn_score += -1.e9 * (1 - mask.float())
             attn_score = attn_score.softmax(dim=-1)
         return attn_score

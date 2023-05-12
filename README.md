@@ -123,9 +123,8 @@ Other packages can be installed via `pip install -r requirements.txt`.
    cd model_zoo/DCN/DCN_torch
    python run_expid.py --expid DCN_test --gpu 0
 
-   ...
-
-   cd model_zoo/MODEL
+   # Change `MODEL` according to the target model name
+   cd model_zoo/MODEL_PATH
    python run_expid.py --expid MODEL_test --gpu 0
    ```
 

@@ -31,13 +31,14 @@ DIEN_test:
     dien_sequence_field: click_sequence
     dien_neg_seq_field: []
     gru_type: AUGRU
+    enable_sum_pooling: False
     attention_type: bilinear_attention
     attention_hidden_units: [80, 40]
-    attention_activation: "Sigmoid"
+    attention_activation: "ReLU"
     attention_dropout: 0
     use_attention_softmax: True
     aux_hidden_units: [100, 50]
-    aux_activation: "Sigmoid"
+    aux_activation: "ReLU"
     aux_loss_alpha: 0
     batch_norm: True
     epochs: 1
@@ -65,13 +66,14 @@ DIEN_default: # This is a config template
     dien_sequence_field: click_sequence
     dien_neg_seq_field: []
     gru_type: AUGRU
+    enable_sum_pooling: False
     attention_type: bilinear_attention
     attention_hidden_units: [80, 40]
-    attention_activation: "Sigmoid"
+    attention_activation: "ReLU"
     attention_dropout: 0
     use_attention_softmax: True
     aux_hidden_units: [100, 50]
-    aux_activation: "Sigmoid"
+    aux_activation: "ReLU"
     aux_loss_alpha: 0
     batch_norm: True
     epochs: 100

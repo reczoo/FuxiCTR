@@ -93,6 +93,7 @@ def enumerate_params(config_file, exclude_expid=[]):
                                                  dataset_para_combs.keys())):
         para_dict = item[0]
         para_dict["dataset_id"] = item[1]
+        del para_dict["model_id"]
         random_str = ""
         if para_dict["debug_mode"]:
             random_str = "{:06d}".format(np.random.randint(1e6)) # add a random number to avoid duplicate during debug
