@@ -1,0 +1,69 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 3
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    ordered_features: null
+    feature_specs: null
+
+FINAL_test:
+    model: FINAL
+    dataset_id: tiny_h5
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 128
+    embedding_dim: 4
+    block_type: "2B"
+    batch_norm: True
+    use_field_gate: True
+    block1_hidden_units: [64, 64, 64]
+    block1_hidden_activations: null
+    block1_dropout: 0
+    block2_hidden_units: [64, 64, 64]
+    block2_hidden_activations: null
+    block2_dropout: 0
+    residual_type: concat
+    epochs: 1
+    shuffle: True
+    seed: 20222023
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+FINAL_default: # This is a config template
+    model: FINAL
+    dataset_id: TBD
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 40
+    block_type: "2B"
+    batch_norm: True
+    use_field_gate: True
+    block1_hidden_units: [64, 64, 64]
+    block1_hidden_activations: null
+    block1_dropout: 0
+    block2_hidden_units: [64, 64, 64]
+    block2_hidden_activations: null
+    block2_dropout: 0
+    residual_type: concat
+    epochs: 100
+    shuffle: True
+    seed: 20222023
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
