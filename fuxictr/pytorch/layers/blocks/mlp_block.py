@@ -29,7 +29,6 @@ class MLP_Block(nn.Module):
                  output_activation=None, 
                  dropout_rates=0.0,
                  batch_norm=False, 
-                 layer_norm=False,
                  norm_before_activation=True,
                  use_bias=True):
         super(MLP_Block, self).__init__()
@@ -45,15 +44,11 @@ class MLP_Block(nn.Module):
             if norm_before_activation:
                 if batch_norm:
                     dense_layers.append(nn.BatchNorm1d(hidden_units[idx + 1]))
-                elif layer_norm:
-                    dense_layers.append(nn.LayerNorm(hidden_units[idx + 1]))
             if hidden_activations[idx]:
                 dense_layers.append(hidden_activations[idx])
             if not norm_before_activation:
                 if batch_norm:
                     dense_layers.append(nn.BatchNorm1d(hidden_units[idx + 1]))
-                elif layer_norm:
-                    dense_layers.append(nn.LayerNorm(hidden_units[idx + 1]))
             if dropout_rates[idx] > 0:
                 dense_layers.append(nn.Dropout(p=dropout_rates[idx]))
         if output_dim is not None:

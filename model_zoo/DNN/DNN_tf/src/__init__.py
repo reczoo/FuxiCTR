@@ -1,1 +1,1 @@
-from fuxictr.tensorflow.models import DNN
+from .DNN import DNN

@@ -1,4 +1,4 @@
-from fuxictr.pytorch.models import DNN
+from .DNN import DNN
 
 
 
