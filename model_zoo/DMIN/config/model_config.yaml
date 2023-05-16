@@ -40,6 +40,7 @@ DMIN_test:
     use_pos_emb: True
     pos_emb_dim: 2
     batch_norm: False
+    layer_norm: True
     epochs: 1
     shuffle: True
     seed: 20222023
@@ -74,6 +75,7 @@ DMIN_default: # This is a config template
     use_pos_emb: True
     pos_emb_dim: 2
     batch_norm: False
+    layer_norm: True
     epochs: 100
     shuffle: True
     seed: 20222023

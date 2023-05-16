@@ -51,6 +51,7 @@ class DMIN(BaseModel):
                  pos_emb_dim=2,
                  aux_loss_lambda=0,
                  batch_norm=True,
+                 layer_norm=True,
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
@@ -81,12 +82,14 @@ class DMIN(BaseModel):
                                                      ffn_dim=model_dim * 2, 
                                                      num_heads=num_heads,
                                                      attn_dropout=attention_dropout,
-                                                     net_dropout=net_dropout)
+                                                     net_dropout=net_dropout,
+                                                     layer_norm=layer_norm)
         self.multi_interest_extractor = MultiInterestExtractorLayer(model_dim,
                                                                     ffn_dim=model_dim * 2, 
                                                                     num_heads=num_heads,
                                                                     attn_dropout=attention_dropout,
                                                                     net_dropout=net_dropout,
+                                                                    layer_norm=layer_norm,
                                                                     attn_hidden_units=attention_hidden_units,
                                                                     attn_activation=attention_activation,
                                                                     use_pos_emb=use_pos_emb,
