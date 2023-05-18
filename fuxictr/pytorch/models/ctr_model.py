@@ -99,10 +99,11 @@ class BaseModel(nn.Module):
                     m.bias.data.fill_(0)
         def reset_custom_params(m):
             # initialize layers with customized reset_parameters
-            pass
+            if hasattr(m, 'reset_custom_params'):
+                m.reset_custom_params()
         self.apply(reset_default_params)
         self.apply(reset_custom_params)
-        
+
     def get_inputs(self, inputs, feature_source=None):
         if feature_source and type(feature_source) == str:
             feature_source = [feature_source]

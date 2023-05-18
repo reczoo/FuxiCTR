@@ -32,7 +32,7 @@ class FINAL(BaseModel):
                  embedding_dim=10,
                  block_type="2B",
                  batch_norm=True,
-                 use_field_gate=True,
+                 use_field_gate=False,
                  block1_hidden_units=[64, 64, 64],
                  block1_hidden_activations=None,
                  block1_dropout=0,
@@ -54,7 +54,7 @@ class FINAL(BaseModel):
         num_fields = feature_map.num_fields
         self.use_field_gate = use_field_gate
         if use_field_gate:
-            self.field_gate = FieldGate(num_fields)
+            self.field_gate = FinalGate(num_fields, gate_residual="concat")
             gate_out_dim = embedding_dim * num_fields * 2
         self.block_type = block_type
         self.block1 = FinalBlock(input_dim=gate_out_dim if use_field_gate \
@@ -76,20 +76,6 @@ class FINAL(BaseModel):
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
         self.reset_parameters()
         self.model_to_device()
-
-    def reset_parameters(self):
-        def reset_default_params(m):
-            # initialize nn.Linear/nn.Conv1d layers by default
-            if type(m) in [nn.Linear, nn.Conv1d]:
-                nn.init.xavier_normal_(m.weight)
-                if m.bias is not None:
-                    m.bias.data.fill_(0)
-        def reset_custom_params(m):
-            # check if the module has reset_parameters
-            if hasattr(m, 'reset_custom_params'):
-                m.reset_custom_params()
-        self.apply(reset_default_params)
-        self.apply(reset_custom_params)
             
     def forward(self, inputs):
         X = self.get_inputs(inputs)
@@ -130,18 +116,23 @@ class FINAL(BaseModel):
         return loss
 
 
-class FieldGate(nn.Module):
-    def __init__(self, num_fields):
-        super(FieldGate, self).__init__()
-        self.proj_field = nn.Linear(num_fields, num_fields)
+class FinalGate(nn.Module):
+    def __init__(self, num_fields, gate_residual="concat"):
+        super(FinalGate, self).__init__()
+        self.linear = nn.Linear(num_fields, num_fields)
+        assert gate_residual in ["concat", "sum"]
+        self.gate_residual = gate_residual
 
     def reset_custom_params(self):
-        nn.init.zeros_(self.proj_field.weight)
-        nn.init.ones_(self.proj_field.bias)
+        nn.init.zeros_(self.linear.weight)
+        nn.init.ones_(self.linear.bias)
 
     def forward(self, feature_emb):
-        gates = self.proj_field(feature_emb.transpose(1, 2)).transpose(1, 2)
-        out = torch.cat([feature_emb, feature_emb * gates], dim=1) # b x 2f x d
+        gates = self.linear(feature_emb.transpose(1, 2)).transpose(1, 2)
+        if gate_residual == "concat":
+            out = torch.cat([feature_emb, feature_emb * gates], dim=1) # b x 2f x d
+        else:
+            out = feature_emb + feature_emb * gates
         return out
 
 
@@ -160,8 +151,8 @@ class FinalBlock(nn.Module):
         self.activation = nn.ModuleList()
         hidden_units = [input_dim] + hidden_units
         for idx in range(len(hidden_units) - 1):
-            self.layer.append(FactorizedInteraction(hidden_units[idx], hidden_units[idx + 1],
-                                                    residual_type=residual_type))
+            self.layer.append(FinalLinear(hidden_units[idx], hidden_units[idx + 1],
+                                          residual_type=residual_type))
             if batch_norm:
                 self.norm.append(nn.BatchNorm1d(hidden_units[idx + 1]))
             if dropout_rates[idx] > 0:
@@ -181,26 +172,23 @@ class FinalBlock(nn.Module):
         return X_i
 
 
-class FactorizedInteraction(nn.Module):
-    def __init__(self, input_dim, output_dim, bias=True, residual_type="sum", activation=None):
+class FinalLinear(nn.Module):
+    def __init__(self, input_dim, output_dim, bias=True, residual_type="sum"):
         """ A replacement of nn.Linear to enhance multiplicative feature interactions. 
             `residual_type="concat"` uses the same number of parameters as nn.Linear 
             while `residual_type="sum"` doubles the number of parameters. 
         """
-        super(FactorizedInteraction, self).__init__()
+        super(FinalLinear, self).__init__()
         self.residual_type = residual_type
         if residual_type == "sum":
             output_dim = output_dim * 2
         else:
             assert output_dim % 2 == 0, "output_dim should be divisible by 2."
         self.linear = nn.Linear(input_dim, output_dim, bias=bias)
-        self.activation = get_activation(activation)
 
     def forward(self, x):
         h = self.linear(x)
         h2, h1 = torch.chunk(h, chunks=2, dim=-1)
-        if self.activation != None:
-            h1 = self.activation(h1)
         if self.residual_type == "concat":
             h = torch.cat([h2, h1 * h2], dim=-1)
         elif self.residual_type == "sum":
