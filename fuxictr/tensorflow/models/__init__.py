@@ -1,1 +1,1 @@
-from .ctr_model import BaseModel
+from .rank_model import BaseModel

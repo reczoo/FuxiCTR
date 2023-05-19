@@ -38,19 +38,21 @@ class DMIN(BaseModel):
                  dnn_hidden_units=[512, 128, 64],
                  dnn_activations="Dice",
                  aux_hidden_units=[100, 50],
-                 aux_activation="Sigmoid",
+                 aux_activation="ReLU",
                  net_dropout=0,
                  target_field=("item_id", "cate_id"),
                  sequence_field=("click_history", "cate_history"),
                  neg_seq_field=("neg_click_history", "neg_cate_history"),
                  num_heads=4,
+                 enable_sum_pooling=False,
                  attention_hidden_units=[80, 40],
-                 attention_activation="Sigmoid",
+                 attention_activation="ReLU",
                  attention_dropout=0,
                  use_pos_emb=True,
-                 pos_emb_dim=2,
+                 pos_emb_dim=8,
                  aux_loss_lambda=0,
                  batch_norm=True,
+                 bn_only_once=False,
                  layer_norm=True,
                  embedding_regularizer=None,
                  net_regularizer=None,
@@ -61,59 +63,74 @@ class DMIN(BaseModel):
                                    embedding_regularizer=embedding_regularizer, 
                                    net_regularizer=net_regularizer,
                                    **kwargs)
-        for x in [target_field, sequence_field, neg_seq_field]:
-            if x != None and type(x) not in [str, tuple]:
-                raise ValueError("{} should be either str or tuple.".format(x))
+        if target_field and not isinstance(target_field, list):
+            target_field = [target_field]
         self.target_field = target_field
+        if sequence_field and not isinstance(sequence_field, list):
+            sequence_field = [sequence_field]
         self.sequence_field = sequence_field
-        self.aux_loss_lambda = aux_loss_lambda
+        if neg_seq_field and not isinstance(neg_seq_field, list):
+            neg_seq_field = [neg_seq_field]
         self.neg_seq_field = neg_seq_field
+        assert len(target_field) == len(sequence_field)
+        if neg_seq_field:
+            assert len(neg_seq_field) == len(sequence_field)
+        self.aux_loss_lambda = aux_loss_lambda
         self.feature_map = feature_map
         self.embedding_dim = embedding_dim
         self.num_heads = num_heads
+        self.enable_sum_pooling = enable_sum_pooling
         self.embedding_layer = FeatureEmbeddingDict(feature_map, embedding_dim)
         self.sum_pooling = MaskedSumPooling()
-        model_dim = embedding_dim * len(self.target_field) if type(self.target_field) == tuple \
-                    else embedding_dim
-        max_seq_len = feature_map.features[self.sequence_field[0]]["max_len"] \
-                      if type(self.target_field) == tuple else \
-                      feature_map.features[self.sequence_field]["max_len"]
-        self.behavior_refiner = BehaviorRefinerLayer(model_dim, 
-                                                     ffn_dim=model_dim * 2, 
-                                                     num_heads=num_heads,
-                                                     attn_dropout=attention_dropout,
-                                                     net_dropout=net_dropout,
-                                                     layer_norm=layer_norm)
-        self.multi_interest_extractor = MultiInterestExtractorLayer(model_dim,
-                                                                    ffn_dim=model_dim * 2, 
-                                                                    num_heads=num_heads,
-                                                                    attn_dropout=attention_dropout,
-                                                                    net_dropout=net_dropout,
-                                                                    layer_norm=layer_norm,
-                                                                    attn_hidden_units=attention_hidden_units,
-                                                                    attn_activation=attention_activation,
-                                                                    use_pos_emb=use_pos_emb,
-                                                                    pos_emb_dim=pos_emb_dim,
-                                                                    max_seq_len=max_seq_len)
-        feature_dim = feature_map.sum_emb_out_dim() + model_dim * (num_heads + 1)
+        self.behavior_refiner = nn.ModuleList()
+        self.multi_interest_extractor = nn.ModuleList()
+        self.aux_net = nn.ModuleList()
+        self.model_dims = []
+        feature_dim = feature_map.sum_emb_out_dim()
+        for i in range(len(self.target_field)):
+            model_dim = embedding_dim * len(list(flatten([self.target_field[i]])))
+            max_seq_len = feature_map.features[list(flatten([self.sequence_field[i]]))[0]]["max_len"]
+            feature_dim += model_dim * (num_heads - 1)
+            if self.enable_sum_pooling:
+                feature_dim += model_dim * 2
+            self.behavior_refiner.append(BehaviorRefinerLayer(model_dim, 
+                                                              ffn_dim=model_dim * 2, 
+                                                              num_heads=num_heads,
+                                                              attn_dropout=attention_dropout,
+                                                              net_dropout=net_dropout,
+                                                              layer_norm=layer_norm))
+            self.multi_interest_extractor.append(
+                MultiInterestExtractorLayer(model_dim,
+                                            ffn_dim=model_dim * 2, 
+                                            num_heads=num_heads,
+                                            attn_dropout=attention_dropout,
+                                            net_dropout=net_dropout,
+                                            layer_norm=layer_norm,
+                                            attn_hidden_units=attention_hidden_units,
+                                            attn_activation=attention_activation,
+                                            use_pos_emb=use_pos_emb,
+                                            pos_emb_dim=pos_emb_dim,
+                                            max_seq_len=max_seq_len))
+            if self.aux_loss_lambda > 0:
+                self.model_dims.append(model_dim)
+                self.aux_net.append(MLP_Block(input_dim=model_dim * 2,
+                                              output_dim=1,
+                                              hidden_units=aux_hidden_units,
+                                              hidden_activations=aux_activation,
+                                              output_activation="Sigmoid",
+                                              dropout_rates=net_dropout,
+                                              batch_norm=batch_norm,
+                                              bn_only_once=bn_only_once))
         if self.neg_seq_field is not None:
-            feature_dim -= embedding_dim * len(list(flatten([self.neg_seq_field])))
-        self.dnn = nn.Sequential(nn.BatchNorm1d(feature_dim) if batch_norm else nn.Identity(),
-                                 MLP_Block(input_dim=feature_dim,
-                                           output_dim=1,
-                                           hidden_units=dnn_hidden_units,
-                                           hidden_activations=dnn_activations,
-                                           output_activation=self.output_activation,
-                                           dropout_rates=net_dropout))
-        if self.aux_loss_lambda > 0:
-            self.model_dim = model_dim
-            self.aux_net = nn.Sequential(nn.BatchNorm1d(model_dim * 2) if batch_norm else nn.Identity(),
-                                         MLP_Block(input_dim=model_dim * 2,
-                                                   output_dim=1,
-                                                   hidden_units=aux_hidden_units,
-                                                   hidden_activations=aux_activation,
-                                                   output_activation="sigmoid",
-                                                   dropout_rates=net_dropout))
+            feature_dim -= embedding_dim * len(set(flatten([self.neg_seq_field])))
+        self.dnn = MLP_Block(input_dim=feature_dim,
+                             output_dim=1,
+                             hidden_units=dnn_hidden_units,
+                             hidden_activations=dnn_activations,
+                             output_activation=self.output_activation,
+                             dropout_rates=net_dropout,
+                             batch_norm=batch_norm,
+                             bn_only_once=bn_only_once)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
@@ -121,23 +138,35 @@ class DMIN(BaseModel):
     def forward(self, inputs):
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
-        target_emb = self.get_embedding(self.target_field, feature_emb_dict)
-        sequence_emb = self.get_embedding(self.sequence_field, feature_emb_dict)
-        sum_pool_emb = self.sum_pooling(sequence_emb)
-        neg_emb = self.get_embedding(self.neg_seq_field, feature_emb_dict) \
-                  if self.aux_loss_lambda > 0 else None
-        seq_field = list(flatten([self.sequence_field]))[0] # pick the first sequence field
-        pad_mask, attn_mask = self.get_mask(X[seq_field])
-        refined_sequence = self.behavior_refiner(sequence_emb, attn_mask=attn_mask)
-        interests = self.multi_interest_extractor(refined_sequence, target_emb, 
-                                                  attn_mask=attn_mask, pad_mask=pad_mask)
-        concat_emb = [sum_pool_emb, target_emb * sum_pool_emb] + interests
+        concat_emb = []
+        refined_sequence_list = []
+        sequence_emb_list = []
+        neg_emb_list = []
+        pad_mask_list = []
+        for i in range(len(self.target_field)):
+            target_emb = self.get_embedding(self.target_field[i], feature_emb_dict)
+            sequence_emb = self.get_embedding(self.sequence_field[i], feature_emb_dict)
+            neg_emb = self.get_embedding(self.neg_seq_field[i], feature_emb_dict) \
+                      if self.aux_loss_lambda > 0 else None
+            seq_field = list(flatten([self.sequence_field[i]]))[0] # pick the first sequence field
+            pad_mask, attn_mask = self.get_mask(X[seq_field])
+            refined_sequence = self.behavior_refiner[i](sequence_emb, attn_mask=attn_mask)
+            interests = self.multi_interest_extractor[i](refined_sequence, target_emb, 
+                                                         attn_mask=attn_mask, pad_mask=pad_mask)
+            concat_emb += interests
+            if self.enable_sum_pooling: # sum pooling of behavior sequence is used in the paper code
+                sum_pool_emb = self.sum_pooling(sequence_emb)
+                concat_emb += [sum_pool_emb, target_emb * sum_pool_emb]
+            refined_sequence_list.append(refined_sequence)
+            sequence_emb_list.append(sequence_emb)
+            neg_emb_list.append(neg_emb)
+            pad_mask_list.append(pad_mask)
         for feature, emb in feature_emb_dict.items():
             if emb.ndim == 2 and (feature not in flatten([self.neg_seq_field])):
                 concat_emb.append(emb)
         y_pred = self.dnn(torch.cat(concat_emb, dim=-1))
-        return_dict = {"y_pred": y_pred, "head_emb": refined_sequence, "pos_emb": sequence_emb,
-                       "neg_emb": neg_emb, "pad_mask": pad_mask}
+        return_dict = {"y_pred": y_pred, "head_emb": refined_sequence_list, "pos_emb": sequence_emb_list,
+                       "neg_emb": neg_emb_list, "pad_mask": pad_mask_list}
         return return_dict
 
     def get_mask(self, x):
@@ -159,22 +188,23 @@ class DMIN(BaseModel):
         return_dict = self.forward(inputs)
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.aux_loss_lambda > 0:
-            # padding post required
-            head_emb, pos_emb, neg_emb, pad_mask = return_dict["head_emb"], \
-                                                   return_dict["pos_emb"], \
-                                                   return_dict["neg_emb"], \
-                                                   return_dict["pad_mask"]
-            pos_prob = self.aux_net(torch.cat([head_emb[:, :-1, :], pos_emb[:, 1:, :]], 
-                                    dim=-1).view(-1, self.model_dim * 2))
-            neg_prob = self.aux_net(torch.cat([head_emb[:, :-1, :], neg_emb[:, 1:, :]], 
-                                    dim=-1).view(-1, self.model_dim * 2))
-            aux_prob = torch.cat([pos_prob, neg_prob], dim=0).view(-1, 1)
-            aux_label = torch.cat([torch.ones_like(pos_prob, device=aux_prob.device),
-                                   torch.zeros_like(neg_prob, device=aux_prob.device)], dim=0).view(-1, 1)
-            aux_loss = F.binary_cross_entropy(aux_prob, aux_label, reduction='none')
-            pad_mask = pad_mask[:, 1:].view(-1, 1)
-            aux_loss = torch.sum(aux_loss * pad_mask, dim=-1) / (torch.sum(pad_mask, dim=-1) + 1.e-9)
-            loss += self.aux_loss_lambda * aux_loss
+            for i in range(len(self.target_field)):
+                # padding post required
+                head_emb, pos_emb, neg_emb, pad_mask = return_dict["head_emb"][i], \
+                                                       return_dict["pos_emb"][i], \
+                                                       return_dict["neg_emb"][i], \
+                                                       return_dict["pad_mask"][i]
+                pos_prob = self.aux_net[i](torch.cat([head_emb[:, :-1, :], pos_emb[:, 1:, :]], 
+                                           dim=-1).view(-1, self.model_dim * 2))
+                neg_prob = self.aux_net[i](torch.cat([head_emb[:, :-1, :], neg_emb[:, 1:, :]], 
+                                           dim=-1).view(-1, self.model_dim * 2))
+                aux_prob = torch.cat([pos_prob, neg_prob], dim=0).view(-1, 1)
+                aux_label = torch.cat([torch.ones_like(pos_prob, device=aux_prob.device),
+                                       torch.zeros_like(neg_prob, device=aux_prob.device)], dim=0).view(-1, 1)
+                aux_loss = F.binary_cross_entropy(aux_prob, aux_label, reduction='none')
+                pad_mask = pad_mask[:, 1:].view(-1, 1)
+                aux_loss = torch.sum(aux_loss * pad_mask, dim=-1) / (torch.sum(pad_mask, dim=-1) + 1.e-9)
+                loss += self.aux_loss_lambda * aux_loss
         return loss
 
     def get_embedding(self, field, feature_emb_dict):
@@ -216,8 +246,8 @@ class BehaviorRefinerLayer(nn.Module):
 
 class MultiInterestExtractorLayer(nn.Module):
     def __init__(self, model_dim=64, ffn_dim=64, num_heads=4, attn_dropout=0.0, net_dropout=0.0,
-                 layer_norm=True, use_residual=True, attn_hidden_units=[80, 40], attn_activation="Sigmoid",
-                 use_pos_emb=True, pos_emb_dim=2, max_seq_len=10):
+                 layer_norm=True, use_residual=True, attn_hidden_units=[80, 40], attn_activation="ReLU",
+                 use_pos_emb=True, pos_emb_dim=8, max_seq_len=10):
         super(MultiInterestExtractorLayer, self).__init__()
         assert model_dim % num_heads == 0, \
                "model_dim={} is not divisible by num_heads={}".format(model_dim, num_heads)
@@ -280,10 +310,10 @@ class TargetAttention(nn.Module):
     def __init__(self, 
                  model_dim=64,
                  attention_hidden_units=[80, 40], 
-                 attention_activation="Sigmoid",
+                 attention_activation="ReLU",
                  attention_dropout=0,
                  use_pos_emb=True,
-                 pos_emb_dim=2,
+                 pos_emb_dim=8,
                  max_seq_len=10):
         super(TargetAttention, self).__init__()
         self.model_dim = model_dim

@@ -39,15 +39,17 @@ class DMR(BaseModel):
                  dnn_activations="PReLU",
                  net_dropout=0,
                  batch_norm=True,
+                 bn_only_once=False,
                  target_field=("item_id", "cate_id"),
                  sequence_field=("click_history", "cate_history"),
                  neg_seq_field=("neg_click_history", "neg_cate_history"),
                  context_field="btag",
+                 enable_sum_pooling=False,
                  attention_hidden_units=[80, 40],
-                 attention_activation="Sigmoid",
+                 attention_activation="ReLU",
                  attention_dropout=0,
                  use_pos_emb=True,
-                 pos_emb_dim=2,
+                 pos_emb_dim=8,
                  aux_loss_beta=0,
                  embedding_regularizer=None,
                  net_regularizer=None,
@@ -58,66 +60,80 @@ class DMR(BaseModel):
                                   embedding_regularizer=embedding_regularizer, 
                                   net_regularizer=net_regularizer,
                                   **kwargs)
-        for x in [target_field, sequence_field, neg_seq_field, context_field]:
-            if x != None and type(x) not in [str, tuple]:
-                raise ValueError("{} should be either str or tuple.".format(x))
+        if target_field and not isinstance(target_field, list):
+            target_field = [target_field]
         self.target_field = target_field
+        if sequence_field and not isinstance(sequence_field, list):
+            sequence_field = [sequence_field]
         self.sequence_field = sequence_field
-        self.aux_loss_beta = aux_loss_beta
+        if neg_seq_field and not isinstance(neg_seq_field, list):
+            neg_seq_field = [neg_seq_field]
         self.neg_seq_field = neg_seq_field
+        if context_field and not isinstance(context_field, list):
+            context_field = [context_field]
         self.context_field = context_field
+        assert len(target_field) == len(sequence_field)
+        if neg_seq_field:
+            assert len(neg_seq_field) == len(sequence_field)
+        if context_field:
+            assert len(context_field) == len(sequence_field)
+        self.aux_loss_beta = aux_loss_beta
+        self.enable_sum_pooling = enable_sum_pooling
         self.feature_map = feature_map
         self.embedding_dim = embedding_dim
-        self.embedding_layer = FeatureEmbeddingDict(
-            feature_map, embedding_dim,
+        self.embedding_layer = FeatureEmbeddingDict(feature_map, embedding_dim,
             not_required_feature_columns=flatten([self.neg_seq_field]) if self.neg_seq_field else None)
         self.sum_pooling = MaskedSumPooling()
-        self.output_emb_layer2 = nn.ModuleDict()
+        self.output_emb_layer = nn.ModuleDict() # output vocab embedding
         for feature in flatten([self.target_field]):
             feature_spec = feature_map.features[feature]
-            self.output_emb_layer2[feature] = nn.Embedding(feature_spec["vocab_size"], 
-                                                           embedding_dim, 
-                                                           padding_idx=feature_spec["padding_idx"])
+            self.output_emb_layer[feature] = nn.Embedding(feature_spec["vocab_size"], 
+                                                          embedding_dim, 
+                                                          padding_idx=feature_spec["padding_idx"])
         if self.context_field is not None:
-            context_dim = embedding_dim * len(list(flatten([self.context_field])))
-            self.context_emb_layer2 = nn.ModuleDict()
+            self.context_emb_layer = nn.ModuleDict() # context field embedding
             for feature in flatten([self.context_field]):
                 feature_spec = feature_map.features[feature]
-                self.context_emb_layer2[feature] = nn.Embedding(feature_spec["vocab_size"], 
-                                                                embedding_dim, 
-                                                                padding_idx=feature_spec["padding_idx"])
-        else:
-            context_dim = 0
-        model_dim = embedding_dim * len(list(flatten([self.target_field])))
-        max_seq_len = feature_map.features[self.sequence_field[0]]["max_len"] \
-                      if type(self.target_field) == tuple else \
-                      feature_map.features[self.sequence_field]["max_len"]
-        self.u2i_net = User2ItemNet(context_dim, 
-                                    model_dim, 
-                                    attention_hidden_units=attention_hidden_units, 
-                                    attention_activation="Sigmoid", 
-                                    attention_dropout=attention_dropout, 
-                                    pos_emb_dim=pos_emb_dim, 
-                                    max_seq_len=max_seq_len)
-        self.i2i_net = Item2ItemNet(context_dim, model_dim, 
-                                    attention_hidden_units=attention_hidden_units, 
-                                    attention_activation=attention_activation,
-                                    attention_dropout=attention_dropout, 
-                                    use_pos_emb=use_pos_emb,
-                                    pos_emb_dim=pos_emb_dim, 
-                                    max_seq_len=max_seq_len)
-        feature_dim = feature_map.sum_emb_out_dim() + model_dim * 2 + 2
+                self.context_emb_layer[feature] = nn.Embedding(feature_spec["vocab_size"], 
+                                                               embedding_dim, 
+                                                               padding_idx=feature_spec["padding_idx"])
+        self.u2i_net = nn.ModuleList()
+        self.i2i_net = nn.ModuleList()
+        feature_dim = feature_map.sum_emb_out_dim()
+        for i in range(len(self.target_field)):
+            model_dim = embedding_dim * len(list(flatten([self.target_field[i]])))
+            max_seq_len = feature_map.features[list(flatten([self.sequence_field[i]]))[0]]["max_len"]
+            feature_dim += 2
+            if self.enable_sum_pooling:
+                feature_dim += model_dim * 2
+            if self.context_field:
+                context_dim = embedding_dim * len(list(flatten([self.context_field[i]])))
+            else:
+                context_dim = 0
+            self.u2i_net.append(User2ItemNet(context_dim,
+                                             model_dim,
+                                             attention_hidden_units=attention_hidden_units, 
+                                             attention_activation=attention_activation, 
+                                             attention_dropout=attention_dropout, 
+                                             pos_emb_dim=pos_emb_dim, 
+                                             max_seq_len=max_seq_len))
+            self.i2i_net.append(Item2ItemNet(context_dim, model_dim, 
+                                             attention_hidden_units=attention_hidden_units, 
+                                             attention_activation=attention_activation,
+                                             attention_dropout=attention_dropout, 
+                                             use_pos_emb=use_pos_emb,
+                                             pos_emb_dim=pos_emb_dim, 
+                                             max_seq_len=max_seq_len))
         if self.neg_seq_field is not None:
-            feature_dim -= embedding_dim * len(list(flatten([self.neg_seq_field])))
-        self.dnn = nn.Sequential(nn.BatchNorm1d(feature_dim) if batch_norm else nn.Identity(),
-                                 MLP_Block(input_dim=feature_dim,
-                                           output_dim=1,
-                                           hidden_units=dnn_hidden_units,
-                                           hidden_activations=dnn_activations,
-                                           output_activation=self.output_activation,
-                                           dropout_rates=net_dropout))
-        if self.aux_loss_beta > 0:
-            self.model_dim = model_dim
+            feature_dim -= embedding_dim * len(set(flatten([self.neg_seq_field])))
+        self.dnn = MLP_Block(input_dim=feature_dim,
+                             output_dim=1,
+                             hidden_units=dnn_hidden_units,
+                             hidden_activations=dnn_activations,
+                             output_activation=self.output_activation,
+                             dropout_rates=net_dropout,
+                             batch_norm=batch_norm,
+                             bn_only_once=bn_only_once)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
@@ -125,28 +141,34 @@ class DMR(BaseModel):
     def forward(self, inputs):
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
-        target_emb = self.get_embedding(self.target_field, feature_emb_dict)
-        sequence_emb = self.get_embedding(self.sequence_field, feature_emb_dict)
-        sum_pool_emb = self.sum_pooling(sequence_emb)
-        seq_field = list(flatten([self.sequence_field]))[0] # pick the first sequence field
-        pad_mask = X[seq_field].long() > 0
-        # item2item network
-        context_emb = self.get_embedding(self.context_field, feature_emb_dict) \
-                      if self.context_field else None
-        attn_out, rel_i2i = self.i2i_net(target_emb, sequence_emb, context_emb, mask=pad_mask)
-        # user2item network
-        neg_emb = self.get_embedding2(self.neg_seq_field, self.target_field, X) \
-                  if self.aux_loss_beta > 0 else None
-        target_emb2 = self.get_embedding2(self.target_field, self.target_field, X)
-        sequence_emb2 = self.get_embedding2(self.sequence_field, self.target_field, X)
-        context_emb2 = self.get_embedding3(self.context_field, X) if self.context_field else None
-        rel_u2i, aux_loss = self.u2i_net(target_emb2, sequence_emb, context_emb2, sequence_emb2, neg_emb, mask=pad_mask)
-        concat_emb = [sum_pool_emb, target_emb * sum_pool_emb, rel_u2i, rel_i2i, attn_out]
+        concat_emb = []
+        aux_loss_sum = 0
+        for i in range(len(self.target_field)):
+            target_emb = self.get_embedding(self.target_field[i], feature_emb_dict)
+            sequence_emb = self.get_embedding(self.sequence_field[i], feature_emb_dict)
+            seq_field = list(flatten([self.sequence_field[i]]))[0] # pick the first sequence field
+            pad_mask = X[seq_field].long() > 0
+            # item2item network
+            context_emb = self.get_embedding(self.context_field[i], feature_emb_dict) \
+                          if self.context_field else None
+            attn_out, rel_i2i = self.i2i_net[i](target_emb, sequence_emb, context_emb, mask=pad_mask)
+            # user2item network
+            neg_emb = self.get_out_embedding(self.neg_seq_field[i], self.target_field[i], X) \
+                      if self.aux_loss_beta > 0 else None
+            target_emb2 = self.get_out_embedding(self.target_field[i], self.target_field[i], X)
+            sequence_emb2 = self.get_out_embedding(self.sequence_field[i], self.target_field[i], X)
+            context_emb2 = self.get_context_embedding(self.context_field[i], X) if self.context_field else None
+            rel_u2i, aux_loss = self.u2i_net[i](target_emb2, sequence_emb, context_emb2, sequence_emb2, neg_emb, mask=pad_mask)
+            aux_loss_sum += aux_loss
+            concat_emb += [rel_u2i, rel_i2i, attn_out]
+            if self.enable_sum_pooling: # sum pooling of behavior sequence is used in the paper code
+                sum_pool_emb = self.sum_pooling(sequence_emb)
+                concat_emb += [sum_pool_emb, target_emb * sum_pool_emb]
         for feature, emb in feature_emb_dict.items():
-            if emb.ndim == 2 and (feature not in flatten([self.neg_seq_field])):
+            if emb.ndim == 2 and (feature not in set(flatten([self.neg_seq_field]))):
                 concat_emb.append(emb)
         y_pred = self.dnn(torch.cat(concat_emb, dim=-1))
-        return_dict = {"y_pred": y_pred, "aux_loss": aux_loss}
+        return_dict = {"y_pred": y_pred, "aux_loss": aux_loss_sum}
         return return_dict
 
     def add_loss(self, inputs):
@@ -165,24 +187,24 @@ class DMR(BaseModel):
         else:
             return feature_emb_dict[field]
 
-    def get_embedding2(self, field, target_field, X):
+    def get_out_embedding(self, field, target_field, X):
         emb_list = []
         for input_name, emb_name in zip(flatten([field]), flatten([target_field])):
-            emb = self.output_emb_layer2[emb_name](X[input_name].long())
+            emb = self.output_emb_layer[emb_name](X[input_name].long())
             emb_list.append(emb)
         return torch.cat(emb_list, dim=-1)
 
-    def get_embedding3(self, field, X):
+    def get_context_embedding(self, field, X):
         emb_list = []
         for feature in zip(flatten([field])):
-            emb = self.context_emb_layer2[feature](X[feature].long())
+            emb = self.context_emb_layer[feature](X[feature].long())
             emb_list.append(emb)
         return torch.cat(emb_list, dim=-1)
 
 
 class User2ItemNet(nn.Module):
     def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40], 
-                 attention_activation="Sigmoid", attention_dropout=0.0, pos_emb_dim=4, 
+                 attention_activation="ReLU", attention_dropout=0.0, pos_emb_dim=8, 
                  max_seq_len=50):
         super(User2ItemNet, self).__init__()
         self.model_dim = model_dim
@@ -242,8 +264,8 @@ class User2ItemNet(nn.Module):
 
 class Item2ItemNet(nn.Module):
     def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40], 
-                 attention_activation="Sigmoid", attention_dropout=0.0, use_pos_emb=True,
-                 pos_emb_dim=4, max_seq_len=50):
+                 attention_activation="ReLU", attention_dropout=0.0, use_pos_emb=True,
+                 pos_emb_dim=8, max_seq_len=50):
         super(Item2ItemNet, self).__init__()
         self.model_dim = model_dim
         self.use_pos_emb = use_pos_emb
@@ -272,7 +294,7 @@ class Item2ItemNet(nn.Module):
             context_emb = torch.cat([context_emb,
                                      self.pos_emb.unsqueeze(0).expand(context_emb.size(0), -1, -1)], 
                                      dim=-1)
-        query = self.W_q(context_emb.view(-1, self.context_dim)).view(-1, seq_len, self.model_dim)
+        query = self.W_q(context_emb.reshape(-1, self.context_dim)).view(-1, seq_len, self.model_dim)
         inp_concat = torch.cat([query, sequence_emb, query - sequence_emb, 
                                 query * sequence_emb], dim=-1)
         attn_score = self.attn_mlp(inp_concat.view(-1, 4 * self.model_dim))

@@ -33,11 +33,11 @@ DMR_test:
     neg_seq_field: null
     context_field: null
     attention_hidden_units: [80, 40]
-    attention_activation: "Sigmoid"
+    attention_activation: "ReLU"
     attention_dropout: 0
     aux_loss_beta: 0
     use_pos_emb: True
-    pos_emb_dim: 2
+    pos_emb_dim: 8
     epochs: 1
     shuffle: True
     seed: 20222023
@@ -65,11 +65,12 @@ DMR_default: # This is a config template
     neg_seq_field: null
     context_field: null
     attention_hidden_units: [80, 40]
-    attention_activation: "Sigmoid"
+    attention_activation: "ReLU"
     attention_dropout: 0
+    enable_sum_pooling: False
     aux_loss_beta: 0
     use_pos_emb: True
-    pos_emb_dim: 2
+    pos_emb_dim: 8
     epochs: 100
     shuffle: True
     seed: 20222023

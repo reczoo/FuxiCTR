@@ -49,7 +49,7 @@ def get_optimizer(optimizer, learning_rate=1.0e-3):
 def get_loss(loss):
     if isinstance(loss, str):
         if loss in ['bce', 'binary_crossentropy', 'binary_cross_entropy']:
-            loss = tf.keras.losses.BinaryCrossentropy()
+            loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
         else:
             raise ValueError('loss={} is not supported.'.format(loss))
     return loss

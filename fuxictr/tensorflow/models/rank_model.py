@@ -55,12 +55,13 @@ class BaseModel(Model):
         self.validation_metrics = kwargs["metrics"]
 
     def compile(self, optimizer, loss, lr):
-        super().compile(optimizer=get_optimizer(optimizer, lr), loss=get_loss(loss))
+        self.optimizer = get_optimizer(optimizer, lr)
+        self.loss_fn = get_loss(loss)
 
     def add_loss(self, inputs):
-        return_dict = self.call(inputs, training=True)
+        return_dict = self(inputs, training=True)
         y_true = self.get_labels(inputs)
-        loss = self.loss(return_dict["y_pred"], y_true)
+        loss = self.loss_fn(return_dict["y_pred"], y_true)
         return loss
     
     def get_total_loss(self, inputs):
@@ -80,8 +81,9 @@ class BaseModel(Model):
         return X_dict
 
     def get_labels(self, inputs):
+        """ assert len(labels) == 1, "Please override get_labels() when using multiple labels!"
+        """
         labels = self.feature_map.labels
-        assert len(labels) == 1, "Please override get_labels(), add_loss(), evaluate() when using multiple labels!"
         y = inputs[labels[0]]
         return y
 
@@ -115,6 +117,28 @@ class BaseModel(Model):
         logging.info("Training finished.")
         logging.info("Load best model: {}".format(self.checkpoint))
         self.load_weights(self.checkpoint)
+
+    def train_epoch(self, data_generator):
+        self._batch_index = 0
+        train_loss = 0
+        if self._verbose == 0:
+            batch_iterator = data_generator
+        else:
+            batch_iterator = tqdm(data_generator, disable=False, file=sys.stdout)
+        for batch_index, batch_data in enumerate(batch_iterator):
+            self._batch_index = batch_index
+            self._total_steps += 1
+            loss = self.train_step(batch_data)
+            train_loss += loss.numpy()
+            if (self._eval_steps is not None) and (self._total_steps % self._eval_steps == 0):
+                logging.info("Train loss: {:.6f}".format(train_loss / self._eval_steps))
+                train_loss = 0
+                self.eval_step()
+            if self._stop_training:
+                break
+        if self._eval_steps is None:
+            logging.info("Train loss: {:.6f}".format(train_loss / (self._batch_index + 1)))
+            self.eval_step()
 
     @tf.function
     def train_step(self, batch_data):
@@ -152,28 +176,6 @@ class BaseModel(Model):
         if not self._save_best_only:
             self.save_weights(self.checkpoint)
 
-    def train_epoch(self, data_generator):
-        self._batch_index = 0
-        train_loss = 0
-        if self._verbose == 0:
-            batch_iterator = data_generator
-        else:
-            batch_iterator = tqdm(data_generator, disable=False, file=sys.stdout)
-        for batch_index, batch_data in enumerate(batch_iterator):
-            self._batch_index = batch_index
-            self._total_steps += 1
-            loss = self.train_step(batch_data)
-            train_loss += loss.numpy()
-            if (self._eval_steps is not None) and (self._total_steps % self._eval_steps == 0):
-                logging.info("Train loss: {:.6f}".format(train_loss / self._eval_steps))
-                train_loss = 0
-                self.eval_step()
-            if self._stop_training:
-                break
-        if self._eval_steps is None:
-            logging.info("Train loss: {:.6f}".format(train_loss / (self._batch_index + 1)))
-            self.eval_step()
-
     def evaluate(self, data_generator, metrics=None):
         y_pred = []
         y_true = []
@@ -181,7 +183,7 @@ class BaseModel(Model):
         if self._verbose > 0:
             data_generator = tqdm(data_generator, disable=False, file=sys.stdout)
         for batch_data in data_generator:
-            return_dict = self.call(batch_data)
+            return_dict = self(batch_data, training=True)
             y_pred.extend(return_dict["y_pred"].numpy().reshape(-1))
             y_true.extend(self.get_labels(batch_data).numpy().reshape(-1))
             if self.feature_map.group_id is not None:
