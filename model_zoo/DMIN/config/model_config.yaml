@@ -33,6 +33,7 @@ DMIN_test:
     sequence_field: click_sequence
     neg_seq_field: null
     enable_sum_pooling: False
+    use_behavior_refiner: True
     num_heads: 2
     attention_hidden_units: [80, 40]
     attention_activation: "ReLU"
@@ -41,6 +42,7 @@ DMIN_test:
     use_pos_emb: True
     pos_emb_dim: 8
     batch_norm: False
+    bn_only_once: False
     layer_norm: True
     epochs: 1
     shuffle: True
@@ -69,6 +71,7 @@ DMIN_default: # This is a config template
     sequence_field: click_sequence
     neg_seq_field: null
     enable_sum_pooling: False
+    use_behavior_refiner: True
     num_heads: 4
     attention_hidden_units: [80, 40]
     attention_activation: "ReLU"
@@ -77,6 +80,7 @@ DMIN_default: # This is a config template
     use_pos_emb: True
     pos_emb_dim: 8
     batch_norm: False
+    bn_only_once: False
     layer_norm: True
     epochs: 100
     shuffle: True

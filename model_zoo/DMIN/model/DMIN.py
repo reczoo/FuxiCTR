@@ -50,6 +50,7 @@ class DMIN(BaseModel):
                  attention_dropout=0,
                  use_pos_emb=True,
                  pos_emb_dim=8,
+                 use_behavior_refiner=True,
                  aux_loss_lambda=0,
                  batch_norm=True,
                  bn_only_once=False,
@@ -82,7 +83,7 @@ class DMIN(BaseModel):
         self.enable_sum_pooling = enable_sum_pooling
         self.embedding_layer = FeatureEmbeddingDict(feature_map, embedding_dim)
         self.sum_pooling = MaskedSumPooling()
-        self.behavior_refiner = nn.ModuleList()
+        self.behavior_refiner = nn.ModuleList() if use_behavior_refiner else None
         self.multi_interest_extractor = nn.ModuleList()
         self.aux_net = nn.ModuleList()
         self.model_dims = []
@@ -93,12 +94,13 @@ class DMIN(BaseModel):
             feature_dim += model_dim * (num_heads - 1)
             if self.enable_sum_pooling:
                 feature_dim += model_dim * 2
-            self.behavior_refiner.append(BehaviorRefinerLayer(model_dim, 
-                                                              ffn_dim=model_dim * 2, 
-                                                              num_heads=num_heads,
-                                                              attn_dropout=attention_dropout,
-                                                              net_dropout=net_dropout,
-                                                              layer_norm=layer_norm))
+            if use_behavior_refiner:
+                self.behavior_refiner.append(BehaviorRefinerLayer(model_dim, 
+                                                                  ffn_dim=model_dim * 2, 
+                                                                  num_heads=num_heads,
+                                                                  attn_dropout=attention_dropout,
+                                                                  net_dropout=net_dropout,
+                                                                  layer_norm=layer_norm))
             self.multi_interest_extractor.append(
                 MultiInterestExtractorLayer(model_dim,
                                             ffn_dim=model_dim * 2, 
@@ -150,7 +152,10 @@ class DMIN(BaseModel):
                       if self.aux_loss_lambda > 0 else None
             seq_field = list(flatten([self.sequence_field[i]]))[0] # pick the first sequence field
             pad_mask, attn_mask = self.get_mask(X[seq_field])
-            refined_sequence = self.behavior_refiner[i](sequence_emb, attn_mask=attn_mask)
+            if self.behavior_refiner is not None:
+                refined_sequence = self.behavior_refiner[i](sequence_emb, attn_mask=attn_mask)
+            else:
+                refined_sequence = sequence_emb
             interests = self.multi_interest_extractor[i](refined_sequence, target_emb, 
                                                          attn_mask=attn_mask, pad_mask=pad_mask)
             concat_emb += interests
@@ -266,14 +271,14 @@ class MultiInterestExtractorLayer(nn.Module):
                                                 nn.ReLU(),
                                                 nn.Linear(ffn_dim, model_dim)) \
                                   for _ in range(num_heads)])
-        self.TargetAttention = nn.ModuleList([TargetAttention(model_dim,
-                                                              attention_hidden_units=attn_hidden_units,
-                                                              attention_activation=attn_activation,
-                                                              attention_dropout=attn_dropout,
-                                                              use_pos_emb=use_pos_emb,
-                                                              pos_emb_dim=pos_emb_dim,
-                                                              max_seq_len=max_seq_len) \
-                                            for _ in range(num_heads)])
+        self.target_attention = nn.ModuleList([TargetAttention(model_dim,
+                                                               attention_hidden_units=attn_hidden_units,
+                                                               attention_activation=attn_activation,
+                                                               attention_dropout=attn_dropout,
+                                                               use_pos_emb=use_pos_emb,
+                                                               pos_emb_dim=pos_emb_dim,
+                                                               max_seq_len=max_seq_len) \
+                                               for _ in range(num_heads)])
 
     def forward(self, sequence_emb, target_emb, attn_mask=None, pad_mask=None):
         # linear projection
@@ -301,7 +306,7 @@ class MultiInterestExtractorLayer(nn.Module):
             head_out = self.ffn[idx](s)
             if self.use_residual:
                 head_out += s
-            interest_emb = self.TargetAttention[idx](head_out, target_emb, mask=pad_mask)
+            interest_emb = self.target_attention[idx](head_out, target_emb, mask=pad_mask)
             interests.append(interest_emb)
         return interests
 
