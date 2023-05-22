@@ -28,6 +28,7 @@ DMR_test:
     dnn_activations: "PReLU"
     net_dropout: 0
     batch_norm: True
+    bn_only_once: False
     target_field: adgroup_id
     sequence_field: click_sequence
     neg_seq_field: null
@@ -35,6 +36,9 @@ DMR_test:
     attention_hidden_units: [80, 40]
     attention_activation: "ReLU"
     attention_dropout: 0
+    enable_sum_pooling: False
+    enable_u2i_rel: True
+    enable_i2i_rel: False
     aux_loss_beta: 0
     use_pos_emb: True
     pos_emb_dim: 8
@@ -60,6 +64,7 @@ DMR_default: # This is a config template
     dnn_activations: "PReLU"
     net_dropout: 0
     batch_norm: True
+    bn_only_once: False
     target_field: adgroup_id
     sequence_field: click_sequence
     neg_seq_field: null
@@ -68,6 +73,8 @@ DMR_default: # This is a config template
     attention_activation: "ReLU"
     attention_dropout: 0
     enable_sum_pooling: False
+    enable_u2i_rel: True
+    enable_i2i_rel: False
     aux_loss_beta: 0
     use_pos_emb: True
     pos_emb_dim: 8

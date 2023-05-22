@@ -13,8 +13,8 @@ from .DESTINE.src import DESTINE
 from .DIEN.src import DIEN
 from .DIN.src import DIN
 from .DLRM.src import DLRM
-from .DMIN.src import DMIN
-from .DMR.src import DMR
+from .DMIN.model import DMIN
+from .DMR.model import DMR
 from .DNN.DNN_torch.src import DNN
 from .DSSM.src import DSSM
 from .EDCN.src import EDCN

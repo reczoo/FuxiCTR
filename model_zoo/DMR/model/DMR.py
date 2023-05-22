@@ -36,7 +36,7 @@ class DMR(BaseModel):
                  learning_rate=1e-3,
                  embedding_dim=10,
                  dnn_hidden_units=[512, 128, 64],
-                 dnn_activations="PReLU",
+                 dnn_activations="ReLU",
                  net_dropout=0,
                  batch_norm=True,
                  bn_only_once=False,
@@ -45,6 +45,8 @@ class DMR(BaseModel):
                  neg_seq_field=("neg_click_history", "neg_cate_history"),
                  context_field="btag",
                  enable_sum_pooling=False,
+                 enable_u2i_rel=True,
+                 enable_i2i_rel=False,
                  attention_hidden_units=[80, 40],
                  attention_activation="ReLU",
                  attention_dropout=0,
@@ -95,28 +97,33 @@ class DMR(BaseModel):
             for feature in flatten([self.context_field]):
                 feature_spec = feature_map.features[feature]
                 self.context_emb_layer[feature] = nn.Embedding(feature_spec["vocab_size"], 
-                                                               embedding_dim, 
+                                                               embedding_dim,
                                                                padding_idx=feature_spec["padding_idx"])
+        self.enable_u2i_rel = enable_u2i_rel
+        self.enable_i2i_rel = enable_i2i_rel
         self.u2i_net = nn.ModuleList()
         self.i2i_net = nn.ModuleList()
         feature_dim = feature_map.sum_emb_out_dim()
         for i in range(len(self.target_field)):
             model_dim = embedding_dim * len(list(flatten([self.target_field[i]])))
             max_seq_len = feature_map.features[list(flatten([self.sequence_field[i]]))[0]]["max_len"]
-            feature_dim += 2
             if self.enable_sum_pooling:
                 feature_dim += model_dim * 2
             if self.context_field:
                 context_dim = embedding_dim * len(list(flatten([self.context_field[i]])))
             else:
                 context_dim = 0
-            self.u2i_net.append(User2ItemNet(context_dim,
-                                             model_dim,
-                                             attention_hidden_units=attention_hidden_units, 
-                                             attention_activation=attention_activation, 
-                                             attention_dropout=attention_dropout, 
-                                             pos_emb_dim=pos_emb_dim, 
-                                             max_seq_len=max_seq_len))
+            if enable_u2i_rel:
+                self.u2i_net.append(User2ItemNet(context_dim,
+                                                 model_dim,
+                                                 attention_hidden_units=attention_hidden_units, 
+                                                 attention_activation=attention_activation, 
+                                                 attention_dropout=attention_dropout, 
+                                                 pos_emb_dim=pos_emb_dim, 
+                                                 max_seq_len=max_seq_len))
+                feature_dim += 1
+            if enable_i2i_rel:
+                feature_dim += 1
             self.i2i_net.append(Item2ItemNet(context_dim, model_dim, 
                                              attention_hidden_units=attention_hidden_units, 
                                              attention_activation=attention_activation,
@@ -152,15 +159,20 @@ class DMR(BaseModel):
             context_emb = self.get_embedding(self.context_field[i], feature_emb_dict) \
                           if self.context_field else None
             attn_out, rel_i2i = self.i2i_net[i](target_emb, sequence_emb, context_emb, mask=pad_mask)
-            # user2item network
-            neg_emb = self.get_out_embedding(self.neg_seq_field[i], self.target_field[i], X) \
-                      if self.aux_loss_beta > 0 else None
-            target_emb2 = self.get_out_embedding(self.target_field[i], self.target_field[i], X)
-            sequence_emb2 = self.get_out_embedding(self.sequence_field[i], self.target_field[i], X)
-            context_emb2 = self.get_context_embedding(self.context_field[i], X) if self.context_field else None
-            rel_u2i, aux_loss = self.u2i_net[i](target_emb2, sequence_emb, context_emb2, sequence_emb2, neg_emb, mask=pad_mask)
-            aux_loss_sum += aux_loss
-            concat_emb += [rel_u2i, rel_i2i, attn_out]
+            concat_emb.append(attn_out)
+            if self.enable_i2i_rel:
+                concat_emb.append(rel_i2i)
+            if self.enable_u2i_rel:
+                # user2item network
+                neg_emb = self.get_out_embedding(self.neg_seq_field[i], self.target_field[i], X) \
+                          if self.aux_loss_beta > 0 else None
+                target_emb2 = self.get_out_embedding(self.target_field[i], self.target_field[i], X)
+                sequence_emb2 = self.get_out_embedding(self.sequence_field[i], self.target_field[i], X)
+                context_emb2 = self.get_context_embedding(self.context_field[i], X) if self.context_field else None
+                rel_u2i, aux_loss = self.u2i_net[i](target_emb2, sequence_emb, context_emb2, 
+                                                    sequence_emb2, neg_emb, mask=pad_mask)
+                aux_loss_sum += aux_loss
+                concat_emb.append(rel_u2i)
             if self.enable_sum_pooling: # sum pooling of behavior sequence is used in the paper code
                 sum_pool_emb = self.sum_pooling(sequence_emb)
                 concat_emb += [sum_pool_emb, target_emb * sum_pool_emb]
@@ -206,12 +218,14 @@ class User2ItemNet(nn.Module):
     def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40], 
                  attention_activation="ReLU", attention_dropout=0.0, pos_emb_dim=8, 
                  max_seq_len=50):
+        """ We follow the code from the authors for this implementation.
+        """
         super(User2ItemNet, self).__init__()
         self.model_dim = model_dim
         self.pos_emb = nn.Parameter(torch.zeros(max_seq_len, pos_emb_dim))
         self.context_dim = context_dim + pos_emb_dim
         self.W_q = nn.Sequential(nn.Linear(self.context_dim, model_dim),
-                                 nn.PReLU(model_dim, init=0.1))
+                                 nn.ReLU())
         self.attn_mlp = MLP_Block(input_dim=model_dim * 4,
                                   output_dim=1,
                                   hidden_units=attention_hidden_units,
@@ -220,7 +234,7 @@ class User2ItemNet(nn.Module):
                                   dropout_rates=attention_dropout,
                                   batch_norm=False)
         self.W_o = nn.Sequential(nn.Linear(model_dim, model_dim),
-                                 nn.PReLU(model_dim, init=0.1))
+                                 nn.ReLU())
 
     def forward(self, target_emb, sequence_emb, context_emb, sequence_emb2, neg_emb=None, mask=None):
         batch_size = target_emb.size(0)
@@ -274,12 +288,12 @@ class Item2ItemNet(nn.Module):
             context_dim += pos_emb_dim
         self.context_dim = context_dim + model_dim
         self.W_q = nn.Sequential(nn.Linear(self.context_dim, model_dim),
-                                 nn.PReLU(model_dim, init=0.1))
+                                 nn.ReLU())
         self.attn_mlp = MLP_Block(input_dim=model_dim * 4,
                                   output_dim=1,
                                   hidden_units=attention_hidden_units,
                                   hidden_activations=attention_activation,
-                                  output_activation=None, 
+                                  output_activation=None,
                                   dropout_rates=attention_dropout,
                                   batch_norm=False)
 
@@ -302,7 +316,7 @@ class Item2ItemNet(nn.Module):
         score_softmax = attn_score.masked_fill_(mask.float() == 0, -1.e9) # fill -inf if mask=0
         score_softmax = score_softmax.softmax(dim=-1)
         attn_out = (score_softmax.unsqueeze(-1) * sequence_emb).sum(dim=1)
-        scores_no_softmax = attn_score.masked_fill_(mask.float() == 0, 0.) # fill 0 if mask=0
+        scores_no_softmax = attn_score * mask.float() # fill 0 if mask=0
         rel_i2i = scores_no_softmax.sum(dim=1, keepdim=True)
         return attn_out, rel_i2i
 
