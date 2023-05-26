@@ -63,13 +63,7 @@ class BaseModel(nn.Module):
         self.optimizer = get_optimizer(optimizer, self.parameters(), lr)
         self.loss_fn = get_loss(loss)
 
-    def add_loss(self, inputs):
-        return_dict = self.forward(inputs)
-        y_true = self.get_labels(inputs)
-        loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
-        return loss
-
-    def add_regularization(self):
+    def regularization_loss(self):
         reg_term = 0
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = get_regularizer(self._embedding_regularizer)
@@ -86,9 +80,10 @@ class BaseModel(nn.Module):
                                 reg_term += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
         return reg_term
 
-    def get_total_loss(self, inputs):
-        total_loss = self.add_loss(inputs) + self.add_regularization()
-        return total_loss
+    def compute_loss(self, return_dict, y_true):
+        loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
+        loss += self.regularization_loss()
+        return loss
 
     def reset_parameters(self):
         def reset_default_params(m):
@@ -117,8 +112,9 @@ class BaseModel(nn.Module):
         return X_dict
 
     def get_labels(self, inputs):
+        """ Please override get_labels() when using multiple labels!
+        """
         labels = self.feature_map.labels
-        assert len(labels) == 1, "Please override get_labels(), add_loss(), evaluate() when using multiple labels!"
         y = inputs[:, self.feature_map.get_column_index(labels[0])].to(self.device)
         return y.float().view(-1, 1)
                 
@@ -191,7 +187,9 @@ class BaseModel(nn.Module):
 
     def train_step(self, batch_data):
         self.optimizer.zero_grad()
-        loss = self.get_total_loss(batch_data)
+        return_dict = self.forward(inputs)
+        y_true = self.get_labels(inputs)
+        loss = self.compute_loss(return_dict, y_true)
         loss.backward()
         nn.utils.clip_grad_norm_(self.parameters(), self._max_gradient_norm)
         self.optimizer.step()
