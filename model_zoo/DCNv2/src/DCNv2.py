@@ -84,18 +84,17 @@ class DCNv2(BaseModel):
 
     def forward(self, inputs):
         X = self.get_inputs(inputs)
-        feature_emb = self.embedding_layer(X, dynamic_emb_dim=True)
-        flat_feature_emb = feature_emb.flatten(start_dim=1)
-        cross_out = self.crossnet(flat_feature_emb)
+        feature_emb = self.embedding_layer(X, flatten_emb=True)
+        cross_out = self.crossnet(feature_emb)
         if self.model_structure == "crossnet_only":
             final_out = cross_out
         elif self.model_structure == "stacked":
             final_out = self.stacked_dnn(cross_out)
         elif self.model_structure == "parallel":
-            dnn_out = self.parallel_dnn(flat_feature_emb)
+            dnn_out = self.parallel_dnn(feature_emb)
             final_out = torch.cat([cross_out, dnn_out], dim=-1)
         elif self.model_structure == "stacked_parallel":
-            final_out = torch.cat([self.stacked_dnn(cross_out), self.parallel_dnn(flat_feature_emb)], dim=-1)
+            final_out = torch.cat([self.stacked_dnn(cross_out), self.parallel_dnn(feature_emb)], dim=-1)
         y_pred = self.fc(final_out)
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}

@@ -57,8 +57,8 @@ class DNN(BaseModel):
         Inputs: [X,y]
         """
         X = self.get_inputs(inputs)
-        feature_emb = self.embedding_layer(X, dynamic_emb_dim=True)
-        y_pred = self.mlp(feature_emb.flatten(start_dim=1))
+        feature_emb = self.embedding_layer(X, flatten_emb=True)
+        y_pred = self.mlp(feature_emb)
         return_dict = {"y_pred": y_pred}
         return return_dict
         

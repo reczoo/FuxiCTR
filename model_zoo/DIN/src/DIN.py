@@ -95,8 +95,8 @@ class DIN(BaseModel):
             for field, field_emb in zip(list(flatten([sequence_field])),
                                         pooling_emb.split(self.embedding_dim, dim=-1)):
                 feature_emb_dict[field] = field_emb
-        feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict, dynamic_emb_dim=True)
-        y_pred = self.dnn(feature_emb.flatten(start_dim=1))
+        feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict, flatten_emb=True)
+        y_pred = self.dnn(feature_emb)
         return_dict = {"y_pred": y_pred}
         return return_dict
 

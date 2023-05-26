@@ -55,7 +55,7 @@ class DCN(BaseModel):
 
     def call(self, inputs, training=False):
         X = self.get_inputs(inputs)
-        feature_emb = self.embedding_layer(X, dynamic_emb_dim=True)
+        feature_emb = self.embedding_layer(X, flatten_emb=True)
         cross_out = self.crossnet(feature_emb)
         if self.dnn is not None:
             dnn_out = self.dnn(feature_emb)

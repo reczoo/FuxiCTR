@@ -43,9 +43,9 @@ class FeatureEmbedding(nn.Module):
                                                     use_pretrain=use_pretrain,
                                                     use_sharing=use_sharing)
 
-    def forward(self, X, feature_source=[], feature_type=[], dynamic_emb_dim=False):
+    def forward(self, X, feature_source=[], feature_type=[], flatten_emb=False):
         feature_emb_dict = self.embedding_layer(X, feature_source=feature_source, feature_type=feature_type)
-        feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict, dynamic_emb_dim=dynamic_emb_dim)
+        feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict, flatten_emb=flatten_emb)
         return feature_emb
 
 
@@ -166,7 +166,7 @@ class FeatureEmbeddingDict(nn.Module):
             embedding_matrix.weight.requires_grad = False
         return embedding_matrix
 
-    def dict2tensor(self, embedding_dict, feature_source=[], feature_type=[], dynamic_emb_dim=False):
+    def dict2tensor(self, embedding_dict, feature_list=[], feature_source=[], feature_type=[], flatten_emb=False):
         if type(feature_source) != list:
             feature_source = [feature_source]
         if type(feature_type) != list:
@@ -177,9 +177,11 @@ class FeatureEmbeddingDict(nn.Module):
                 continue
             if feature_type and feature_spec["type"] not in feature_type:
                 continue
+            if feature_list and feature not in feature_list:
+                continue
             if feature in embedding_dict:
                 feature_emb_list.append(embedding_dict[feature])
-        if dynamic_emb_dim:
+        if flatten_emb:
             feature_emb = torch.cat(feature_emb_list, dim=-1)
         else:
             feature_emb = torch.stack(feature_emb_list, dim=1)

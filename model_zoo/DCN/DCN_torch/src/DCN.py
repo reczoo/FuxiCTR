@@ -62,11 +62,10 @@ class DCN(BaseModel):
 
     def forward(self, inputs):
         X = self.get_inputs(inputs)
-        feature_emb = self.embedding_layer(X, dynamic_emb_dim=True)
-        flat_input = feature_emb.flatten(start_dim=1)
-        cross_out = self.crossnet(flat_input)
+        feature_emb = self.embedding_layer(X, flatten_emb=True)
+        cross_out = self.crossnet(feature_emb)
         if self.dnn is not None:
-            dnn_out = self.dnn(flat_input)
+            dnn_out = self.dnn(feature_emb)
             final_out = torch.cat([cross_out, dnn_out], dim=-1)
         else:
             final_out = cross_out
