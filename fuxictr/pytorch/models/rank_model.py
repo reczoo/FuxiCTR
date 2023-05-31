@@ -187,8 +187,8 @@ class BaseModel(nn.Module):
 
     def train_step(self, batch_data):
         self.optimizer.zero_grad()
-        return_dict = self.forward(inputs)
-        y_true = self.get_labels(inputs)
+        return_dict = self.forward(batch_data)
+        y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)
         loss.backward()
         nn.utils.clip_grad_norm_(self.parameters(), self._max_gradient_norm)

@@ -10,7 +10,6 @@ Base:
     group_id: null
     use_features: null
     feature_specs: null
-    feature_config: null
 
 PPNet_test:
     model: PPNet
@@ -24,7 +23,8 @@ PPNet_test:
     net_regularizer: 0
     batch_size: 128
     embedding_dim: 4
-    gate_features: ["userid", "adgroup_id", "pid"]
+    gate_emb_dim: 4
+    gate_priors: ["userid", "adgroup_id", "pid"]
     gate_hidden_dim: 64
     hidden_units: [64, 64, 64]
     hidden_activations: ReLU
@@ -38,7 +38,7 @@ PPNet_test:
 
 PPNet_default: # This is a config template
     model: PPNet
-    dataset_id: tiny_h5
+    dataset_id: TBD
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -46,9 +46,10 @@ PPNet_default: # This is a config template
     learning_rate: 1.e-3
     embedding_regularizer: 0
     net_regularizer: 0
-    batch_size: 128
-    embedding_dim: 4
-    gate_features: ["userid", "adgroup_id", "pid"]
+    batch_size: 10000
+    embedding_dim: 16
+    gate_emb_dim: 16
+    gate_priors: ["userid", "adgroup_id", "pid"]
     gate_hidden_dim: 64
     hidden_units: [64, 64, 64]
     hidden_activations: ReLU

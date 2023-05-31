@@ -112,16 +112,22 @@ class APG_MLP(nn.Module):
                  overparam_p=None,
                  generate_bias=True):
         super(APG_MLP, self).__init__()
+        self.hidden_layers = len(hidden_units)
         if not isinstance(dropout_rates, list):
-            dropout_rates = [dropout_rates] * len(hidden_units)
+            dropout_rates = [dropout_rates] * self.hidden_layers
         if not isinstance(hidden_activations, list):
-            hidden_activations = [hidden_activations] * len(hidden_units)
+            hidden_activations = [hidden_activations] * self.hidden_layers
         hidden_activations = get_activation(hidden_activations, hidden_units)
+        if not isinstance(rank_k, list):
+            rank_k = [rank_k] * self.hidden_layers
+        if not isinstance(overparam_p, list):
+            overparam_p = [overparam_p] * self.hidden_layers
+        assert self.hidden_layers == len(dropout_rates) == len(hidden_activations) \
+               == len(rank_k) == len(overparam_p)
         hidden_units = [input_dim] + hidden_units
         self.dense_layers = nn.ModuleDict()
         if batch_norm and bn_only_once:
             self.dense_layers["bn_0"] = nn.BatchNorm1d(input_dim)
-        self.hidden_layers = len(hidden_units) - 1
         self.condition_mode = condition_mode
         assert condition_mode in ["self-wise", "group-wise", "mix-wise"], \
                "Invalid condition_mode={}".format(condition_mode)

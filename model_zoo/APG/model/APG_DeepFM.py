@@ -17,7 +17,7 @@
 import torch
 from torch import nn
 from fuxictr.pytorch.models import BaseModel
-from fuxictr.pytorch.layers import FeatureEmbeddingDict, FactorizationMachine
+from fuxictr.pytorch.layers import FeatureEmbedding, FeatureEmbeddingDict, FactorizationMachine
 from .APG_layers import APG_MLP
 
 
@@ -37,13 +37,14 @@ class APG_DeepFM(BaseModel):
                  hypernet_config={},
                  condition_features=[],
                  condition_mode="self-wise",
+                 new_condition_emb=False,
                  rank_k=32,
                  overparam_p=1024,
                  generate_bias=True,
                  **kwargs):
         super(APG_DeepFM, self).__init__(feature_map, 
                                          model_id=model_id, 
-                                         gpu=gpu, 
+                                         gpu=gpu,
                                          embedding_regularizer=embedding_regularizer, 
                                          net_regularizer=net_regularizer,
                                          **kwargs)
@@ -51,17 +52,21 @@ class APG_DeepFM(BaseModel):
         self.fm = FactorizationMachine(feature_map)
         self.condition_mode = condition_mode
         self.condition_features = condition_features
-        if condition_mode != "self-wise":
+        self.condition_emb_layer = None
+        if condition_mode == "self-wise":
+            condition_dim = None
+        else:
             assert len(condition_features) > 0
             condition_dim = len(condition_features) * embedding_dim
-        else:
-            condition_dim = None
+            if new_condition_emb:
+                self.condition_emb_layer = FeatureEmbedding(feature_map, embedding_dim,
+                                                            required_feature_columns=condition_features)
         self.mlp = APG_MLP(input_dim=feature_map.sum_emb_out_dim(),
-                           output_dim=1, 
+                           output_dim=1,
                            hidden_units=hidden_units,
                            hidden_activations=hidden_activations,
-                           output_activation=None, 
-                           dropout_rates=net_dropout, 
+                           output_activation=None,
+                           dropout_rates=net_dropout,
                            batch_norm=batch_norm,
                            hypernet_config=hypernet_config,
                            condition_dim=condition_dim,
@@ -79,12 +84,7 @@ class APG_DeepFM(BaseModel):
         """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
-        if self.condition_mode == "self-wise":
-            condition_z = None
-        else:
-            condition_z = self.embedding_layer.dict2tensor(feature_emb_dict, 
-                                                           feature_list=self.condition_features,
-                                                           flatten_emb=True)
+        condition_z = self.get_condition_z(X, feature_emb_dict)
         feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict)
         y_fm = self.fm(X, feature_emb)
         y_mlp = self.mlp(feature_emb.flatten(start_dim=1), condition_z)
@@ -92,3 +92,14 @@ class APG_DeepFM(BaseModel):
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}
         return return_dict
+
+    def get_condition_z(self, X, feature_emb_dict):
+        condition_z = None
+        if self.condition_mode != "self-wise":
+            if self.condition_emb_layer is not None:
+                condition_z = self.condition_emb_layer(X, flatten_emb=True)
+            else:
+                condition_z = self.embedding_layer.dict2tensor(feature_emb_dict, 
+                                                               feature_list=self.condition_features,
+                                                               flatten_emb=True)
+        return condition_z

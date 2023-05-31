@@ -37,9 +37,9 @@ from .MaskNet.src import MaskNet
 from .NFM.src import NFM
 from .ONN.src import ONN, ONNv2
 from .PNN.src import PNN
-from .PPNet.src import PPNet
 from .SAM.src import SAM
 from .SDIM.src import SDIM
 from .WideDeep.WideDeep_torch.src import WideDeep
 from .xDeepFM.src import xDeepFM
+from .PEPNet.model import PPNet
 from .multitask import SharedBottom, MMoE

@@ -34,6 +34,7 @@ APG_DeepFM_test:
         dropout_rates: 0
     condition_features: []
     condition_mode: "self-wise"
+    new_condition_emb: False
     rank_k: 8
     overparam_p: 64
     generate_bias: True
@@ -65,6 +66,7 @@ APG_DeepFM: # This is a config template
         dropout_rates: 0
     condition_features: []
     condition_mode: "self-wise"
+    new_condition_emb: False
     rank_k: 8
     overparam_p: 64
     generate_bias: True
@@ -102,6 +104,7 @@ APG_DCNv2_test:
         dropout_rates: 0
     condition_features: []
     condition_mode: "self-wise"
+    new_condition_emb: False
     rank_k: 8
     overparam_p: 64
     generate_bias: True
@@ -139,6 +142,7 @@ APG_DCNv2: # This is a config template
         dropout_rates: 0
     condition_features: []
     condition_mode: "self-wise"
+    new_condition_emb: False
     rank_k: 8
     overparam_p: 64
     generate_bias: True

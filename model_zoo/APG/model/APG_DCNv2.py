@@ -17,7 +17,7 @@
 import torch
 from torch import nn
 from fuxictr.pytorch.models import BaseModel
-from fuxictr.pytorch.layers import FeatureEmbeddingDict, CrossNetV2, CrossNetMix
+from fuxictr.pytorch.layers import FeatureEmbedding, FeatureEmbeddingDict, CrossNetV2, CrossNetMix
 from .APG_layers import APG_MLP
 
 
@@ -43,6 +43,7 @@ class APG_DCNv2(BaseModel):
                  hypernet_config={},
                  condition_features=[],
                  condition_mode="self-wise",
+                 new_condition_emb=False,
                  rank_k=32,
                  overparam_p=1024,
                  generate_bias=True,
@@ -56,11 +57,15 @@ class APG_DCNv2(BaseModel):
         self.embedding_layer = FeatureEmbeddingDict(feature_map, embedding_dim)
         self.condition_mode = condition_mode
         self.condition_features = condition_features
-        if condition_mode != "self-wise":
+        self.condition_emb_layer = None
+        if condition_mode == "self-wise":
+            condition_dim = None
+        else:
             assert len(condition_features) > 0
             condition_dim = len(condition_features) * embedding_dim
-        else:
-            condition_dim = None
+            if new_condition_emb:
+                self.condition_emb_layer = FeatureEmbedding(feature_map, embedding_dim,
+                                                            required_feature_columns=condition_features)
         input_dim = feature_map.sum_emb_out_dim()
         if use_low_rank_mixture:
             self.crossnet = CrossNetMix(input_dim, num_cross_layers, low_rank=low_rank, num_experts=num_experts)
@@ -111,12 +116,7 @@ class APG_DCNv2(BaseModel):
     def forward(self, inputs):
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
-        if self.condition_mode == "self-wise":
-            condition_z = None
-        else:
-            condition_z = self.embedding_layer.dict2tensor(feature_emb_dict, 
-                                                           feature_list=self.condition_features,
-                                                           flatten_emb=True)
+        condition_z = self.get_condition_z(X, feature_emb_dict)
         feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict, flatten_emb=True)
         cross_out = self.crossnet(feature_emb)
         if self.model_structure == "crossnet_only":
@@ -134,3 +134,13 @@ class APG_DCNv2(BaseModel):
         return_dict = {"y_pred": y_pred}
         return return_dict
 
+    def get_condition_z(self, X, feature_emb_dict):
+        condition_z = None
+        if self.condition_mode != "self-wise":
+            if self.condition_emb_layer is not None:
+                condition_z = self.condition_emb_layer(X, flatten_emb=True)
+            else:
+                condition_z = self.embedding_layer.dict2tensor(feature_emb_dict, 
+                                                               feature_list=self.condition_features,
+                                                               flatten_emb=True)
+        return condition_z
