@@ -35,7 +35,7 @@ from .LorentzFM.src import LorentzFM
 from .LR.src import LR
 from .MaskNet.src import MaskNet
 from .NFM.src import NFM
-from .ONN.src import ONN, ONNv2
+from .ONN.ONN_torch.model import ONN, ONNv2
 from .PNN.src import PNN
 from .SAM.src import SAM
 from .SDIM.src import SDIM

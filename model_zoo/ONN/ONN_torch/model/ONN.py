@@ -63,11 +63,9 @@ class ONN(BaseModel):
         """
         X = self.get_inputs(inputs)
         field_aware_emb_list = [each_layer(X) for each_layer in self.embedding_layers] # list of emb tensors
-        # copy_embedding
-        copy_embedding = field_aware_emb_list[0].flatten(start_dim=1)
-        # field-aware interaction
+        diag_embedding = field_aware_emb_list[0].flatten(start_dim=1)
         ffm_out = self.field_aware_interaction(field_aware_emb_list[1:])
-        dnn_input = torch.cat([copy_embedding, ffm_out], dim=1)
+        dnn_input = torch.cat([diag_embedding, ffm_out], dim=1)
         y_pred = self.dnn(dnn_input)
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}

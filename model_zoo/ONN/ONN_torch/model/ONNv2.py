@@ -32,9 +32,8 @@ class ONNv2(BaseModel):
                  net_regularizer=None,
                  hidden_units=[64, 64, 64], 
                  hidden_activations="ReLU",
-                 embedding_dropout=0,
-                 net_dropout = 0,
-                 batch_norm = False,
+                 net_dropout=0,
+                 batch_norm=False,
                  **kwargs):
         super(ONNv2, self).__init__(feature_map, 
                                     model_id=model_id, 
@@ -49,8 +48,8 @@ class ONNv2(BaseModel):
                              output_dim=1, 
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             output_activation=None, 
-                             dropout_rates=net_dropout, 
+                             output_activation=None,
+                             dropout_rates=net_dropout,
                              batch_norm=batch_norm)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim * self.num_fields) # b x f x dim*f
         self.diag_mask = torch.eye(self.num_fields).bool().to(self.device)
@@ -61,17 +60,17 @@ class ONNv2(BaseModel):
 
     def forward(self, inputs):
         X = self.get_inputs(inputs)
-        field_wise_embedding = self.embedding_layer(X).view(-1, self.num_fields, self.num_fields, self.embedding_dim)
-        batch_size = field_wise_embedding.shape[0]
-        copy_embedding = torch.masked_select(field_wise_embedding, self.diag_mask.unsqueeze(-1)).view(batch_size, -1)
-        ffm_out = self.ffm_interaction(field_wise_embedding)
-        dnn_input = torch.cat([copy_embedding, ffm_out], dim=1)
+        field_wise_emb = self.embedding_layer(X).view(-1, self.num_fields, self.num_fields, self.embedding_dim)
+        batch_size = field_wise_emb.shape[0]
+        diag_embedding = torch.masked_select(field_wise_emb, self.diag_mask.unsqueeze(-1)).view(batch_size, -1)
+        ffm_out = self.ffm_interaction(field_wise_emb)
+        dnn_input = torch.cat([diag_embedding, ffm_out], dim=1)
         y_pred = self.dnn(dnn_input)
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}
         return return_dict
 
-    def ffm_interaction(self, field_wise_embedding):
-        out = (field_wise_embedding.transpose(1, 2) * field_wise_embedding).sum(dim=-1)
+    def ffm_interaction(self, field_wise_emb):
+        out = (field_wise_emb.transpose(1, 2) * field_wise_emb).sum(dim=-1)
         out = torch.masked_select(out, self.triu_mask).view(-1, self.interact_units)
         return out
