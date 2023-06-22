@@ -18,7 +18,7 @@ import torch
 from torch import nn
 from fuxictr.pytorch.models import BaseModel
 from fuxictr.pytorch.layers import FeatureEmbedding, FeatureEmbeddingDict, CrossNetV2, CrossNetMix
-from .APG_layers import APG_MLP
+from .APG import APG_MLP
 
 
 class APG_DCNv2(BaseModel):
@@ -64,16 +64,18 @@ class APG_DCNv2(BaseModel):
             assert len(condition_features) > 0
             condition_dim = len(condition_features) * embedding_dim
             if new_condition_emb:
-                self.condition_emb_layer = FeatureEmbedding(feature_map, embedding_dim,
-                                                            required_feature_columns=condition_features)
+                self.condition_emb_layer = FeatureEmbedding(
+                    feature_map, embedding_dim,
+                    required_feature_columns=condition_features)
         input_dim = feature_map.sum_emb_out_dim()
         if use_low_rank_mixture:
-            self.crossnet = CrossNetMix(input_dim, num_cross_layers, low_rank=low_rank, num_experts=num_experts)
+            self.crossnet = CrossNetMix(input_dim, num_cross_layers, low_rank=low_rank,
+                                        num_experts=num_experts)
         else:
             self.crossnet = CrossNetV2(input_dim, num_cross_layers)
         self.model_structure = model_structure
-        assert self.model_structure in ["crossnet_only", "stacked", "parallel", "stacked_parallel"], \
-               "model_structure={} not supported!".format(self.model_structure)
+        assert self.model_structure in ["crossnet_only", "stacked", "parallel",
+            "stacked_parallel"], "model_structure={} not supported!".format(self.model_structure)
         if self.model_structure in ["stacked", "stacked_parallel"]:
             self.stacked_dnn = APG_MLP(input_dim=input_dim,
                                        output_dim=None, 

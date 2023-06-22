@@ -14,11 +14,9 @@
 # limitations under the License.
 # =========================================================================
 
-import torch
-from torch import nn
 from fuxictr.pytorch.models import BaseModel
 from fuxictr.pytorch.layers import FeatureEmbedding, FeatureEmbeddingDict, FactorizationMachine
-from .APG_layers import APG_MLP
+from .APG import APG_MLP
 
 
 class APG_DeepFM(BaseModel):
@@ -59,8 +57,9 @@ class APG_DeepFM(BaseModel):
             assert len(condition_features) > 0
             condition_dim = len(condition_features) * embedding_dim
             if new_condition_emb:
-                self.condition_emb_layer = FeatureEmbedding(feature_map, embedding_dim,
-                                                            required_feature_columns=condition_features)
+                self.condition_emb_layer = FeatureEmbedding(
+                    feature_map, embedding_dim,
+                    required_feature_columns=condition_features)
         self.mlp = APG_MLP(input_dim=feature_map.sum_emb_out_dim(),
                            output_dim=1,
                            hidden_units=hidden_units,

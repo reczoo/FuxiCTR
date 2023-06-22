@@ -22,8 +22,8 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class APG_Linear(nn.Module):
-    def __init__(self, input_dim, output_dim, condition_dim, bias=True, rank_k=None, overparam_p=None,
-                 generate_bias=False, hypernet_config={}):
+    def __init__(self, input_dim, output_dim, condition_dim, bias=True, rank_k=None, 
+                 overparam_p=None, generate_bias=False, hypernet_config={}):
         super(APG_Linear, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -39,27 +39,30 @@ class APG_Linear(nn.Module):
                 self.U_l = nn.Parameter(nn.init.xavier_normal_(torch.empty(input_dim, overparam_p)))
                 self.U_r = nn.Parameter(nn.init.xavier_normal_(torch.empty(overparam_p, rank_k)))
                 self.V_l = nn.Parameter(nn.init.xavier_normal_(torch.empty(rank_k, overparam_p)))
-                self.V_r = nn.Parameter(nn.init.xavier_normal_(torch.empty(overparam_p, output_dim)))
+                self.V_r = nn.Parameter(nn.init.xavier_normal_(
+                                        torch.empty(overparam_p, output_dim)))
             else:
                 self.U = nn.Parameter(nn.init.xavier_normal_(torch.empty(input_dim, rank_k)))
                 self.V = nn.Parameter(nn.init.xavier_normal_(torch.empty(rank_k, output_dim)))
             # low-rank weight generation
-            self.hypernet = MLP_Block(input_dim=condition_dim,
-                                      output_dim=rank_k ** 2 + int(generate_bias) * output_dim,
-                                      hidden_units=hypernet_config.get("hidden_units", []),
-                                      hidden_activations=hypernet_config.get("hidden_activations", "ReLU"),
-                                      output_activation=None,
-                                      dropout_rates=hypernet_config.get("dropout_rates", 0),
-                                      batch_norm=False)
+            self.hypernet = MLP_Block(
+                input_dim=condition_dim,
+                output_dim=rank_k ** 2 + int(generate_bias) * output_dim,
+                hidden_units=hypernet_config.get("hidden_units", []),
+                hidden_activations=hypernet_config.get("hidden_activations", "ReLU"),
+                output_activation=None,
+                dropout_rates=hypernet_config.get("dropout_rates", 0),
+                batch_norm=False)
         else:
             # full weight generation
-            self.hypernet = MLP_Block(input_dim=condition_dim,
-                                      output_dim=input_dim * output_dim + int(generate_bias) * output_dim,
-                                      hidden_units=hypernet_config.get("hidden_units", []),
-                                      hidden_activations=hypernet_config.get("hidden_activations", "ReLU"),
-                                      output_activation=None,
-                                      dropout_rates=hypernet_config.get("dropout_rates", 0),
-                                      batch_norm=False)
+            self.hypernet = MLP_Block(
+                input_dim=condition_dim,
+                output_dim=input_dim * output_dim + int(generate_bias) * output_dim,
+                hidden_units=hypernet_config.get("hidden_units", []),
+                hidden_activations=hypernet_config.get("hidden_activations", "ReLU"),
+                output_activation=None,
+                dropout_rates=hypernet_config.get("dropout_rates", 0),
+                batch_norm=False)
         if self.use_bias and (not self.generate_bias):
             self.bias = nn.Parameter(torch.zeros(1, output_dim))
         else:
@@ -134,14 +137,15 @@ class APG_MLP(nn.Module):
         for idx in range(self.hidden_layers):
             if self.condition_mode == "self-wise":
                 condition_dim = hidden_units[idx]
-            self.dense_layers["linear_{}".format(idx + 1)] = APG_Linear(hidden_units[idx], 
-                                                                        hidden_units[idx + 1],
-                                                                        condition_dim,
-                                                                        bias=use_bias,
-                                                                        rank_k=rank_k,
-                                                                        overparam_p=overparam_p,
-                                                                        generate_bias=generate_bias,
-                                                                        hypernet_config=hypernet_config)
+            self.dense_layers["linear_{}".format(idx + 1)] = APG_Linear(
+                hidden_units[idx], 
+                hidden_units[idx + 1],
+                condition_dim,
+                bias=use_bias,
+                rank_k=rank_k[idx],
+                overparam_p=overparam_p[idx],
+                generate_bias=generate_bias,
+                hypernet_config=hypernet_config)
             if batch_norm and not bn_only_once:
                 self.dense_layers["bn_{}".format(idx + 1)] = nn.BatchNorm1d(hidden_units[idx + 1])
             if hidden_activations[idx]:
