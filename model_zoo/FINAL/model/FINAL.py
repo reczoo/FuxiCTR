@@ -129,7 +129,7 @@ class FinalGate(nn.Module):
 
     def forward(self, feature_emb):
         gates = self.linear(feature_emb.transpose(1, 2)).transpose(1, 2)
-        if gate_residual == "concat":
+        if self.gate_residual == "concat":
             out = torch.cat([feature_emb, feature_emb * gates], dim=1) # b x 2f x d
         else:
             out = feature_emb + feature_emb * gates
