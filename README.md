@@ -9,7 +9,6 @@
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/v/fuxictr.svg" style="max-width: 100%;" alt="Pypi version"></a>
 <a href="https://pepy.tech/project/fuxictr"><img src="https://pepy.tech/badge/fuxictr" style="max-width: 100%;" alt="Downloads"></a>
 <a href="https://github.com/xue-pai/FuxiCTR/blob/main/LICENSE"><img src="https://img.shields.io/github/license/xue-pai/fuxictr.svg" style="max-width: 100%;" alt="License"></a>
-<a href="https://fuxictr.github.io/tutorials"><img src="https://img.shields.io/badge/tutorials-passing-brightgreen?style=flat" style="max-width: 100%;" alt="Wechat QR code"></a>
 </div>
 <hr/>
 
