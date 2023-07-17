@@ -79,17 +79,16 @@ class MultiTaskModel(BaseModel):
              for i in range(len(labels))]
         return y
 
-    def add_loss(self, inputs):
-        return_dict = self.forward(inputs)
-        y_true = self.get_labels(inputs)
+    def compute_loss(self, return_dict, y_true):
         labels = self.feature_map.labels
         loss = [self.loss_fn[i](return_dict["{}_pred".format(labels[i])], y_true[i], reduction='mean')
                 for i in range(len(labels))]
         if self.loss_weight == 'EQ':
             # Default: All losses are weighted equally
             loss = torch.sum(torch.stack(loss))
+        loss += self.regularization_loss()
         return loss
-
+    
     def evaluate(self, data_generator, metrics=None):
         self.eval()  # set to evaluation mode
         with torch.no_grad():
@@ -128,3 +127,17 @@ class MultiTaskModel(BaseModel):
                 mean_val_logs[k] = np.mean(v)
             all_val_logs.update(mean_val_logs)
             return all_val_logs
+
+    def predict(self, data_generator):
+        self.eval()  # set to evaluation mode
+        with torch.no_grad():
+            y_pred_all = defaultdict(list)
+            labels = self.feature_map.labels
+            if self._verbose > 0:
+                data_generator = tqdm(data_generator, disable=False, file=sys.stdout)
+            for batch_data in data_generator:
+                return_dict = self.forward(batch_data)
+                for i in range(len(labels)):
+                    y_pred_all[labels[i]].extend(
+                        return_dict["{}_pred".format(labels[i])].data.cpu().numpy().reshape(-1))
+        return y_pred_all
