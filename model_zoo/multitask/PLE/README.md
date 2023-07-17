@@ -7,7 +7,7 @@
 
 PLE is a multitasking model with shared and task-specific experts for each task. The model is published in the following paper:
 
-+ Hongyan Tang (Tencent PCG), Junning Liu (Tencent PCG), Marco Zhao (Tencent PCG), Xudong Gong (Tencent PCG). [Progressive Layered Extraction (PLE): A Novel Multi-Task Learning (MTL) Model for Personalized Recommendations](https://dl.acm.org/doi/10.1145/3383313.3412236), in Recsys 2020**(Best Paper Award)**.
++ Hongyan Tang (Tencent PCG), Junning Liu (Tencent PCG), Marco Zhao (Tencent PCG), Xudong Gong (Tencent PCG). [Progressive Layered Extraction (PLE): A Novel Multi-Task Learning (MTL) Model for Personalized Recommendations](https://dl.acm.org/doi/10.1145/3383313.3412236), in Recsys 2020 **(Best Paper Award)**.
 
 **Model structure:**
 
