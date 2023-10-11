@@ -244,7 +244,6 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             y_pred = []
             if self._verbose > 0:
-                
                 data_generator = tqdm(data_generator, disable=False, file=sys.stdout)
             for batch_data in data_generator:
                 return_dict = self.forward(batch_data)

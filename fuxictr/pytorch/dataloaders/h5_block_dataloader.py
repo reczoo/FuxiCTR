@@ -21,6 +21,7 @@ import h5py
 from itertools import chain
 import torch
 import logging
+import glob
 
 
 class DataLoader(object):
@@ -86,24 +87,26 @@ class H5BlockDataLoader(object):
         self.stage = stage
         if stage in ["both", "train"]:
             train_blocks = glob.glob(train_data)
-            valid_blocks = glob.glob(valid_data)
-            assert len(train_blocks) > 0 and len(valid_blocks) > 0, "invalid data files or paths."
+            assert len(train_blocks) > 0, "invalid data files or paths."
             if len(train_blocks) > 1:
                 train_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0])) # "xx_part_1.h5"
             train_gen = DataLoader(feature_map, train_blocks, batch_size=batch_size, shuffle=shuffle, verbose=verbose, **kwargs)
             logging.info("Train samples: total/{:d}, blocks/{:d}".format(train_gen.num_samples, train_gen.num_blocks))     
-            if len(valid_blocks) > 1:
-                valid_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
-            valid_gen = DataLoader(feature_map, valid_blocks, batch_size=batch_size, shuffle=False, verbose=verbose, **kwargs)
-            logging.info("Validation samples: total/{:d}, blocks/{:d}".format(valid_gen.num_samples, valid_gen.num_blocks))
+            if valid_data:
+                valid_blocks = glob.glob(valid_data)
+                if len(valid_blocks) > 1:
+                    valid_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
+                valid_gen = DataLoader(feature_map, valid_blocks, batch_size=batch_size, shuffle=False, verbose=verbose, **kwargs)
+                logging.info("Validation samples: total/{:d}, blocks/{:d}".format(valid_gen.num_samples, valid_gen.num_blocks))
 
         if stage in ["both", "test"]:
-            test_blocks = glob.glob(test_data)
-            assert len(test_blocks) > 0, "invalid data files or paths."
-            if len(test_blocks) > 1:
-                test_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
-            test_gen = DataLoader(feature_map, test_blocks, batch_size=batch_size, shuffle=False, verbose=verbose, **kwargs)
-            logging.info("Test samples: total/{:d}, blocks/{:d}".format(test_gen.num_samples, test_gen.num_blocks))
+            if test_data:
+                test_blocks = glob.glob(test_data)
+                assert len(test_blocks) > 0, "invalid data files or paths."
+                if len(test_blocks) > 1:
+                    test_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0]))
+                test_gen = DataLoader(feature_map, test_blocks, batch_size=batch_size, shuffle=False, verbose=verbose, **kwargs)
+                logging.info("Test samples: total/{:d}, blocks/{:d}".format(test_gen.num_samples, test_gen.num_blocks))
         self.train_gen, self.valid_gen, self.test_gen = train_gen, valid_gen, test_gen
 
     def make_iterator(self):

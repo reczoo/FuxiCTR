@@ -4,6 +4,25 @@
 
 [Doing] Add support for saving pb file, exporting embeddings, exporting feature vocab
 
+**FuxiCTR v2.0.4, 2023-10-10**
+
+Features
+    + Add multi-task models (MMoE/PLE)
+Fixes
+    + Fix exception when test_data is None
+
+**FuxiCTR v2.0.3, 2023-05-14**
+
+Fixes
+    + Update DMIN, DMR, APG, PPNet, ONN_tf
+    + Change dynamic_emb_dim to flatten_emb
+
+**FuxiCTR v2.0.2, 2023-05-14**
+
+Fixes
+    + Update FINAL, DIEN
+    + Update ordered_features to use_features
+
 **FuxiCTR v2.0.1, 2023-02-15**
 
 Docs

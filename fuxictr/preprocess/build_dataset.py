@@ -127,9 +127,10 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
     if data_block_size > 0:
         return os.path.join(feature_encoder.data_dir, "train/*.h5"), \
                os.path.join(feature_encoder.data_dir, "valid/*.h5"), \
-               os.path.join(feature_encoder.data_dir, "test/*.h5")
+               os.path.join(feature_encoder.data_dir, "test/*.h5") if (
+               test_data or test_size > 0) else None
     else:
         return os.path.join(feature_encoder.data_dir, 'train.h5'), \
                os.path.join(feature_encoder.data_dir, 'valid.h5'), \
-               os.path.join(feature_encoder.data_dir, 'test.h5')
-
+               os.path.join(feature_encoder.data_dir, 'test.h5') if (
+               test_data or test_size > 0) else None

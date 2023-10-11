@@ -69,12 +69,14 @@ class H5DataLoader(object):
         self.stage = stage
         if stage in ["both", "train"]:
             train_gen = DataLoader(feature_map, train_data, batch_size=batch_size, shuffle=shuffle, **kwargs)
-            logging.info("Train samples: total/{:d}, blocks/{:d}".format(train_gen.num_samples, 1))     
-            valid_gen = DataLoader(feature_map, valid_data, batch_size=batch_size, shuffle=False, **kwargs)
-            logging.info("Validation samples: total/{:d}, blocks/{:d}".format(valid_gen.num_samples, 1))
+            logging.info("Train samples: total/{:d}, blocks/{:d}".format(train_gen.num_samples, 1))
+            if valid_data:  
+                valid_gen = DataLoader(feature_map, valid_data, batch_size=batch_size, shuffle=False, **kwargs)
+                logging.info("Validation samples: total/{:d}, blocks/{:d}".format(valid_gen.num_samples, 1))
         if stage in ["both", "test"]:
-            test_gen = DataLoader(feature_map, test_data, batch_size=batch_size, shuffle=False, **kwargs)
-            logging.info("Test samples: total/{:d}, blocks/{:d}".format(test_gen.num_samples, 1))
+            if test_data:
+                test_gen = DataLoader(feature_map, test_data, batch_size=batch_size, shuffle=False, **kwargs)
+                logging.info("Test samples: total/{:d}, blocks/{:d}".format(test_gen.num_samples, 1))
         self.train_gen, self.valid_gen, self.test_gen = train_gen, valid_gen, test_gen
 
     def make_iterator(self):
