@@ -1,40 +1,49 @@
 ## FuxiCTR Milestones
 
-### FuxiCTR v2.0
+### FuxiCTR v2.1
+[Doing] Add support for saving pb file, exporting embeddings
 
-[Doing] Add support for saving pb file, exporting embeddings, exporting feature vocab
+**FuxiCTR v2.1.0, 2023-10-14**
++ Features
+    + Add PretrainedEmbedding Layer
+    + 
++ Fixes
+    + Fix bug [#72](https://github.com/xue-pai/FuxiCTR/issues/72) for SDIM
+
+-------------------------------
+
+### FuxiCTR v2.0
 
 **FuxiCTR v2.0.4, 2023-10-10**
 
-Features
++ Features
     + Add multi-task models (MMoE/PLE)
-Fixes
++ Fixes
     + Fix exception when test_data is None
 
 **FuxiCTR v2.0.3, 2023-05-14**
 
-Fixes
++ Fixes
     + Update DMIN, DMR, APG, PPNet, ONN_tf
     + Change dynamic_emb_dim to flatten_emb
 
 **FuxiCTR v2.0.2, 2023-05-14**
 
-Fixes
++ Fixes
     + Update FINAL, DIEN
     + Update ordered_features to use_features
 
 **FuxiCTR v2.0.1, 2023-02-15**
 
-Docs
++ Docs
     + Add fuxictr tutorials
-
-Fixes
++ Fixes
     + Update demo examples
     + Fix build_dataset() to skip rebuilding if it already exists
 
 **FuxiCTR v2.0.0, 2023-01-19**
 
-Features
++ Features
     - Add more models of year 2021-2022.
     - Add tensorflow backbone support
     - Refine code structure to support model development with minimal code
@@ -46,7 +55,6 @@ Features
 **FuxiCTR v1.2.2, 2022-07-03**
 
 + Fix bug in EDCN #29
-
 + Fix MultiHeadAttention bug #30
 
 **FuxiCTR v1.2.1, 2022-06-12**

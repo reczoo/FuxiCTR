@@ -74,10 +74,10 @@ if __name__ == '__main__':
     gc.collect()
     
     logging.info('******** Test evaluation ********')
-    test_gen = H5DataLoader(feature_map, stage='test', **params).make_iterator()
     test_result = {}
-    if test_gen:
-      test_result = model.evaluate(test_gen)
+    if params["test_data"]:
+        test_gen = H5DataLoader(feature_map, stage='test', **params).make_iterator()
+        test_result = model.evaluate(test_gen)
     
     result_filename = Path(args['config']).name.replace(".yaml", "") + '.csv'
     with open(result_filename, 'a+') as fw:

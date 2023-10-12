@@ -68,16 +68,18 @@ class BaseModel(nn.Module):
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = get_regularizer(self._embedding_regularizer)
             net_reg = get_regularizer(self._net_regularizer)
-            for name, param in self.named_parameters():
-                if param.requires_grad:
-                    if "embedding_layer" in name:
-                        if self._embedding_regularizer:
-                            for emb_p, emb_lambda in emb_reg:
-                                reg_term += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
-                    else:
-                        if self._net_regularizer:
-                            for net_p, net_lambda in net_reg:
-                                reg_term += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
+            for _, module in self.named_modules():
+                for p_name, param in module.named_parameters():
+                    if param.requires_grad:
+                        if p_name in ["weight", "bias"]:
+                            if type(module) == nn.Embedding:
+                                if self._embedding_regularizer:
+                                    for emb_p, emb_lambda in emb_reg:
+                                        reg_term += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
+                            else:
+                                if self._net_regularizer:
+                                    for net_p, net_lambda in net_reg:
+                                        reg_term += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
         return reg_term
 
     def compute_loss(self, return_dict, y_true):

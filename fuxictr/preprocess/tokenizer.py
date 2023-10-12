@@ -24,13 +24,14 @@ import os
 from tqdm import tqdm
 import logging
 import sklearn.preprocessing as sklearn_preprocess
+from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 class Tokenizer(object):
-    def __init__(self, num_IDs=None, na_value="", min_freq=1, splitter=None, remap=True,
+    def __init__(self, max_features=None, na_value="", min_freq=1, splitter=None, remap=True,
                  lower=False, max_len=0, padding="pre", num_workers=8):
-        self._num_IDs = num_IDs
+        self._max_features = max_features
         self._na_value = na_value
         self._min_freq = min_freq
         self._lower = lower
@@ -60,16 +61,18 @@ class Tokenizer(object):
 
     def build_vocab(self, word_counts):
         word_counts = word_counts.items()
-        if self._num_IDs:
-            word_counts = sorted(word_counts, key=lambda x: (-x[1], x[0]))
-            word_counts = word_counts[0:self._num_IDs]
+        # sort to guarantee the determinism of index order
+        word_counts = sorted(word_counts, key=lambda x: (-x[1], x[0]))
+        if self._max_features: # keep the most frequent features
+            word_counts = word_counts[0:self._max_features]
         words = []
         for token, count in word_counts:
             if count >= self._min_freq:
                 if token != self._na_value:
                     words.append(token.lower() if self._lower else token)
+            else:
+                break # already sorted in decending order
         if self.remap:
-            words.sort() # sort to guarantee the determinism of index order
             self.vocab = dict((token, idx) for idx, token in enumerate(words, 1))
         else:
             self.vocab = dict((token, int(token)) for token in words)
@@ -94,7 +97,7 @@ class Tokenizer(object):
     def vocab_size(self):
         return max(self.vocab.values()) + 1
 
-    def add_vocab(self, word_list):
+    def update_vocab(self, word_list):
         new_words = 0
         for word in word_list:
             if word not in self.vocab:
@@ -103,12 +106,18 @@ class Tokenizer(object):
         if new_words > 0:
             self.vocab["__OOV__"] = self.vocab_size()
 
+    def expand_pretrain_vocab(self, word_list):
+        # Do not update OOV index here
+        for word in word_list:
+            if word not in self.vocab:
+                self.vocab[word] = self.vocab_size()
+
     def encode_meta(self, values):
         word_counts = Counter(list(values))
         if len(self.vocab) == 0:
             self.build_vocab(word_counts)
-        else:
-            self.add_vocab(word_counts.keys())
+        else: # for considering meta data in test data
+            self.update_vocab(word_counts.keys())
         meta_values = [self.vocab.get(x, self.vocab["__OOV__"]) for x in values]
         return np.array(meta_values)
 
@@ -129,14 +138,15 @@ class Tokenizer(object):
         return np.array(sequence_list)
     
     def load_pretrained_embedding(self, feature_name, feature_dtype, pretrain_path,  
-                                  output_path, freeze_emb=True):
+                                  output_path, freeze_emb=True, expand_pretrain_vocab=True):
         with h5py.File(pretrain_path, 'r') as hf:
             keys = hf["key"][:]
             keys = keys.astype(feature_dtype) # in case mismatch of dtype between int and str
             pretrained_vocab = dict(zip(keys, range(len(keys))))
             pretrained_emb = hf["value"][:]
         # update vocab with pretrained keys, in case new token ids appear in validation or test set
-        self.add_vocab(pretrained_vocab.keys())
+        if expand_pretrain_vocab:
+            self.expand_pretrain_vocab(pretrained_vocab.keys())
         
         logging.info("{}\'s pretrained_emb shape: {}".format(feature_name, pretrained_emb.shape))
         embedding_dim = pretrained_emb.shape[1]
@@ -146,7 +156,8 @@ class Tokenizer(object):
             embedding_matrix = np.random.normal(loc=0, scale=1.e-4, size=(self.vocab_size(), embedding_dim))
             embedding_matrix[self.vocab["__PAD__"], :] = 0.  # set as zero embedding for PAD
         for word in pretrained_vocab.keys():
-            embedding_matrix[self.vocab[word]] = pretrained_emb[pretrained_vocab[word]]
+            if word in self.vocab:
+                embedding_matrix[self.vocab[word]] = pretrained_emb[pretrained_vocab[word]]
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with h5py.File(output_path, 'a') as hf: # Add different embeddings to a single h5 file
             hf.create_dataset(feature_name, data=embedding_matrix)
@@ -166,56 +177,3 @@ def count_tokens(texts, splitter):
         for token in text_split:
             word_counts[token] += 1
     return word_counts, max_len
-
-
-class Normalizer(object):
-    def __init__(self, normalizer):
-        if not callable(normalizer):
-            self.callable = False
-            if normalizer in ['StandardScaler', 'MinMaxScaler']:
-                self.normalizer = getattr(sklearn_preprocess, normalizer)()
-            else:
-                raise NotImplementedError('normalizer={}'.format(normalizer))
-        else:
-            # normalizer is a method
-            self.normalizer = normalizer
-            self.callable = True
-
-    def fit(self, X):
-        if not self.callable:
-            null_index = np.isnan(X)
-            self.normalizer.fit(X[~null_index].reshape(-1, 1))
-
-    def normalize(self, X):
-        if self.callable:
-            return self.normalizer(X)
-        else:
-            return self.normalizer.transform(X.reshape(-1, 1)).flatten()
-
-
-def pad_sequences(sequences, maxlen=None, dtype='int32',
-                  padding='pre', truncating='pre', value=0.):
-    """ Pads sequences (list of list) to the ndarray of same length 
-        This is an equivalent implementation of tf.keras.preprocessing.sequence.pad_sequences
-    """
-
-    assert padding in ["pre", "post"], "Invalid padding={}.".format(padding)
-    assert truncating in ["pre", "post"], "Invalid truncating={}.".format(truncating)
-    
-    if maxlen is None:
-        maxlen = max(len(x) for x in sequences)
-    arr = np.full((len(sequences), maxlen), value, dtype=dtype)
-    for idx, x in enumerate(sequences):
-        if len(x) == 0:
-            continue  # empty list
-        if truncating == 'pre':
-            trunc = x[-maxlen:]
-        else:
-            trunc = x[:maxlen]
-        trunc = np.asarray(trunc, dtype=dtype)
-
-        if padding == 'pre':
-            arr[idx, -len(trunc):] = trunc
-        else:
-            arr[idx, :len(trunc)] = trunc
-    return arr

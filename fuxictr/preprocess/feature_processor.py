@@ -23,10 +23,10 @@ import os
 import logging
 import json
 import re
-from functools import partial
 import sklearn.preprocessing as sklearn_preprocess
 from fuxictr.features import FeatureMap
-from .utils import Tokenizer, Normalizer
+from .tokenizer import Tokenizer
+from .normalizer import Normalizer
 
 
 class FeatureProcessor(object):
@@ -119,6 +119,26 @@ class FeatureProcessor(object):
                                           min_categr_count=min_categr_count)
                 else:
                     raise NotImplementedError("feature_col={}".format(feature_col))
+        
+        # Expand vocab from pretrained_emb
+        for col in self.feature_cols:
+            name = col["name"]
+            if "pretrained_emb" in col:
+                logging.info("Loading pretrained embedding: " + name)
+                if "pretrain_dim" in col:
+                    self.feature_map.features[name]["pretrain_dim"] = col["pretrain_dim"]
+                self.feature_map.features[name]["pretrained_emb"] = "pretrained_emb.h5"
+                self.feature_map.features[name]["freeze_emb"] = col.get("freeze_emb", True)
+                self.feature_map.features[name]["pretrain_usage"] = col.get("pretrain_usage", "init")
+                tokenizer = self.processor_dict[name + "::tokenizer"]
+                tokenizer.load_pretrained_embedding(name,
+                                                    self.dtype_dict[name],
+                                                    col["pretrained_emb"], 
+                                                    os.path.join(self.data_dir, "pretrained_emb.h5"),
+                                                    freeze_emb=col.get("freeze_emb", True))
+                self.processor_dict[name + "::tokenizer"] = tokenizer
+                self.feature_map.features[name]["vocab_size"] = tokenizer.vocab_size()
+
         # Handle share_embedding vocab re-assign
         for name, spec in self.feature_map.features.items():
             if spec["type"] == "numeric":
@@ -189,20 +209,10 @@ class FeatureProcessor(object):
                 self.feature_map.features[col["share_embedding"]] \
                                 .update({"oov_idx": self.processor_dict[tknzr_name].vocab["__OOV__"],
                                          "vocab_size": self.processor_dict[tknzr_name].vocab_size()})
-            else:
-                if "pretrained_emb" in col:
-                    logging.info("Loading pretrained embedding: " + name)
-                    self.feature_map.features[name]["pretrained_emb"] = "pretrained_emb.h5"
-                    self.feature_map.features[name]["freeze_emb"] = col.get("freeze_emb", True)
-                    tokenizer.load_pretrained_embedding(name,
-                                                        self.dtype_dict[name],
-                                                        col["pretrained_emb"], 
-                                                        os.path.join(self.data_dir, "pretrained_emb.h5"),
-                                                        freeze_emb=col.get("freeze_emb", True))
+            self.processor_dict[name + "::tokenizer"] = tokenizer
             self.feature_map.features[name].update({"padding_idx": 0,
                                                     "oov_idx": tokenizer.vocab["__OOV__"],
                                                     "vocab_size": tokenizer.vocab_size()})
-            self.processor_dict[name + "::tokenizer"] = tokenizer
         else:
             category_processor = col["category_processor"]
             self.feature_map.features[name]["category_processor"] = category_processor
@@ -252,21 +262,11 @@ class FeatureProcessor(object):
             self.feature_map.features[col["share_embedding"]] \
                             .update({"oov_idx": self.processor_dict[tknzr_name].vocab["__OOV__"],
                                      "vocab_size": self.processor_dict[tknzr_name].vocab_size()})
-        else:
-            if "pretrained_emb" in col:
-                logging.info("Loading pretrained embedding: " + name)
-                self.feature_map.features[name]["pretrained_emb"] = "pretrained_emb.h5"
-                self.feature_map.features[name]["freeze_emb"] = col.get("freeze_emb", True)
-                tokenizer.load_pretrained_embedding(name,
-                                                    self.dtype_dict[name],
-                                                    col["pretrained_emb"], 
-                                                    os.path.join(self.data_dir, "pretrained_emb.h5"),
-                                                    freeze_emb=col.get("freeze_emb", True))
+        self.processor_dict[name + "::tokenizer"] = tokenizer
         self.feature_map.features[name].update({"padding_idx": 0,
                                                 "oov_idx": tokenizer.vocab["__OOV__"],
-                                                "vocab_size": tokenizer.vocab_size(),
-                                                "max_len": tokenizer.max_len})
-        self.processor_dict[name + "::tokenizer"] = tokenizer
+                                                "max_len": tokenizer.max_len,
+                                                "vocab_size": tokenizer.vocab_size()})
 
     def transform(self, ddf):
         logging.info("Transform feature columns...")

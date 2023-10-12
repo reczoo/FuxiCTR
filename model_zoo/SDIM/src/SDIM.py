@@ -127,8 +127,10 @@ class SDIM(BaseModel):
                                                                  self.long_sequence_field)):
             target_emb = self.concat_embedding(target_field, feature_emb_dict)
             sequence_emb = self.concat_embedding(sequence_field, feature_emb_dict)
+            seq_field = list(flatten([sequence_field]))[0] # flatten nested list to pick the first field
+            mask = X[seq_field].long() != 0 # padding_idx = 0 required in input data
             long_interest_emb = self.lsh_attentioin(self.random_rotations[idx], 
-                                                    target_emb, sequence_emb)
+                                                    target_emb, sequence_emb, mask)
             for field, field_emb in zip(list(flatten([sequence_field])),
                                         long_interest_emb.split(self.embedding_dim, dim=-1)):
                 feature_emb_dict[field] = field_emb
@@ -144,18 +146,19 @@ class SDIM(BaseModel):
         else:
             return feature_emb_dict[field]
 
-    def lsh_attentioin(self, random_rotations, target_item, history_sequence):
+    def lsh_attentioin(self, random_rotations, target_item, history_sequence, mask):
         if not self.reuse_hash:
             random_rotations = torch.randn(target_item.size(1), self.num_hashes, 
                                            self.hash_bits, device=target_item.device)
-        target_bucket = self.lsh_hash(history_sequence, random_rotations)
-        sequence_bucket = self.lsh_hash(target_item.unsqueeze(1), random_rotations)
+        sequence_bucket = self.lsh_hash(history_sequence, random_rotations)
+        target_bucket = self.lsh_hash(target_item.unsqueeze(1), random_rotations)
         bucket_match = (sequence_bucket - target_bucket).permute(2, 0, 1) # num_hashes x B x seq_len
-        collide_mask = (bucket_match == 0).float()
+        collide_mask = ((bucket_match == 0) * mask.unsqueeze(0)).float() # both hash collision mask and sequence mask
         hash_index, collide_index = torch.nonzero(collide_mask.flatten(start_dim=1), as_tuple=True)
-        offsets = collide_mask.sum(dim=-1).long().flatten().cumsum(dim=0)
+        offsets = collide_mask.sum(dim=-1).flatten().cumsum(dim=0)
+        offsets = torch.cat([torch.zeros(1, device=offsets.device), offsets]).long()
         attn_out = F.embedding_bag(collide_index, history_sequence.view(-1, target_item.size(1)), 
-                                   offsets, mode='sum') # (num_hashes x B) x d
+                                   offsets, mode='sum', include_last_offset=True) # (num_hashes x B) x d
         attn_out = attn_out.view(self.num_hashes, -1, target_item.size(1)).mean(dim=0) # B x d
         return attn_out
         

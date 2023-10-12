@@ -1,3 +1,5 @@
+torch
+keras_preprocessing
 PyYAML
 pandas
 scikit-learn
