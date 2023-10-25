@@ -25,7 +25,6 @@ from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
 from fuxictr.features import FeatureMap
 from fuxictr.pytorch.torch_utils import seed_everything
-from fuxictr.pytorch.dataloaders import H5DataLoader
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 import model_zoo
 import gc
@@ -73,9 +72,9 @@ if __name__ == '__main__':
     del train_gen, valid_gen
     gc.collect()
     
-    logging.info('******** Test evaluation ********')
     test_result = {}
     if params["test_data"]:
+        logging.info('******** Test evaluation ********')
         test_gen = H5DataLoader(feature_map, stage='test', **params).make_iterator()
         test_result = model.evaluate(test_gen)
     

@@ -49,6 +49,8 @@ class Dataset(data.Dataset):
 
 class DataLoader(data.DataLoader):
     def __init__(self, feature_map, data_path, batch_size=32, shuffle=False, num_workers=1, **kwargs):
+        if not data_path.endswith(".h5"):
+            data_path += ".h5"
         self.dataset = Dataset(feature_map, data_path)
         super(DataLoader, self).__init__(dataset=self.dataset, batch_size=batch_size,
                                          shuffle=shuffle, num_workers=num_workers)

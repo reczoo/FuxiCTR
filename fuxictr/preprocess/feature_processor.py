@@ -23,6 +23,7 @@ import os
 import logging
 import json
 import re
+import shutil
 import sklearn.preprocessing as sklearn_preprocess
 from fuxictr.features import FeatureMap
 from .tokenizer import Tokenizer
@@ -121,21 +122,20 @@ class FeatureProcessor(object):
                     raise NotImplementedError("feature_col={}".format(feature_col))
         
         # Expand vocab from pretrained_emb
+        os.makedirs(self.data_dir, exist_ok=True)
         for col in self.feature_cols:
             name = col["name"]
             if "pretrained_emb" in col:
                 logging.info("Loading pretrained embedding: " + name)
                 if "pretrain_dim" in col:
                     self.feature_map.features[name]["pretrain_dim"] = col["pretrain_dim"]
-                self.feature_map.features[name]["pretrained_emb"] = "pretrained_emb.h5"
+                shutil.copy(col["pretrained_emb"],
+                            os.path.join(self.data_dir, "pretrained_{}".format(name)))
+                self.feature_map.features[name]["pretrained_emb"] = "pretrained_{}.h5".format(name)
                 self.feature_map.features[name]["freeze_emb"] = col.get("freeze_emb", True)
                 self.feature_map.features[name]["pretrain_usage"] = col.get("pretrain_usage", "init")
                 tokenizer = self.processor_dict[name + "::tokenizer"]
-                tokenizer.load_pretrained_embedding(name,
-                                                    self.dtype_dict[name],
-                                                    col["pretrained_emb"], 
-                                                    os.path.join(self.data_dir, "pretrained_emb.h5"),
-                                                    freeze_emb=col.get("freeze_emb", True))
+                tokenizer.load_pretrained_vocab(self.dtype_dict[name], col["pretrained_emb"])
                 self.processor_dict[name + "::tokenizer"] = tokenizer
                 self.feature_map.features[name]["vocab_size"] = tokenizer.vocab_size()
 
@@ -317,7 +317,6 @@ class FeatureProcessor(object):
 
     def save_pickle(self, pickle_file):
         logging.info("Pickle feature_encode: " + pickle_file)
-        os.makedirs(os.path.dirname(pickle_file), exist_ok=True)
         pickle.dump(self, open(pickle_file, "wb"))
 
     def save_vocab(self, vocab_file):

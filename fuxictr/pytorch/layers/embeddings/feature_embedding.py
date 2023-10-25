@@ -86,13 +86,16 @@ class FeatureEmbeddingDict(nn.Module):
                     self.embedding_layers[feature] = nn.Linear(1, feat_dim, bias=False)
                 elif feature_spec["type"] in ["categorical", "sequence"]:
                     if use_pretrain and "pretrained_emb" in feature_spec:
-                        pretrained_path = os.path.join(feature_map.data_dir, 
-                                                       feature_spec["pretrained_emb"])
+                        pretrain_path = os.path.join(feature_map.data_dir, 
+                                                     feature_spec["pretrained_emb"])
+                        vocab_path = os.path.join(feature_map.data_dir, 
+                                                  "feature_vocab.json")
                         pretrain_dim = feature_spec.get("pretrain_dim", feat_dim)
                         pretrain_usage = feature_spec.get("pretrain_usage", "init")
                         self.embedding_layers[feature] = PretrainedEmbedding(feature,
                                                                              feature_spec,
-                                                                             pretrained_path,
+                                                                             pretrain_path,
+                                                                             vocab_path,
                                                                              feat_dim,
                                                                              pretrain_dim,
                                                                              pretrain_usage)

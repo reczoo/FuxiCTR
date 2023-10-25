@@ -15,15 +15,10 @@
 # =========================================================================
 
 from collections import Counter
-import itertools
 import numpy as np
 import pandas as pd
 import h5py
-import pickle
-import os
 from tqdm import tqdm
-import logging
-import sklearn.preprocessing as sklearn_preprocess
 from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -106,12 +101,6 @@ class Tokenizer(object):
         if new_words > 0:
             self.vocab["__OOV__"] = self.vocab_size()
 
-    def expand_pretrain_vocab(self, word_list):
-        # Do not update OOV index here
-        for word in word_list:
-            if word not in self.vocab:
-                self.vocab[word] = self.vocab_size()
-
     def encode_meta(self, values):
         word_counts = Counter(list(values))
         if len(self.vocab) == 0:
@@ -137,35 +126,16 @@ class Tokenizer(object):
                                       padding=self.padding, truncating=self.padding)
         return np.array(sequence_list)
     
-    def load_pretrained_embedding(self, feature_name, feature_dtype, pretrain_path,  
-                                  output_path, freeze_emb=True, expand_pretrain_vocab=True):
+    def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
         with h5py.File(pretrain_path, 'r') as hf:
             keys = hf["key"][:]
             keys = keys.astype(feature_dtype) # in case mismatch of dtype between int and str
-            pretrained_vocab = dict(zip(keys, range(len(keys))))
-            pretrained_emb = hf["value"][:]
-        # update vocab with pretrained keys, in case new token ids appear in validation or test set
-        if expand_pretrain_vocab:
-            self.expand_pretrain_vocab(pretrained_vocab.keys())
-        
-        logging.info("{}\'s pretrained_emb shape: {}".format(feature_name, pretrained_emb.shape))
-        embedding_dim = pretrained_emb.shape[1]
-        if freeze_emb:
-            embedding_matrix = np.zeros((self.vocab_size(), embedding_dim))
-        else:
-            embedding_matrix = np.random.normal(loc=0, scale=1.e-4, size=(self.vocab_size(), embedding_dim))
-            embedding_matrix[self.vocab["__PAD__"], :] = 0.  # set as zero embedding for PAD
-        for word in pretrained_vocab.keys():
-            if word in self.vocab:
-                embedding_matrix[self.vocab[word]] = pretrained_emb[pretrained_vocab[word]]
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with h5py.File(output_path, 'a') as hf: # Add different embeddings to a single h5 file
-            hf.create_dataset(feature_name, data=embedding_matrix)
-
-    # def load_vocab(self, vocab_file):
-    #     with open(vocab_file, 'r') as fid:
-    #         word_counts = json.load(fid)
-    #     self.build_vocab(word_counts)
+        # Update vocab with pretrained keys in case new tokens appear in validation or test set
+        # Do not update OOV index here since it is used in PretrainedEmbedding
+        if expand_vocab:
+            for word in keys:
+                if word not in self.vocab:
+                    self.vocab[word] = self.vocab_size()
 
 
 def count_tokens(texts, splitter):

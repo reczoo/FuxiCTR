@@ -55,27 +55,28 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     return train_ddf, valid_ddf, test_ddf
 
 
-def transform_h5(feature_encoder, ddf, filename, preprocess=False, block_size=0):
-    def _transform_block(feature_encoder, df_block, filename, preprocess):
-        if preprocess:
-            df_block = feature_encoder.preprocess(df_block)
-        darray_dict = feature_encoder.transform(df_block)
-        save_h5(darray_dict, os.path.join(feature_encoder.data_dir, filename))
+def transform_block(feature_encoder, df_block, filename, preprocess=False):
+    if preprocess:
+        df_block = feature_encoder.preprocess(df_block)
+    darray_dict = feature_encoder.transform(df_block)
+    save_h5(darray_dict, os.path.join(feature_encoder.data_dir, filename))
 
+
+def transform_h5(feature_encoder, ddf, filename, preprocess=False, block_size=0):
     if block_size > 0:
         pool = mp.Pool(mp.cpu_count() // 2)
         block_id = 0
         for idx in range(0, len(ddf), block_size):
             df_block = ddf[idx: (idx + block_size)]
-            pool.apply_async(_transform_block, args=(feature_encoder,
-                                                     df_block,
-                                                     '{}/part_{}.h5'.format(filename, block_id),
-                                                     preprocess))
+            pool.apply_async(transform_block, args=(feature_encoder,
+                                                    df_block,
+                                                    '{}/part_{}.h5'.format(filename, block_id),
+                                                    preprocess))
             block_id += 1
         pool.close()
         pool.join()
     else:
-        _transform_block(feature_encoder, ddf, filename + ".h5", preprocess)
+        transform_block(feature_encoder, ddf, filename + ".h5", preprocess)
 
 
 def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None, valid_size=0, 
@@ -124,13 +125,7 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         logging.info("Transform csv data to h5 done.")
     
     # Return processed data splits
-    if data_block_size > 0:
-        return os.path.join(feature_encoder.data_dir, "train/*.h5"), \
-               os.path.join(feature_encoder.data_dir, "valid/*.h5"), \
-               os.path.join(feature_encoder.data_dir, "test/*.h5") if (
-               test_data or test_size > 0) else None
-    else:
-        return os.path.join(feature_encoder.data_dir, 'train.h5'), \
-               os.path.join(feature_encoder.data_dir, 'valid.h5'), \
-               os.path.join(feature_encoder.data_dir, 'test.h5') if (
-               test_data or test_size > 0) else None
+    return os.path.join(feature_encoder.data_dir, "train"), \
+           os.path.join(feature_encoder.data_dir, "valid"), \
+           os.path.join(feature_encoder.data_dir, "test") if (
+           test_data or test_size > 0) else None

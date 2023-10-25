@@ -19,14 +19,18 @@ import torch
 from torch import nn
 import h5py
 import os
+import io
+import json
 import numpy as np
+import logging
 
 
 class PretrainedEmbedding(nn.Module):
     def __init__(self,
                  feature_name,
                  feature_spec,
-                 pretrained_path,
+                 pretrain_path,
+                 vocab_path,
                  embedding_dim,
                  pretrain_dim,
                  pretrain_usage="init"):
@@ -40,11 +44,10 @@ class PretrainedEmbedding(nn.Module):
         padding_idx = feature_spec.get("padding_idx", None)
         self.oov_idx = feature_spec["oov_idx"]
         self.freeze_emb = feature_spec["freeze_emb"]
-        embedding_matrix = nn.Embedding(feature_spec["vocab_size"],
-                                        pretrain_dim,
-                                        padding_idx=padding_idx)
-        self.pretrain_embedding = self.load_pretrained_embedding(embedding_matrix,
-                                                                 pretrained_path,
+        self.pretrain_embedding = self.load_pretrained_embedding(feature_spec["vocab_size"],
+                                                                 pretrain_dim,
+                                                                 pretrain_path,
+                                                                 vocab_path,
                                                                  feature_name,
                                                                  freeze=self.freeze_emb,
                                                                  padding_idx=padding_idx)
@@ -63,23 +66,39 @@ class PretrainedEmbedding(nn.Module):
             nn.init.zeros_(self.id_embedding.weight) # set oov token embeddings to zeros
             embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])
 
-    def get_pretrained_embedding(self, pretrained_path, feature_name):
-        with h5py.File(pretrained_path, 'r') as hf:
-            embeddings = hf[feature_name][:]
-        return embeddings
+    def get_pretrained_embedding(self, pretrain_path):
+        with h5py.File(pretrain_path, 'r') as hf:
+            keys = hf["key"][:]
+            embeddings = hf["value"][:]
+        logging.info("Loading pretrained_emb: {}".format(pretrain_path))
+        return keys, embeddings
 
-    def load_pretrained_embedding(self, embedding_matrix, pretrained_path, feature_name,
-                                  freeze=False, padding_idx=None):
-        embeddings = self.get_pretrained_embedding(pretrained_path, feature_name)
-        if padding_idx is not None:
-            embeddings[padding_idx] = np.zeros(embeddings.shape[-1])
-        assert embeddings.shape[-1] == embedding_matrix.embedding_dim, \
-            "{}\'s pretrain_dim is not correct.".format(feature_name)
-        embeddings = torch.from_numpy(embeddings).float()
-        embedding_matrix.weight = torch.nn.Parameter(embeddings)
+    def load_feature_vocab(self, vocab_path, feature_name):
+        with io.open(vocab_path, "r", encoding="utf-8") as fd:
+            vocab = json.load(fd)
+        return vocab[feature_name]
+
+    def load_pretrained_embedding(self, vocab_size, pretrain_dim, pretrain_path, vocab_path,
+                                  feature_name, freeze=False, padding_idx=None):
+        embedding_layer = nn.Embedding(vocab_size,
+                                       pretrain_dim,
+                                       padding_idx=padding_idx)
         if freeze:
-            embedding_matrix.weight.requires_grad = False
-        return embedding_matrix
+            embedding_matrix = np.zeros((vocab_size, pretrain_dim))
+        else:
+            embedding_matrix = np.random.normal(loc=0, scale=1.e-4, size=(vocab_size, pretrain_dim))
+            if padding_idx:
+                embedding_matrix[padding_idx, :] = np.zeros(pretrain_dim) # set as zero for PAD
+        keys, embeddings = self.get_pretrained_embedding(pretrain_path)
+        assert embeddings.shape[-1] == pretrain_dim, f"pretrain_dim={pretrain_dim} not correct."
+        vocab = self.load_feature_vocab(vocab_path, feature_name)
+        for idx, word in enumerate(keys):
+            if word in vocab:
+                embedding_matrix[vocab[word]] = embeddings[idx]
+        embedding_layer.weight = torch.nn.Parameter(torch.from_numpy(embedding_matrix).float())
+        if freeze:
+            embedding_layer.weight.requires_grad = False
+        return embedding_layer
 
     def forward(self, inputs):
         mask = (inputs <= self.oov_idx).float()
