@@ -13,7 +13,7 @@
 <hr/>
 
 <div align="center">
-<a href="https://github.com/xue-pai/FuxiCTR/stargazers"><img src="https://reporoster.com/stars/xue-pai/FuxiCTR" /><a/>
+<a href="https://github.com/xue-pai/FuxiCTR/stargazers"><img src="http://bytecrank.com/nastyox/reporoster/php/stargazersSVG.php?user=xue-pai&repo=FuxiCTR" width="600"/><a/>
 </div>
 
 Click-through rate (CTR) prediction is a critical task for many industrial applications such as online advertising, recommender systems, and sponsored search. FuxiCTR provides an open-source library for CTR prediction, with key features in configurability, tunability, and reproducibility. We hope this project could benefit both researchers and practitioners with the goal of open benchmarking for CTR prediction tasks.
