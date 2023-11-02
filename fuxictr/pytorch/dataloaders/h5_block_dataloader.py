@@ -1,4 +1,5 @@
 # =========================================================================
+# Copyright (C) 2023. FuxiCTR Authors. All rights reserved.
 # Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,15 +26,13 @@ import logging
 import glob
 
 
-class DataBlockDataset(data.IterableDataset):
-    def __init__(self, feature_map, block_file_list, shuffle=False, verbose=0):
-        # block_file_list: path list of data blocks
+class BlockIterDataPipe(data.IterDataPipe):
+    def __init__(self, block_datapipe, feature_map, verbose=0):
         self.feature_map = feature_map
-        self.data_blocks = block_file_list
-        self.shuffle = shuffle
+        self.block_datapipe = block_datapipe
         self.verbose = verbose
         
-    def load_data_array(self, data_path):
+    def load_data(self, data_path):
         data_dict = load_h5(data_path, verbose=self.verbose)
         data_arrays = []
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
@@ -45,32 +44,28 @@ class DataBlockDataset(data.IterableDataset):
                 data_arrays.append(array)
         data_tensor = torch.from_numpy(np.hstack(data_arrays))
         return data_tensor
-    
-    def iter_block(self, data_block):
-        darray = self.load_data_array(data_block)
-        block_size = darray.shape[0]
-        indexes = list(range(block_size))
-        if self.shuffle:
-            np.random.shuffle(indexes)
-        for idx in indexes:
+
+    def read_block(self, data_block):
+        darray = self.load_data(data_block)
+        for idx in range(darray.shape[0]):
             yield darray[idx, :]
 
     def __iter__(self):
         worker_info = data.get_worker_info()
         if worker_info is None: # single-process data loading
-            chunk_list = self.data_blocks
+            block_list = self.block_datapipe
         else: # in a worker process
-            worker_id = worker_info.id
-            chunk_list = np.array_split(self.data_blocks, worker_info.num_workers)
-            sub_list = chunk_list[worker_id].tolist()
-            if self.shuffle:
-                np.random.shuffle(sub_list)
-        return chain.from_iterable(map(self.iter_block, sub_list))
+            block_list = [
+                block
+                for idx, block in enumerate(self.block_datapipe)
+                if idx % worker_info.num_workers == worker_info.id
+            ]
+        return chain.from_iterable(map(self.read_block, block_list))
 
 
 class DataLoader(data.DataLoader):
     def __init__(self, feature_map, data_path, batch_size=32, shuffle=False,
-                 num_workers=1, verbose=0, **kwargs):
+                 num_workers=1, verbose=0, buffer_size=100000, **kwargs):
         data_blocks = glob.glob(data_path + "/*.h5")
         assert len(data_blocks) > 0, f"invalid data_path: {data_path}"
         if len(data_blocks) > 1:
@@ -80,9 +75,10 @@ class DataLoader(data.DataLoader):
         self.feature_map = feature_map
         self.batch_size = batch_size
         self.num_batches, self.num_samples = self.count_batches_and_samples()
-        self.dataset = DataBlockDataset(feature_map, data_blocks, shuffle=shuffle, verbose=verbose)
-        super(DataLoader, self).__init__(dataset=self.dataset, batch_size=batch_size,
-                                         num_workers=num_workers)
+        datapipe = BlockIterDataPipe(data_blocks, feature_map, verbose)
+        if shuffle:
+            datapipe = datapipe.shuffle(buffer_size=buffer_size)
+        super(DataLoader, self).__init__(dataset=datapipe, batch_size=batch_size, num_workers=num_workers)
 
     def __len__(self):
         return self.num_batches
