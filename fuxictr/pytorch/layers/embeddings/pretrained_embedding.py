@@ -57,9 +57,9 @@ class PretrainedEmbedding(nn.Module):
                                              padding_idx=padding_idx)
         self.proj = None
         if pretrain_usage in ["init", "sum"] and embedding_dim != pretrain_dim:
-            self.proj = nn.Linear(pretrain_dim, embedding_dim)
+            self.proj = nn.Linear(pretrain_dim, embedding_dim, bias=False)
         if pretrain_usage == "concat":
-            self.proj = nn.Linear(pretrain_dim + embedding_dim, embedding_dim)
+            self.proj = nn.Linear(pretrain_dim + embedding_dim, embedding_dim, bias=False)
 
     def reset_parameters(self, embedding_initializer):
         if self.pretrain_usage in ["sum", "concat"]:

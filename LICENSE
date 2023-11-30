@@ -187,7 +187,7 @@
     identification within third-party archives.
 
 
-  Copyright (C) 2022 The FuxiCTR Authors. 
+  Copyright (C) 2023 The FuxiCTR Authors. 
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -201,7 +201,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  All contributions by Huawei:
+  -----------------------------------------------------------------------
+  This library bundles some third-party components under other open 
+  source licenses. This section summarizes their copyrights and licenses. 
+  -----------------------------------------------------------------------
+
+  For contributions by Huawei:
   Copyright (C) 2022 Huawei Technologies Co., Ltd.
 
   This program is free software; you can redistribute it and/or modify it under
@@ -210,17 +215,13 @@
   This program is distributed in the hope that it will be useful, but WITHOUT ANY
   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
   PARTICULAR PURPOSE. See the MIT License for more details.
-
-  -----------------------------------------------------------------------
-  This library bundles some third-party components under other open 
-  source licenses. This section summarizes their copyrights and licenses. 
   -----------------------------------------------------------------------
 
   For layers.ScaledDotProductAttention:
   Copyright (C) 2018 pengshuang@Github
   -----------------------------------------------------------------------
 
-  For models.DCNv2.CrossNetMix:
+  For model_zoo.DCNv2.CrossNetMix:
   Copyright (C) 2021 The DeepCTR-Torch authors (chen_kkkk, zanshuxun)
 
   Licensed under the Apache License, Version 2.0 (the "License");
