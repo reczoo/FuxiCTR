@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2022. The FuxiCTR Authors. All rights reserved.
+# Copyright (C) 2023. The FuxiCTR Authors. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ class FINAL(BaseModel):
                  embedding_dim=10,
                  block_type="2B",
                  batch_norm=True,
-                 use_field_gate=False,
+                 use_feature_gating=False,
                  block1_hidden_units=[64, 64, 64],
                  block1_hidden_activations=None,
                  block1_dropout=0,
@@ -52,26 +52,26 @@ class FINAL(BaseModel):
         assert block_type in ["1B", "2B"], "block_type={} not supported.".format(block_type)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
         num_fields = feature_map.num_fields
-        self.use_field_gate = use_field_gate
-        if use_field_gate:
-            self.field_gate = FinalGate(num_fields, gate_residual="concat")
+        self.use_feature_gating = use_feature_gating
+        if use_feature_gating:
+            self.feature_gating = FeatureGating(num_fields, gate_residual="concat")
             gate_out_dim = embedding_dim * num_fields * 2
         self.block_type = block_type
-        self.block1 = FinalBlock(input_dim=gate_out_dim if use_field_gate \
-                                           else embedding_dim * num_fields,
-                                 hidden_units=block1_hidden_units,
-                                 hidden_activations=block1_hidden_activations,
-                                 dropout_rates=block1_dropout,
-                                 batch_norm=batch_norm,
-                                 residual_type=residual_type)
+        self.block1 = QuadNet(input_dim=gate_out_dim if use_feature_gating \
+                                        else embedding_dim * num_fields,
+                              hidden_units=block1_hidden_units,
+                              hidden_activations=block1_hidden_activations,
+                              dropout_rates=block1_dropout,
+                              batch_norm=batch_norm,
+                              residual_type=residual_type)
         self.fc1 = nn.Linear(block1_hidden_units[-1], 1)
         if block_type == "2B":
-            self.block2 = FinalBlock(input_dim=embedding_dim * num_fields,
-                                     hidden_units=block2_hidden_units,
-                                     hidden_activations=block2_hidden_activations,
-                                     dropout_rates=block2_dropout,
-                                     batch_norm=batch_norm,
-                                     residual_type=residual_type)
+            self.block2 = QuadNet(input_dim=embedding_dim * num_fields,
+                                  hidden_units=block2_hidden_units,
+                                  hidden_activations=block2_hidden_activations,
+                                  dropout_rates=block2_dropout,
+                                  batch_norm=batch_norm,
+                                  residual_type=residual_type)
             self.fc2 = nn.Linear(block2_hidden_units[-1], 1)
         self.compile(kwargs["optimizer"], loss=kwargs["loss"], lr=learning_rate)
         self.reset_parameters()
@@ -92,8 +92,8 @@ class FINAL(BaseModel):
         return return_dict
 
     def forward1(self, X):
-        if self.use_field_gate:
-            X = self.field_gate(X)
+        if self.use_feature_gating:
+            X = self.feature_gating(X)
         block1_out = self.block1(X.flatten(start_dim=1))
         y_pred = self.fc1(block1_out)
         return y_pred
@@ -116,9 +116,9 @@ class FINAL(BaseModel):
         return loss
 
 
-class FinalGate(nn.Module):
+class FeatureGating(nn.Module):
     def __init__(self, num_fields, gate_residual="concat"):
-        super(FinalGate, self).__init__()
+        super(FeatureGating, self).__init__()
         self.linear = nn.Linear(num_fields, num_fields)
         assert gate_residual in ["concat", "sum"]
         self.gate_residual = gate_residual
@@ -136,11 +136,11 @@ class FinalGate(nn.Module):
         return out
 
 
-class FinalBlock(nn.Module):
+class QuadNet(nn.Module):
     def __init__(self, input_dim, hidden_units=[], hidden_activations=None, 
                  dropout_rates=[], batch_norm=True, residual_type="sum"):
-        # Replacement of MLP_Block, identical when order=1
-        super(FinalBlock, self).__init__()
+        # Quadratic Interaction Network: Replacement of MLP block
+        super(QuadNet, self).__init__()
         if type(dropout_rates) != list:
             dropout_rates = [dropout_rates] * len(hidden_units)
         if type(hidden_activations) != list:
@@ -151,8 +151,9 @@ class FinalBlock(nn.Module):
         self.activation = nn.ModuleList()
         hidden_units = [input_dim] + hidden_units
         for idx in range(len(hidden_units) - 1):
-            self.layer.append(FinalLinear(hidden_units[idx], hidden_units[idx + 1],
-                                          residual_type=residual_type))
+            self.layer.append(FactorizedQuadraticInteraction(hidden_units[idx],
+                                                             hidden_units[idx + 1],
+                                                             residual_type=residual_type))
             if batch_norm:
                 self.norm.append(nn.BatchNorm1d(hidden_units[idx + 1]))
             if dropout_rates[idx] > 0:
@@ -172,13 +173,14 @@ class FinalBlock(nn.Module):
         return X_i
 
 
-class FinalLinear(nn.Module):
+class FactorizedQuadraticInteraction(nn.Module):
     def __init__(self, input_dim, output_dim, bias=True, residual_type="sum"):
-        """ A replacement of nn.Linear to enhance multiplicative feature interactions. 
-            `residual_type="concat"` uses the same number of parameters as nn.Linear 
-            while `residual_type="sum"` doubles the number of parameters. 
+        """ FactorizedQuadraticInteraction layer is an improvement of nn.Linear to capture quadratic 
+            interactions between features.
+            Setting `residual_type="concat"` keeps the same number of parameters as nn.Linear
+            while `residual_type="sum"` doubles the number of parameters.
         """
-        super(FinalLinear, self).__init__()
+        super(FactorizedQuadraticInteraction, self).__init__()
         self.residual_type = residual_type
         if residual_type == "sum":
             output_dim = output_dim * 2

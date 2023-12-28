@@ -25,7 +25,7 @@ FINAL_test:
     embedding_dim: 4
     block_type: "2B"
     batch_norm: True
-    use_field_gate: True
+    use_feature_gating: True
     block1_hidden_units: [64, 64, 64]
     block1_hidden_activations: null
     block1_dropout: 0
@@ -53,7 +53,7 @@ FINAL_default: # This is a config template
     embedding_dim: 40
     block_type: "2B"
     batch_norm: True
-    use_field_gate: True
+    use_feature_gating: True
     block1_hidden_units: [64, 64, 64]
     block1_hidden_activations: null
     block1_dropout: 0
@@ -66,4 +66,3 @@ FINAL_default: # This is a config template
     seed: 20222023
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
-

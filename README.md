@@ -69,17 +69,17 @@ Click-through rate (CTR) prediction is a critical task for various industrial ap
 | 33  | DLP-KDD'21        | [MaskNet](./model_zoo/MaskNet)           | [MaskNet: Introducing Feature-Wise Multiplication to CTR Ranking Models by Instance-Guided Mask](https://arxiv.org/abs/2102.07619) :triangular_flag_on_post:**Sina Weibo**                                      | [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/MaskNet)      | `torch`       |
 | 34  | SIGIR'21          | [SAM](./model_zoo/SAM)                   | [Looking at CTR Prediction Again: Is Attention All You Need?](https://arxiv.org/abs/2105.05563) :triangular_flag_on_post:**BOSS Zhipin**                                                                        | [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/SAM)          | `torch`       |
 | 35  | KDD'21            | [AOANet](./model_zoo/AOANet)             | [Architecture and Operation Adaptive Network for Online Recommendations](https://dl.acm.org/doi/10.1145/3447548.3467133) :triangular_flag_on_post:**Didi Chuxing**                                              | [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/AOANet)       | `torch`       |
-| 36  | AAAI'23           | [FinalMLP](./model_zoo/FinalMLP)         | [FinalMLP: An Enhanced Two-Stream MLP Model for CTR Prediction](https://arxiv.org/abs/2304.00902) :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/FinalMLP)         | `torch`       |
-| 37  | SIGIR'23          | [FINAL](./model_zoo/FINAL)               | FINAL: Factorized Interaction Layer for CTR Prediction :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/FINAL)         | `torch`       |
-| 38  | CIKM'23           | [GDCN](./model_zoo/GDCN)         | [Towards Deeper, Lighter and Interpretable Cross Network for CTR Prediction](https://dl.acm.org/doi/pdf/10.1145/3583780.3615089) :triangular_flag_on_post:**Microsoft**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/FinalMLP)         | `torch`       |
+| 36  | AAAI'23           | [FinalMLP](./model_zoo/FinalMLP)         | [FinalMLP: An Enhanced Two-Stream MLP Model for CTR Prediction](https://arxiv.org/abs/2304.00902) :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/FinalMLP)         | `torch`       |
+| 37  | SIGIR'23          | [FINAL](./model_zoo/FINAL)               | [FINAL: Factorized Interaction Layer for CTR Prediction](https://dl.acm.org/doi/10.1145/3539618.3591988) :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/FINAL)         | `torch`       |
+| 38  | CIKM'23           | [GDCN](./model_zoo/GDCN)         | [Towards Deeper, Lighter and Interpretable Cross Network for CTR Prediction](https://dl.acm.org/doi/pdf/10.1145/3583780.3615089) :triangular_flag_on_post:**Microsoft**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/FinalMLP)         | `torch`       |
 |<tr><th colspan=6 align="center">:open_file_folder: **Behavior Sequence Modeling**</th></tr>|
 | 39  | KDD'18            | [DIN](./model_zoo/DIN)                   | [Deep Interest Network for Click-Through Rate Prediction](https://www.kdd.org/kdd2018/accepted-papers/view/deep-interest-network-for-click-through-rate-prediction) :triangular_flag_on_post:**Alibaba**        |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/DIN)       | `torch`       |
-| 40  | AAAI'19           | [DIEN](./model_zoo/DIEN)                 | [Deep Interest Evolution Network for Click-Through Rate Prediction](https://arxiv.org/abs/1809.03672) :triangular_flag_on_post:**Alibaba**                                                                      |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/DIEN)        | `torch`       |
-| 41  | DLP-KDD'19        | [BST](./model_zoo/BST)                   | [Behavior Sequence Transformer for E-commerce Recommendation in Alibaba](https://arxiv.org/abs/1905.06874) :triangular_flag_on_post:**Alibaba**                                                                 |  [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/BST)     | `torch`       |
-| 42  | CIKM'20           | [DMIN](./model_zoo/DMIN)                 | [Deep Multi-Interest Network for Click-through Rate Prediction](https://dl.acm.org/doi/10.1145/3340531.3412092) :triangular_flag_on_post:**Alibaba**                                                            |                                                                                                                 | `torch`       |
-| 43  | AAAI'20           | [DMR](./model_zoo/DMR)                   | [Deep Match to Rank Model for Personalized Click-Through Rate Prediction](https://ojs.aaai.org/index.php/AAAI/article/view/5346) :triangular_flag_on_post:**Alibaba**                                           |                                                                                                                 | `torch`       |
-| 44  | Arxiv'21          | [ETA](./model_zoo/ETA)                   | [End-to-End User Behavior Retrieval in Click-Through RatePrediction Model](https://arxiv.org/abs/2108.04468) :triangular_flag_on_post:**Alibaba**                                                               |                                                                                                                 | `torch`       |
-| 45  | CIKM'22           | [SDIM](./model_zoo/SDIM)                 | [Sampling Is All You Need on Modeling Long-Term User Behaviors for CTR Prediction](https://arxiv.org/abs/2205.10249) :triangular_flag_on_post:**Meituan**                                                       |                                                                                                                 | `torch`       |
+| 40  | AAAI'19           | [DIEN](./model_zoo/DIEN)                 | [Deep Interest Evolution Network for Click-Through Rate Prediction](https://arxiv.org/abs/1809.03672) :triangular_flag_on_post:**Alibaba**                                                                      |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/DIEN)        | `torch`       |
+| 41  | DLP-KDD'19        | [BST](./model_zoo/BST)                   | [Behavior Sequence Transformer for E-commerce Recommendation in Alibaba](https://arxiv.org/abs/1905.06874) :triangular_flag_on_post:**Alibaba**                                                                 |  [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/BST)     | `torch`       |
+| 42  | CIKM'20           | [DMIN](./model_zoo/DMIN)                 | [Deep Multi-Interest Network for Click-through Rate Prediction](https://dl.acm.org/doi/10.1145/3340531.3412092) :triangular_flag_on_post:**Alibaba**                                                            |                                                                                                                 | `torch`       |
+| 43  | AAAI'20           | [DMR](./model_zoo/DMR)                   | [Deep Match to Rank Model for Personalized Click-Through Rate Prediction](https://ojs.aaai.org/index.php/AAAI/article/view/5346) :triangular_flag_on_post:**Alibaba**                                           |                                                                                                                 | `torch`       |
+| 44  | Arxiv'21          | [ETA](./model_zoo/ETA)                   | [End-to-End User Behavior Retrieval in Click-Through RatePrediction Model](https://arxiv.org/abs/2108.04468) :triangular_flag_on_post:**Alibaba**                                                               |                                                                                                                 | `torch`       |
+| 45  | CIKM'22           | [SDIM](./model_zoo/SDIM)                 | [Sampling Is All You Need on Modeling Long-Term User Behaviors for CTR Prediction](https://arxiv.org/abs/2205.10249) :triangular_flag_on_post:**Meituan**                                                       |                                                                                                                 | `torch`       |
 |<tr><th colspan=6 align="center">:open_file_folder: **Dynamic Weight Network**</th></tr>|
 | 46  | NeurIPS'22          | [APG](./model_zoo/APG)               | [APG: Adaptive Parameter Generation Network for Click-Through Rate Prediction](https://arxiv.org/abs/2203.16218) :triangular_flag_on_post:**Alibaba**                                |                                                                                                  | `torch`       |
 | 47  | Arxiv'23        | [PPNet](./model_zoo/PEPNet)             | [PEPNet: Parameter and Embedding Personalized Network for Infusing with Personalized Prior Information](https://arxiv.org/abs/2302.01115) :triangular_flag_on_post:**KuaiShou**                          |                                                                                                  | `torch`       |
@@ -90,10 +90,13 @@ Click-through rate (CTR) prediction is a critical task for various industrial ap
 |<tr><th colspan=6 align="center">:open_file_folder: **Multi-Domain Modeling**</th></tr>|
 | 51  | Arxiv'23           | PEPNet              | [PEPNet: Parameter and Embedding Personalized Network for Infusing with Personalized Prior Information](https://arxiv.org/abs/2302.01115) :triangular_flag_on_post:**KuaiShou**                                                                                            |                                                                                                                 | `torch`       |
 
-+ :point_right: See [reusable dataset splits for CTR prediction](https://openbenchmark.github.io/BARS/datasets/README.html).
-+ :point_right: See [benchmarking configurations and steps](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks).
-+ :point_right: See [the BARS benchmark leaderboard](https://openbenchmark.github.io/BARS/ctr_prediction/leaderboard/README.html#).
+## Benchmarking
 
+We have evaluated FuxiCTR models on a set of benchmark datasets as follows:
+
++ :star: [Benchmark datasets for CTR prediction](https://github.com/reczoo/Datasets?tab=readme-ov-file#ctr-prediction)
++ :star: [Benchmark configurations and reproducing steps](https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks)
++ :star: [The BARS-CTR benchmark leaderboard](https://openbenchmark.github.io/BARS/ctr_prediction/leaderboard/README.html#)
 
 ## Dependencies
 
@@ -117,7 +120,7 @@ Other packages can be installed via `pip install -r requirements.txt`.
    python example2_DeepFM_with_h5_input.py
    ```
 
-2. Run an existing model
+2. Run a model on tiny data
    
     Users can easily run each model in the model zoo following the commands below, which is a demo for running DCN. In addition, users can modify the dataset config and model config files to run on their own datasets or with new hyper-parameters. More details can be found in the [readme file](./model_zoo/DCN/DCN_torch/README.md).
    
@@ -130,19 +133,23 @@ Other packages can be installed via `pip install -r requirements.txt`.
    python run_expid.py --expid MODEL_test --gpu 0
    ```
 
-3. Implement a new model
+3. Run a model on benchmark data (e.g., Criteo)
+
+   Users can follow the [benchmark section](#Benchmarking) to get benchmark datasets and running steps. Please see an example here: https://github.com/reczoo/BARS/tree/main/ctr_prediction/benchmarks/DCNv2/DCNv2_criteo_x1
+
+
+4. Implement a new model
    
-    The FuxiCTR code structure is modularized, so that every part can be overwritten by users according to their needs. In many cases, only the model class needs to be implemented for a new customized model. If data preprocessing or data loader is not directly applicable, one can also overwrite a new one through the [core APIs](https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7). We show a concrete example which implements our new model [FinalMLP](https://reczoo.github.io/FinalMLP) that has been recently published in AAAI 2023. More examples can be found in the [model zoo](./model_zoo/).
+    The FuxiCTR library is designed to be modularized, so that every component can be overwritten by users according to their needs. In many cases, only the model class needs to be implemented for a new customized model. If data preprocessing or data loader is not directly applicable, one can also overwrite a new one through the [core APIs](https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7). We show a concrete example which implements our new model [FinalMLP](https://reczoo.github.io/FinalMLP) that has been recently published in AAAI 2023. More examples can be found in the [model zoo](./model_zoo/).
 
 
 ## Citation
 
-*:bell: If you find our code or benchmarks helpful in your research, please kindly cite the following papers.*
+*:bell: If you find our code or benchmarks helpful in your research, please cite the following papers.*
 
 > Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
 
 > Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
-
 
 ## Discussion
 
