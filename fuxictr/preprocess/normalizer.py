@@ -36,7 +36,7 @@ class Normalizer(object):
             null_index = np.isnan(X)
             self.normalizer.fit(X[~null_index].reshape(-1, 1))
 
-    def normalize(self, X):
+    def transform(self, X):
         if self.callable:
             return self.normalizer(X)
         else:
