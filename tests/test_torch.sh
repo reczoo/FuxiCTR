@@ -32,7 +32,7 @@ echo "=== Testing FM ===" && cd $home/FM && python run_expid.py --expid FM_test 
 echo "=== Testing FmFM ===" && cd $home/FmFM && python run_expid.py --expid FmFM_test && \
 echo "=== Testing FwFM ===" && cd $home/FwFM && python run_expid.py --expid FwFM_test && \
 echo "=== Testing FinalMLP ===" && cd $home/FinalMLP && python run_expid.py --expid FinalMLP_test && \
-# echo "=== Testing FINAL ===" && cd $home/FINAL && python run_expid.py --expid FINAL_test && \
+echo "=== Testing FinalNet ===" && cd $home/FinalNet && python run_expid.py --expid FinalNet_test && \
 echo "=== Testing HFM ===" && cd $home/HFM && python run_expid.py --expid HFM_test && \
 echo "=== Testing HOFM ===" && cd $home/HOFM && python run_expid.py --expid HOFM_test && \
 echo "=== Testing InterHAt ===" && cd $home/InterHAt && python run_expid.py --expid InterHAt_test && \

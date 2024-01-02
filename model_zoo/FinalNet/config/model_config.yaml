@@ -11,8 +11,8 @@ Base:
     ordered_features: null
     feature_specs: null
 
-FINAL_test:
-    model: FINAL
+FinalNet_test:
+    model: FinalNet
     dataset_id: tiny_h5
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
@@ -39,8 +39,8 @@ FINAL_test:
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
 
-FINAL_default: # This is a config template
-    model: FINAL
+FinalNet_default: # This is a config template
+    model: FinalNet
     dataset_id: TBD
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']

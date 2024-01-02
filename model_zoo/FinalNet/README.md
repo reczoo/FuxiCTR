@@ -1,4 +1,4 @@
-# FINAL
+# FinalNet
 
 Click-through rate (CTR) prediction is one of the fundamental tasks for online advertising and recommendation. Inspired by factorization machines, in this paper, we propose FINAL, a factorized interaction layer that extends the widely-used linear layer and is capable of learning quadratic feature interactions. Similar to MLPs, multiple FINAL layers can be stacked into a FINAL block, yielding feature interactions with an exponential degree growth. We unify feature interactions and MLPs into a single FINAL block and empirically show its effectiveness as a replacement for the MLP block. 
 
@@ -41,7 +41,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
   
 | Params                  | Type            | Default                 | Description                                                                                                                                                                                                       |
 | ----------------------- | --------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| model                   | str             | "FINAL"                 | model name,  which should be same with model class name                                                                                                                                                           |
+| model                   | str             | "FinalNet"                 | model name,  which should be same with model class name                                                                                                                                                           |
 | dataset_id              | str             | "TBD"                   | dataset_id to be determined                                                                                                                                                                                       |
 | loss                    | str             | "binary_crossentropy"   | loss function                                                                                                                                                                                                     |
 | metrics                 | list            | ['logloss', 'AUC']      | a list of metrics for evaluation                                                                                                                                                                                  |
@@ -61,7 +61,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 | block_type         | str            | "2B"                   | block type: ```"1B"```, ```"2B"```                                                                                                                                                                               |
 | batch_norm         | bool            | True                   | whether to use BN                                                                                                                                                                                       |
 | use_feature_gating                  | bool            | True                    | whether to use feature gating                                                                                                                                                                                   |
-| residual_type         | str            | "concat"                |  residual type in FactorizedQuadraticInteraction: ```"concat"```, ```"sum"```                                                                                                                                                          |
+| residual_type         | str            | "concat"                |  residual type in FINAL: ```"concat"```, ```"sum"```                                                                                                                                                          |
 | epochs                  | int             | 100                     | the max number of epochs for training, which can early stop via monitor metrics.                                                                                                                                  |
 | shuffle                 | bool            | True                    | whether shuffle the data samples for each epoch of training                                                                                                                                                       |
 | seed                    | int             | 2021                    | the random seed used for reproducibility                                                                                                                                                                          |
@@ -86,8 +86,8 @@ The evaluation results on AUC:
 |   DCNv2  |   81.42   |   76.54   |   96.91   |   98.45   |
 |   EDCN   |   81.47   |   76.52   |   96.71   |   98.50   |
 | FinalMLP |   81.49   |   76.66   |   97.20   | **98.61** |
-| FINAL_1B |   81.44   |   76.60   |   97.06   |   98.52   |
-| FINAL_2B | **81.54** | **76.71** | **97.25** |   98.57   |
+| FinalNet_1B |   81.44   |   76.60   |   97.06   |   98.52   |
+| FinalNet_2B | **81.54** | **76.71** | **97.25** |   98.57   |
 
 
-For reproducing the results, please refer to https://github.com/reczoo/RecZoo/tree/main/ranking/ctr/FINAL
+For reproducing the results, please refer to https://github.com/reczoo/RecZoo/tree/main/ranking/ctr/FinalNet
