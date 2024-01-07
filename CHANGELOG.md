@@ -3,9 +3,14 @@
 ### FuxiCTR v2.1
 [Doing] Add support for saving pb file, exporting embeddings
 
+**FuxiCTR v2.1.3, 2024-01-08**
++ [Feature] Add GDCN model
++ [Edit] Rename FINAL model to FinalNet
++ [Edit] Update RecZoo URLs
++ [Fix] Fix bug #75
 
 **FuxiCTR v2.1.2, 2023-11-01**
-+ [Feature] Update H5DataBlockLoader to support dataloader with multiprocessing
++ [Edit] Update H5DataBlockLoader to support dataloader with multiprocessing
 
 **FuxiCTR v2.1.1, 2023-10-26**
 + [Feature] Update to allow loading pretrained h5 directly in PretrainedEmbedding (skip key mapping in preprocess)
@@ -30,7 +35,7 @@
 
 **FuxiCTR v2.0.2, 2023-05-14**
 + [Feature] Update FINAL, DIEN
-+ [Feature] Update ordered_features to use_features
++ [Edit] Update ordered_features to use_features
 
 **FuxiCTR v2.0.1, 2023-02-15**
 + [Doc] Add fuxictr tutorials
@@ -39,8 +44,8 @@
 
 **FuxiCTR v2.0.0, 2023-01-19**
 + [Feature] Add more models of year 2021-2022.
-+ [Feature] dd tensorflow backbone support
-+ [Feature] Refine code structure to support model development with minimal code
++ [Feature] Add tensorflow backbone support
++ [Edit] Refine code structure to support model development with minimal code
 
 -------------------------------
 
@@ -70,7 +75,7 @@
 + [Feature] Add new feature for loading blocks of h5 data
 + [Feature] Add tests for DIN, FmFM
 + [Feature] Add support for multiple fields concat for DIN
-+ [Feature] Remove the unnecessary config of embedding_dropout because it does not help after some attempts
++ [Edit] Remove the unnecessary config of embedding_dropout because it does not help after some attempts
 + [Feature] Add embedding_hooks of dense layers on pretrained embeddings
 + [Fix] Fix the bug in padding_idx (have no effect on Criteo/Avazu results)
 + [Fix] Fix the bug in loading pretrained embeddings (have no effect on Criteo/Avazu results)
@@ -81,7 +86,7 @@
 ### FuxiCTR v1.0
 
 **FuxiCTR v1.0.2, 2021-12-01**
-+ [Feature] Refactor the code and documentation to support reproducing the BARS-CTR benchmark.
++ [Edit] Refactor the code and documentation to support reproducing the BARS-CTR benchmark.
 
 **FuxiCTR v1.0.1, 2021-10-01**
-+ [Feature] The first release of FuxiCTR, including 28 models. This version was used for running the experiments in the CIKM'21 paper.
++ [Feature] The first release of FuxiCTR, including 28 models. This version was used for the CIKM'21 paper.

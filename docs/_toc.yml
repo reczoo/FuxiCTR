@@ -1,0 +1,16 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: index
+parts:
+- caption: TUTORIALS
+  chapters:
+  - file: quickstart.md
+  - file: installation.md
+  - file: configurations.md
+  
+- caption: REFERENCES
+  chapters:
+  - url: https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7
+    title: FuxiCTR APIs

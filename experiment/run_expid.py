@@ -24,6 +24,7 @@ from fuxictr import datasets
 from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
 from fuxictr.features import FeatureMap
+from fuxictr.pytorch.dataloaders import H5DataLoader
 from fuxictr.pytorch.torch_utils import seed_everything
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 import model_zoo
