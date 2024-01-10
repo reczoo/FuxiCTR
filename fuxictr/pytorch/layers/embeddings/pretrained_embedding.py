@@ -76,7 +76,8 @@ class PretrainedEmbedding(nn.Module):
     def load_feature_vocab(self, vocab_path, feature_name):
         with io.open(vocab_path, "r", encoding="utf-8") as fd:
             vocab = json.load(fd)
-        return vocab[feature_name]
+            vocab_type = type(list(vocab.items())[1][0]) # get key dtype
+        return vocab[feature_name], vocab_type
 
     def load_pretrained_embedding(self, vocab_size, pretrain_dim, pretrain_path, vocab_path,
                                   feature_name, freeze=False, padding_idx=None):
@@ -91,7 +92,8 @@ class PretrainedEmbedding(nn.Module):
                 embedding_matrix[padding_idx, :] = np.zeros(pretrain_dim) # set as zero for PAD
         keys, embeddings = self.get_pretrained_embedding(pretrain_path)
         assert embeddings.shape[-1] == pretrain_dim, f"pretrain_dim={pretrain_dim} not correct."
-        vocab = self.load_feature_vocab(vocab_path, feature_name)
+        vocab, vocab_type = self.load_feature_vocab(vocab_path, feature_name)
+        keys = keys.astype(vocab_type) # ensure the same dtype between pretrained keys and vocab keys
         for idx, word in enumerate(keys):
             if word in vocab:
                 embedding_matrix[vocab[word]] = embeddings[idx]

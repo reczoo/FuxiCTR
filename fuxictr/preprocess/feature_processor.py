@@ -112,6 +112,7 @@ class FeatureProcessor(object):
                 elif col["type"] == "numeric":
                     self.fit_numeric_col(col, train_ddf[name].values)
                 elif col["type"] == "categorical":
+
                     self.fit_categorical_col(col, train_ddf[name].values, 
                                              min_categr_count=min_categr_count,
                                              num_buckets=num_buckets)
@@ -130,7 +131,7 @@ class FeatureProcessor(object):
                 if "pretrain_dim" in col:
                     self.feature_map.features[name]["pretrain_dim"] = col["pretrain_dim"]
                 shutil.copy(col["pretrained_emb"],
-                            os.path.join(self.data_dir, "pretrained_{}".format(name)))
+                            os.path.join(self.data_dir, "pretrained_{}.h5".format(name)))
                 self.feature_map.features[name]["pretrained_emb"] = "pretrained_{}.h5".format(name)
                 self.feature_map.features[name]["freeze_emb"] = col.get("freeze_emb", True)
                 self.feature_map.features[name]["pretrain_usage"] = col.get("pretrain_usage", "init")

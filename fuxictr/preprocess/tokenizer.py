@@ -90,7 +90,7 @@ class Tokenizer(object):
         return shared_tokenizer
 
     def vocab_size(self):
-        return max(self.vocab.values()) + 1
+        return max(self.vocab.values()) + 1 # In case that keys start from 1
 
     def update_vocab(self, word_list):
         new_words = 0
@@ -131,11 +131,13 @@ class Tokenizer(object):
             keys = hf["key"][:]
             keys = keys.astype(feature_dtype) # in case mismatch of dtype between int and str
         # Update vocab with pretrained keys in case new tokens appear in validation or test set
-        # Do not update OOV index here since it is used in PretrainedEmbedding
+        # Do NOT update OOV index here since it is used in PretrainedEmbedding
         if expand_vocab:
+            vocab_size = self.vocab_size()
             for word in keys:
                 if word not in self.vocab:
-                    self.vocab[word] = self.vocab_size()
+                    self.vocab[word] = vocab_size
+                    vocab_size += 1
 
 
 def count_tokens(texts, splitter):

@@ -151,9 +151,9 @@ class FinalBlock(nn.Module):
         self.activation = nn.ModuleList()
         hidden_units = [input_dim] + hidden_units
         for idx in range(len(hidden_units) - 1):
-            self.layer.append(FactorizedQuadraticInteraction(hidden_units[idx],
-                                                             hidden_units[idx + 1],
-                                                             residual_type=residual_type))
+            self.layer.append(FactorizedInteraction(hidden_units[idx],
+                                                    hidden_units[idx + 1],
+                                                    residual_type=residual_type))
             if batch_norm:
                 self.norm.append(nn.BatchNorm1d(hidden_units[idx + 1]))
             if dropout_rates[idx] > 0:

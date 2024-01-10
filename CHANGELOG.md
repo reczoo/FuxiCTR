@@ -8,6 +8,7 @@
 + [Edit] Rename FINAL model to FinalNet
 + [Edit] Update RecZoo URLs
 + [Fix] Fix bug #75
++ [Fix] Fix h5 file extenstion issue
 
 **FuxiCTR v2.1.2, 2023-11-01**
 + [Edit] Update H5DataBlockLoader to support dataloader with multiprocessing
