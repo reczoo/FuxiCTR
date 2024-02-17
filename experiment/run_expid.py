@@ -24,7 +24,7 @@ from fuxictr import datasets
 from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
 from fuxictr.features import FeatureMap
-from fuxictr.pytorch.dataloaders import H5DataLoader
+from fuxictr.pytorch.dataloaders import RankDataLoader
 from fuxictr.pytorch.torch_utils import seed_everything
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 import model_zoo
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     data_dir = os.path.join(params['data_root'], params['dataset_id'])
     feature_map_json = os.path.join(data_dir, "feature_map.json")
     if params["data_format"] == "csv":
-        # Build feature_map and transform h5 data
+        # Build feature_map and transform data
         feature_encoder = FeatureProcessor(**params)
         params["train_data"], params["valid_data"], params["test_data"] = \
             build_dataset(feature_encoder, **params)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     model = model_class(feature_map, **params)
     model.count_parameters() # print number of parameters used in model
 
-    train_gen, valid_gen = H5DataLoader(feature_map, stage='train', **params).make_iterator()
+    train_gen, valid_gen = RankDataLoader(feature_map, stage='train', **params).make_iterator()
     model.fit(train_gen, validation_data=valid_gen, **params)
 
     logging.info('****** Validation evaluation ******')
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     test_result = {}
     if params["test_data"]:
         logging.info('******** Test evaluation ********')
-        test_gen = H5DataLoader(feature_map, stage='test', **params).make_iterator()
+        test_gen = RankDataLoader(feature_map, stage='test', **params).make_iterator()
         test_result = model.evaluate(test_gen)
     
     result_filename = Path(args['config']).name.replace(".yaml", "") + '.csv'

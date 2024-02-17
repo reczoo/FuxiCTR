@@ -1,4 +1,5 @@
 # =========================================================================
+# Copyright (C) 2024. FuxiCTR Authors. All rights reserved.
 # Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +16,11 @@
 # =========================================================================
 
 
-import h5py
 import os
 import logging
 import numpy as np
 import gc
 import multiprocessing as mp
-
-
-def save_h5(darray_dict, data_path):
-    logging.info("Saving data to h5: " + data_path)
-    os.makedirs(os.path.dirname(data_path), exist_ok=True)
-    with h5py.File(data_path, 'w') as hf:
-        for key, arr in darray_dict.items():
-            hf.create_dataset(key, data=arr)
 
 
 def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0, 
@@ -55,14 +47,20 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     return train_ddf, valid_ddf, test_ddf
 
 
+def save_npz(darray_dict, data_path):
+    logging.info("Saving data to npz: " + data_path)
+    os.makedirs(os.path.dirname(data_path), exist_ok=True)
+    np.savez(data_path, **darray_dict)
+
+
 def transform_block(feature_encoder, df_block, filename, preprocess=False):
     if preprocess:
         df_block = feature_encoder.preprocess(df_block)
     darray_dict = feature_encoder.transform(df_block)
-    save_h5(darray_dict, os.path.join(feature_encoder.data_dir, filename))
+    save_npz(darray_dict, os.path.join(feature_encoder.data_dir, filename))
 
 
-def transform_h5(feature_encoder, ddf, filename, preprocess=False, block_size=0):
+def transform(feature_encoder, ddf, filename, preprocess=False, block_size=0):
     if block_size > 0:
         pool = mp.Pool(mp.cpu_count() // 2)
         block_id = 0
@@ -70,18 +68,18 @@ def transform_h5(feature_encoder, ddf, filename, preprocess=False, block_size=0)
             df_block = ddf[idx: (idx + block_size)]
             pool.apply_async(transform_block, args=(feature_encoder,
                                                     df_block,
-                                                    '{}/part_{:05d}.h5'.format(filename, block_id),
+                                                    '{}/part_{:05d}.npz'.format(filename, block_id),
                                                     preprocess))
             block_id += 1
         pool.close()
         pool.join()
     else:
-        transform_block(feature_encoder, ddf, filename + ".h5", preprocess)
+        transform_block(feature_encoder, ddf, filename, preprocess)
 
 
 def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None, valid_size=0, 
                   test_size=0, split_type="sequential", data_block_size=0, **kwargs):
-    """ Build feature_map and transform h5 data """
+    """ Build feature_map and transform data """
 
     feature_map_json = os.path.join(feature_encoder.data_dir, "feature_map.json")
     if os.path.exists(feature_map_json):
@@ -103,7 +101,7 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         # fit and transform train_ddf
         train_ddf = feature_encoder.preprocess(train_ddf)
         feature_encoder.fit(train_ddf, **kwargs)
-        transform_h5(feature_encoder, train_ddf, 'train', preprocess=False, block_size=data_block_size)
+        transform(feature_encoder, train_ddf, 'train', preprocess=False, block_size=data_block_size)
         del train_ddf
         gc.collect()
 
@@ -111,7 +109,7 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         if valid_ddf is None and (valid_data is not None):
             valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
         if valid_ddf is not None:
-            transform_h5(feature_encoder, valid_ddf, 'valid', preprocess=True, block_size=data_block_size)
+            transform(feature_encoder, valid_ddf, 'valid', preprocess=True, block_size=data_block_size)
             del valid_ddf
             gc.collect()
 
@@ -119,10 +117,10 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         if test_ddf is None and (test_data is not None):
             test_ddf = feature_encoder.read_csv(test_data, **kwargs)
         if test_ddf is not None:
-            transform_h5(feature_encoder, test_ddf, 'test', preprocess=True, block_size=data_block_size)
+            transform(feature_encoder, test_ddf, 'test', preprocess=True, block_size=data_block_size)
             del test_ddf
             gc.collect()
-        logging.info("Transform csv data to h5 done.")
+        logging.info("Transform csv data to npz done.")
     
     # Return processed data splits
     return os.path.join(feature_encoder.data_dir, "train"), \

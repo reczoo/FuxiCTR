@@ -7,14 +7,14 @@ from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json
 from fuxictr.features import FeatureMap
 from fuxictr.pytorch.torch_utils import seed_everything
-from fuxictr.pytorch.dataloaders import H5DataLoader
+from fuxictr.pytorch.dataloaders import RankDataLoader
 from model_zoo import DeepFM
 
 
 if __name__ == '__main__':
     # Load params from config files
     config_dir = './config/example2_config'
-    experiment_id = 'DeepFM_test_h5' # corresponds to h5 input `data/tiny_h5`
+    experiment_id = 'DeepFM_test_npz' # corresponds to input `data/tiny_npz`
     params = load_config(config_dir, experiment_id)
 
     # set up logger and random seed
@@ -29,13 +29,13 @@ if __name__ == '__main__':
     feature_map.load(feature_map_json, params)
     logging.info("Feature specs: " + print_to_json(feature_map.features))
     
-    # Get train and validation data generators from h5
-    train_gen, valid_gen = H5DataLoader(feature_map, 
-                                        stage='train', 
-                                        train_data=params['train_data'],
-                                        valid_data=params['valid_data'],
-                                        batch_size=params['batch_size'],
-                                        shuffle=params['shuffle']).make_iterator()
+    # Get train and validation data generators
+    train_gen, valid_gen = RankDataLoader(feature_map,
+                                          stage='train',
+                                          train_data=params['train_data'],
+                                          valid_data=params['valid_data'],
+                                          batch_size=params['batch_size'],
+                                          shuffle=params['shuffle']).make_iterator()
 
     # Model initialization and fitting
     model = DeepFM(feature_map, **params)
@@ -45,10 +45,9 @@ if __name__ == '__main__':
     model.evaluate(valid_gen)
 
     logging.info('***** Test evaluation *****')
-    test_gen = H5DataLoader(feature_map, 
-                            stage='test',
-                            test_data=params['test_data'],
-                            batch_size=params['batch_size'],
-                            shuffle=False).make_iterator()
+    test_gen = RankDataLoader(feature_map, 
+                              stage='test',
+                              test_data=params['test_data'],
+                              batch_size=params['batch_size'],
+                              shuffle=False).make_iterator()
     model.evaluate(test_gen)
-    

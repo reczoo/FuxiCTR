@@ -28,8 +28,3 @@ class FeatureProcessor(BaseFeatureProcessor):
                 value = int(value)
             return value
         return df[col_name].map(_convert_to_bucket).astype(int)
-
-
-	
-
-

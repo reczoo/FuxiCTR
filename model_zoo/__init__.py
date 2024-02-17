@@ -24,6 +24,7 @@ from .FGCNN.src import FGCNN
 from .FiBiNET.src import FiBiNET
 from .FiGNN.src import FiGNN
 from .FinalMLP.src import FinalMLP
+from .FinalNet.src import FinalNet
 from .FLEN.src import FLEN
 from .FM.src import FM
 from .FmFM.src import FmFM

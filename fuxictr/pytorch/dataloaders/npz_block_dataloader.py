@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2023. FuxiCTR Authors. All rights reserved.
+# Copyright (C) 2023-2024. FuxiCTR Authors. All rights reserved.
 # Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,23 +17,19 @@
 
 
 import numpy as np
-from fuxictr.utils import load_h5
-import h5py
 from itertools import chain
 import torch
 from torch.utils import data
-import logging
 import glob
 
 
-class BlockIterDataPipe(data.IterDataPipe):
-    def __init__(self, block_datapipe, feature_map, verbose=0):
+class BlockDataPipe(data.IterDataPipe):
+    def __init__(self, block_datapipe, feature_map):
         self.feature_map = feature_map
         self.block_datapipe = block_datapipe
-        self.verbose = verbose
         
     def load_data(self, data_path):
-        data_dict = load_h5(data_path, verbose=self.verbose)
+        data_dict = np.load(data_path)
         data_arrays = []
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
         for col in all_cols:
@@ -63,10 +59,10 @@ class BlockIterDataPipe(data.IterDataPipe):
         return chain.from_iterable(map(self.read_block, block_list))
 
 
-class DataLoader(data.DataLoader):
+class NpzBlockDataLoader(data.DataLoader):
     def __init__(self, feature_map, data_path, batch_size=32, shuffle=False,
-                 num_workers=1, verbose=0, buffer_size=100000, **kwargs):
-        data_blocks = glob.glob(data_path + "/*.h5")
+                 num_workers=1, buffer_size=100000, **kwargs):
+        data_blocks = glob.glob(data_path + "/*.npz")
         assert len(data_blocks) > 0, f"invalid data_path: {data_path}"
         if len(data_blocks) > 1:
             data_blocks.sort() # sort by part name
@@ -75,10 +71,11 @@ class DataLoader(data.DataLoader):
         self.feature_map = feature_map
         self.batch_size = batch_size
         self.num_batches, self.num_samples = self.count_batches_and_samples()
-        datapipe = BlockIterDataPipe(data_blocks, feature_map, verbose)
+        datapipe = BlockDataPipe(data_blocks, feature_map)
         if shuffle:
             datapipe = datapipe.shuffle(buffer_size=buffer_size)
-        super(DataLoader, self).__init__(dataset=datapipe, batch_size=batch_size, num_workers=num_workers)
+        super(NpzBlockDataLoader, self).__init__(dataset=datapipe, batch_size=batch_size,
+                                                 num_workers=num_workers)
 
     def __len__(self):
         return self.num_batches
@@ -87,41 +84,7 @@ class DataLoader(data.DataLoader):
         num_samples = 0
         num_batches = 0
         for block_path in self.data_blocks:
-            with h5py.File(block_path, 'r') as hf:
-                y = hf[self.feature_map.labels[0]][:]
-                num_samples += len(y)
-                num_batches += int(np.ceil(len(y) * 1.0 / self.batch_size))
+            block_size = np.load(block_path)[self.feature_map.labels[0]].shape[0]
+            num_samples += block_size
+            num_batches += int(np.ceil(block_size * 1.0 / self.batch_size))
         return num_batches, num_samples
-
-
-class H5BlockDataLoader(object):
-    def __init__(self, feature_map, stage="both", train_data=None, valid_data=None, test_data=None,
-                 batch_size=32, shuffle=True, verbose=0, **kwargs):
-        logging.info("Loading data...")
-        train_gen = None
-        valid_gen = None
-        test_gen = None
-        self.stage = stage
-        if stage in ["both", "train"]:
-            train_gen = DataLoader(feature_map, train_data, batch_size=batch_size, shuffle=shuffle, verbose=verbose, **kwargs)
-            logging.info("Train samples: total/{:d}, blocks/{:d}".format(train_gen.num_samples, train_gen.num_blocks))     
-            if valid_data:
-                valid_gen = DataLoader(feature_map, valid_data, batch_size=batch_size, shuffle=False, verbose=verbose, **kwargs)
-                logging.info("Validation samples: total/{:d}, blocks/{:d}".format(valid_gen.num_samples, valid_gen.num_blocks))
-
-        if stage in ["both", "test"]:
-            if test_data:
-                test_gen = DataLoader(feature_map, test_data, batch_size=batch_size, shuffle=False, verbose=verbose, **kwargs)
-                logging.info("Test samples: total/{:d}, blocks/{:d}".format(test_gen.num_samples, test_gen.num_blocks))
-        self.train_gen, self.valid_gen, self.test_gen = train_gen, valid_gen, test_gen
-
-    def make_iterator(self):
-        if self.stage == "train":
-            logging.info("Loading train and validation data done.")
-            return self.train_gen, self.valid_gen
-        elif self.stage == "test":
-            logging.info("Loading test data done.")
-            return self.test_gen
-        else:
-            logging.info("Loading data done.")
-            return self.train_gen, self.valid_gen, self.test_gen

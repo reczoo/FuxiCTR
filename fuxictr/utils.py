@@ -21,7 +21,6 @@ import yaml
 import glob
 import json
 from collections import OrderedDict
-import h5py
 
 
 def load_config(config_dir, experiment_id):
@@ -105,12 +104,3 @@ class Monitor(object):
 
     def get_metrics(self):
         return list(self.kv_pairs.keys())
-
-def load_h5(data_path, verbose=0):
-    if verbose == 0:
-        logging.info('Loading data from h5: ' + data_path)
-    data_dict = dict()
-    with h5py.File(data_path, 'r') as hf:
-        for key in hf.keys():
-            data_dict[key] = hf[key][:]
-    return data_dict

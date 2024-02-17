@@ -14,7 +14,7 @@ Base:
 
 AFM_test:
     model: AFM
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

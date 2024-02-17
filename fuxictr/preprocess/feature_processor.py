@@ -156,6 +156,9 @@ class FeatureProcessor(object):
                                                             "vocab_size": tokenizer.vocab_size()})
                 else:
                     self.feature_map.total_features += self.feature_map.features[name]["vocab_size"]
+                if "pretrained_emb" not in spec: # "oov_idx" not used without pretrained_emb
+                    del self.feature_map.features[name]["oov_idx"]
+
         self.feature_map.num_fields = self.feature_map.get_num_fields()
         self.feature_map.set_column_index()
         self.save_pickle(self.pickle_file)

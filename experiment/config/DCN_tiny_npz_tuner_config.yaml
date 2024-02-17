@@ -1,6 +1,6 @@
 base_config: ../model_zoo/DCN/DCN_torch/config/
 base_expid: DCN_default
-dataset_id: tiny_h5
+dataset_id: tiny_npz
 
 tuner_space:
     model_root: './checkpoints/'

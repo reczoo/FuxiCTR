@@ -14,7 +14,7 @@ Base:
 
 ONN_test:
     model: ONN
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -58,7 +58,7 @@ ONN_default: # This is a config template
 
 ONNv2_test:
     model: ONNv2
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

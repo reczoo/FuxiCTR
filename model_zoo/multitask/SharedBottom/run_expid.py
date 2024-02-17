@@ -25,7 +25,7 @@ from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
 from fuxictr.features import FeatureMap
 from fuxictr.pytorch.torch_utils import seed_everything
-from fuxictr.pytorch.dataloaders import H5DataLoader
+from fuxictr.pytorch.dataloaders import RankDataLoader
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 import src as model_zoo
 import gc
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     model = model_class(feature_map, **params)
     model.count_parameters() # print number of parameters used in model
 
-    train_gen, valid_gen = H5DataLoader(feature_map, stage='train', **params).make_iterator()
+    train_gen, valid_gen = RankDataLoader(feature_map, stage='train', **params).make_iterator()
     model.fit(train_gen, validation_data=valid_gen, **params)
 
     logging.info('****** Validation evaluation ******')
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     gc.collect()
     
     logging.info('******** Test evaluation ********')
-    test_gen = H5DataLoader(feature_map, stage='test', **params).make_iterator()
+    test_gen = RankDataLoader(feature_map, stage='test', **params).make_iterator()
     test_result = {}
     if test_gen:
       test_result = model.evaluate(test_gen)

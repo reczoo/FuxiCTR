@@ -14,7 +14,7 @@ Base:
 
 GDCNP_test:
     model: GDCNP
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -37,7 +37,7 @@ GDCNP_test:
 
 GDCNS_test:
     model: GDCNS
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification

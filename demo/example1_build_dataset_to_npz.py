@@ -22,9 +22,8 @@ if __name__ == '__main__':
                                        dataset_id=dataset_id, 
                                        data_root=params["data_root"])
                                        
-    # Build dataset from csv to h5
+    # Build dataset
     build_dataset(feature_encoder, 
                   train_data=params["train_data"],
                   valid_data=params["valid_data"],
                   test_data=params["test_data"])
-

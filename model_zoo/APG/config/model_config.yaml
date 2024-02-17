@@ -14,7 +14,7 @@ Base:
 
 APG_DeepFM_test:
     model: APG_DeepFM
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -78,7 +78,7 @@ APG_DeepFM: # This is a config template
 
 APG_DCNv2_test:
     model: APG_DCNv2
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification

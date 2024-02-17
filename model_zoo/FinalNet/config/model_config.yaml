@@ -13,7 +13,7 @@ Base:
 
 FinalNet_test:
     model: FinalNet
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

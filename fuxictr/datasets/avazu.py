@@ -34,5 +34,3 @@ class FeatureProcessor(BaseFeatureProcessor):
 
     def convert_hour(self, df, col_name):
         return df['hour'].apply(lambda x: int(x[6:8]))
-
-

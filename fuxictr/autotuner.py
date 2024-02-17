@@ -69,7 +69,7 @@ def enumerate_params(config_file, exclude_expid=[]):
     dataset_para_combs = dict()
     for idx, values in enumerate(itertools.product(*map(dataset_dict.get, dataset_para_keys))):
         dataset_params = dict(zip(dataset_para_keys, values))
-        if dataset_params["data_format"] == "h5":
+        if dataset_params["data_format"] == "npz":
             dataset_para_combs[dataset_id] = dataset_params
         else:
             hash_id = hashlib.md5("".join(sorted(print_to_json(dataset_params))).encode("utf-8")).hexdigest()[0:8]

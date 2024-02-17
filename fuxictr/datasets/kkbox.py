@@ -45,5 +45,3 @@ class FeatureProcessor(BaseFeatureProcessor):
                 else:
                     return "7"
         return df[col_name].apply(_bucketize)
-
-

@@ -22,7 +22,6 @@ import torch
 from torch import nn
 import random
 from functools import partial
-import h5py
 import re
 
 
@@ -117,27 +116,3 @@ def get_initializer(initializer):
             raise ValueError("initializer={} is not supported."\
                              .format(initializer))
     return initializer
-
-def save_init_embs(model, data_path="init_embs.h5"):
-    emb_dict = dict()
-    for k, v in model.state_dict().items():
-        if "embedding_layers" in k:
-            if v.size(-1) > 1:
-                f_name = re.findall(r"embedding_layers.(.*).weight", k)[0]
-                emb_dict[f_name] = v.cpu().numpy()
-    with h5py.File(data_path, 'w') as hf:
-        for key, arr in emb_dict.items():
-            hf.create_dataset(key, data=arr)
-
-def load_init_embs(model, data_path="init_embs.h5"):
-    state_dict = model.state_dict()
-    f_name_dict = dict()
-    for k in state_dict.keys():
-        if "embedding_layers" in k and state_dict[k].size(-1) > 1:
-            f_name = re.findall(r"embedding_layers.(.*).weight", k)[0]
-            f_name_dict[f_name] = k
-    with h5py.File(data_path, 'r') as hf:
-        for key in hf.keys():
-            if key in f_name_dict:
-                state_dict[f_name_dict[key]] = torch.from_numpy(hf[key][:])
-    model.load_state_dict(state_dict)

@@ -14,7 +14,7 @@ Base:
 
 FFM_test:
     model: FFM
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -48,7 +48,7 @@ FFM_default: # This is a config template
 
 FFMv2_test:
     model: FFMv2
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

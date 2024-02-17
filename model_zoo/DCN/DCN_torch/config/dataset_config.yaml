@@ -1,8 +1,7 @@
 ### Tiny data for tests only
-tiny_h5:
+tiny_npz:
     data_root: ../../../data/
-    data_format: h5
-    train_data: ../../../data/tiny_h5/train.h5
-    valid_data: ../../../data/tiny_h5/valid.h5
-    test_data: ../../../data/tiny_h5/test.h5
-
+    data_format: npz
+    train_data: ../../../data/tiny_npz/train.npz
+    valid_data: ../../../data/tiny_npz/valid.npz
+    test_data: ../../../data/tiny_npz/test.npz
