@@ -1,15 +1,24 @@
 ## FuxiCTR Versions
 
-### FuxiCTR v2.1
+### FuxiCTR v2.2
 [Doing] Add support for saving pb file, exporting embeddings
+[Doing] Add support of NVTabular data
 
-**FuxiCTR v2.1.3, 2024-01-08**
+**FuxiCTR v2.2.0, 2024-02-17**
++ [Feature] Add support of npz format for pretrained_emb
+
+-------------------------------
+
+### FuxiCTR v2.1
+
+**FuxiCTR v2.1.3, 2024-02-17**
 + [Feature] Add GDCN model
 + [Edit] Rename FINAL model to FinalNet
 + [Edit] Update RecZoo URLs
 + [Fix] Fix bug #75
 + [Fix] Fix h5 file extenstion issue
-
++ [Fix] Fix typo in FinalNet
+ 
 **FuxiCTR v2.1.2, 2023-11-01**
 + [Edit] Update H5DataBlockLoader to support dataloader with multiprocessing
 

@@ -69,7 +69,7 @@ class DataLoader(data.DataLoader):
         data_blocks = glob.glob(data_path + "/*.h5")
         assert len(data_blocks) > 0, f"invalid data_path: {data_path}"
         if len(data_blocks) > 1:
-            data_blocks.sort(key=lambda x: int(x.split("_")[-1].split(".")[0])) # e.g. "part_1.h5"
+            data_blocks.sort() # sort by part name
         self.data_blocks = data_blocks
         self.num_blocks = len(self.data_blocks)
         self.feature_map = feature_map

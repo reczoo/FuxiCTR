@@ -24,6 +24,7 @@ import logging
 import json
 import re
 import shutil
+from pathlib import Path
 import sklearn.preprocessing as sklearn_preprocess
 from fuxictr.features import FeatureMap
 from .tokenizer import Tokenizer
@@ -130,9 +131,10 @@ class FeatureProcessor(object):
                 logging.info("Loading pretrained embedding: " + name)
                 if "pretrain_dim" in col:
                     self.feature_map.features[name]["pretrain_dim"] = col["pretrain_dim"]
+                ext = Path(col["pretrained_emb"]).suffix
                 shutil.copy(col["pretrained_emb"],
-                            os.path.join(self.data_dir, "pretrained_{}.h5".format(name)))
-                self.feature_map.features[name]["pretrained_emb"] = "pretrained_{}.h5".format(name)
+                            os.path.join(self.data_dir, "pretrained_{}{}".format(name, ext)))
+                self.feature_map.features[name]["pretrained_emb"] = "pretrained_{}{}".format(name, ext)
                 self.feature_map.features[name]["freeze_emb"] = col.get("freeze_emb", True)
                 self.feature_map.features[name]["pretrain_usage"] = col.get("pretrain_usage", "init")
                 tokenizer = self.processor_dict[name + "::tokenizer"]

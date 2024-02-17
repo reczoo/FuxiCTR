@@ -70,7 +70,7 @@ def transform_h5(feature_encoder, ddf, filename, preprocess=False, block_size=0)
             df_block = ddf[idx: (idx + block_size)]
             pool.apply_async(transform_block, args=(feature_encoder,
                                                     df_block,
-                                                    '{}/part_{}.h5'.format(filename, block_id),
+                                                    '{}/part_{:05d}.h5'.format(filename, block_id),
                                                     preprocess))
             block_id += 1
         pool.close()

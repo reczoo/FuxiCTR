@@ -67,9 +67,13 @@ class PretrainedEmbedding(nn.Module):
             embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])
 
     def get_pretrained_embedding(self, pretrain_path):
-        with h5py.File(pretrain_path, 'r') as hf:
-            keys = hf["key"][:]
-            embeddings = hf["value"][:]
+        if pretrain_path.endswith("h5"):
+            with h5py.File(pretrain_path, 'r') as hf:
+                keys = hf["key"][:]
+                embeddings = hf["value"][:]
+        elif pretrain_path.endswith("npz"):
+            npz = np.load(pretrain_path)
+            keys, embeddings = npz["key"], npz["value"]
         logging.info("Loading pretrained_emb: {}".format(pretrain_path))
         return keys, embeddings
 
