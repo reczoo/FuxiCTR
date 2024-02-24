@@ -1,5 +1,5 @@
 {
-    "dataset_id": "tiny_h5",
+    "dataset_id": "tiny_npz",
     "num_fields": 14,
     "total_features": 485,
     "input_length": 14,

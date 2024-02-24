@@ -12,9 +12,9 @@ Base:
     feature_specs: null
     feature_config: null
 
-DeepFM_test_h5:
+DeepFM_test_npz:
     model: DeepFM
-    dataset_id: tiny_h5
+    dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
