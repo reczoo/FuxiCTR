@@ -1,0 +1,21 @@
+### Tiny data for demo only
+tiny_example6:
+    data_root: ../data/
+    data_format: csv 
+    train_data: ../data/tiny_csv/custom_preprocess_train_sample.csv
+    valid_data: ../data/tiny_csv/custom_preprocess_valid_sample.csv
+    test_data: ../data/tiny_csv/custom_preprocess_test_sample.csv
+    min_categr_count: 1
+    feature_cols:
+        -   active: true
+            dtype: str
+            name: [msno, song_id, source_system_tab, source_screen_name, source_type,
+                city, gender, registered_via, language]
+            type: categorical
+        - {active: true, dtype: str, encoder: MaskedSumPooling, max_len: 3, name: genre_ids,
+            type: sequence}
+        - {active: true, dtype: str, encoder: MaskedSumPooling, max_len: 3, name: artist_name,
+            type: sequence}
+        - {active: true, dtype: str, name: isrc, preprocess: extract_country_code, type: categorical}
+        - {active: true, dtype: str, name: bd, preprocess: bucketize_age, type: categorical}
+    label_col: {dtype: float, name: label}
