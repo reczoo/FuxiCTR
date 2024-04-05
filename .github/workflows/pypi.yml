@@ -7,6 +7,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  build:
+    name: Build wheel distribution
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.7
+    - name: Build a binary wheel and a source tarball
+      run: |
+        pip install wheel
+        python setup.py sdist bdist_wheel
+    - name: Store the distribution packages
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package-distributions
+        path: dist/
+
   pypi-publish:
     name: upload to pypi
     runs-on: ubuntu-latest
@@ -16,6 +35,10 @@ jobs:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
     steps:
-      # retrieve your distributions here
+      - name: Download all the dists
+        uses: actions/download-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
       - name: Publish package distributions to pypi
         uses: pypa/gh-action-pypi-publish@release/v1

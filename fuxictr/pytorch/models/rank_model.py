@@ -177,7 +177,7 @@ class BaseModel(nn.Module):
                 self.save_weights(self.checkpoint)
         if self._stopping_steps >= self._early_stop_patience:
             self._stop_training = True
-            logging.info("********* Epoch=={} early stop *********".format(self._epoch_index + 1))
+            logging.info("********* Epoch={} early stop *********".format(self._epoch_index + 1))
         if not self._save_best_only:
             self.save_weights(self.checkpoint)
 

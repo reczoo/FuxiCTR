@@ -1,22 +1,22 @@
-# name: jupyter-book
+name: jupyter-book
 
-# # Only run this when the master branch changes
-# on:
-#   push:
-#     branches:
-#     - main
+# Only run this when the master branch changes
+on:
+  push:
+    branches:
+    - main
 
-# # This job installs dependencies, build the book, and pushes it to `gh-pages`
-# jobs:
-#   deploy-book:
-#     runs-on: ubuntu-latest
-#     steps:
-#     # Install dependencies
-#     - uses: actions/checkout@v3
-#     - uses: actions/setup-python@v3
-#       with:
-#         python-version: 3.7
-#     - run: pip install jupyter-book
+# This job installs dependencies, build the book, and pushes it to `gh-pages`
+jobs:
+  deploy-book:
+    runs-on: ubuntu-latest
+    steps:
+    # Install dependencies
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
+      with:
+        python-version: 3.7
+    - run: pip install jupyter-book
 
 #     # Build the book
 #     - name: Build the book
