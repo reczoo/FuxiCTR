@@ -18,12 +18,14 @@
 import numpy as np
 from collections import Counter, OrderedDict
 import pandas as pd
+import polars as pl
 import pickle
 import os
 import logging
 import json
 import re
 import shutil
+import glob
 from pathlib import Path
 import sklearn.preprocessing as sklearn_preprocess
 from fuxictr.features import FeatureMap
@@ -65,11 +67,14 @@ class FeatureProcessor(object):
                 full_feature_cols.append(col)
         return full_feature_cols
 
-    def read_csv(self, data_path, sep=",", nrows=None, **kwargs):
+    def read_csv(self, data_path, sep=",", n_rows=None, **kwargs):
         logging.info("Reading file: " + data_path)
-        usecols_fn = lambda x: x in self.dtype_dict
-        ddf = pd.read_csv(data_path, sep=sep, usecols=usecols_fn, 
-                          dtype=object, memory_map=True, nrows=nrows)
+        file_names = sorted(glob.glob(data_path))
+        assert len(file_names) > 0, f"Invalid data path: {data_path}"
+        # Require python >= 3.8 for use polars to scan multiple csv files
+        file_names = file_names[0]
+        ddf = pl.scan_csv(source=file_names, separator=sep, dtypes=self.dtype_dict,
+                          low_memory=False, n_rows=n_rows)
         return ddf
 
     def preprocess(self, ddf):
@@ -78,29 +83,17 @@ class FeatureProcessor(object):
         for col in all_cols:
             name = col["name"]
             if name in ddf.columns:
-                if ddf[name].isnull().values.any():
-                    ddf[name] = self._fill_na_(col, ddf[name])
-                ddf[name] = ddf[name].astype(self.dtype_dict[name])
+                fill_na = "" if col["dtype"] in ["str", str] else 0
+                fill_na = col.get("fill_na", fill_na)
+                ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
             if col.get("preprocess"):
-                preprocess_splits = re.split(r"\(|\)", col["preprocess"])
-                preprocess_fn = getattr(self, preprocess_splits[0])
-                if len(preprocess_splits) > 1:
-                    ddf[name] = preprocess_fn(ddf, preprocess_splits[1])
-                else:
-                    ddf[name] = preprocess_fn(ddf, name)
-                ddf[name] = ddf[name].astype(self.dtype_dict[name])
+                preprocess_args = re.split(r"\(|\)", col["preprocess"])
+                preprocess_fn = getattr(self, preprocess_args[0])
+                ddf = preprocess_fn(ddf, name, *preprocess_args[1:-1])
+                ddf = ddf.with_columns(pl.col(name).cast(self.dtype_dict[name]))
         active_cols = [col["name"] for col in all_cols if col.get("active") != False]
-        ddf = ddf.loc[:, active_cols]
+        ddf = ddf.select(active_cols)
         return ddf
-
-    def _fill_na_(self, col, series):
-        na_value = col.get("fill_na")
-        if na_value is not None:
-            return series.fillna(na_value)
-        elif col["dtype"] in ["str", str]:
-            return series.fillna("")
-        else:
-            raise RuntimeError("Feature column={} requires to assign fill_na value!".format(col["name"]))
 
     def fit(self, train_ddf, min_categr_count=1, num_buckets=10, **kwargs):    
         logging.info("Fit feature processor...")
@@ -108,20 +101,20 @@ class FeatureProcessor(object):
             name = col["name"]
             if col["active"]:
                 logging.info("Processing column: {}".format(col))
+                col_series = train_ddf.select(name).collect().to_series().to_pandas()
                 if col["type"] == "meta": # e.g. group_id
-                    self.fit_meta_col(col, train_ddf[name].values)
+                    self.fit_meta_col(col)
                 elif col["type"] == "numeric":
-                    self.fit_numeric_col(col, train_ddf[name].values)
+                    self.fit_numeric_col(col, col_series)
                 elif col["type"] == "categorical":
-
-                    self.fit_categorical_col(col, train_ddf[name].values, 
+                    self.fit_categorical_col(col, col_series,
                                              min_categr_count=min_categr_count,
                                              num_buckets=num_buckets)
                 elif col["type"] == "sequence":
-                    self.fit_sequence_col(col, train_ddf[name].values, 
+                    self.fit_sequence_col(col, col_series, 
                                           min_categr_count=min_categr_count)
                 else:
-                    raise NotImplementedError("feature_col={}".format(feature_col))
+                    raise NotImplementedError("feature type={}".format(col["type"]))
         
         # Expand vocab from pretrained_emb
         os.makedirs(self.data_dir, exist_ok=True)
@@ -166,17 +159,16 @@ class FeatureProcessor(object):
         self.feature_map.save(self.json_file)
         logging.info("Set feature processor done.")
 
-    def fit_meta_col(self, col, col_values):
+    def fit_meta_col(self, col):
         name = col["name"]
         feature_type = col["type"]
         self.feature_map.features[name] = {"type": feature_type}
-        # assert col.get("remap") == False, "Meta feature currently only supports `remap=False`, \
-            # since it needs to map train and validation sets together."
         if col.get("remap", True):
+            # No need to fit, update vocab in encode_meta()
             tokenizer = Tokenizer(min_freq=1, remap=True)
             self.processor_dict[name + "::tokenizer"] = tokenizer
 
-    def fit_numeric_col(self, col, col_values):
+    def fit_numeric_col(self, col, col_series):
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -186,10 +178,10 @@ class FeatureProcessor(object):
             self.feature_map.features[name]["feature_encoder"] = col["feature_encoder"]
         if "normalizer" in col:
             normalizer = Normalizer(col["normalizer"])
-            normalizer.fit(col_values)
+            normalizer.fit(col_series.dropna().values)
             self.processor_dict[name + "::normalizer"] = normalizer
 
-    def fit_categorical_col(self, col, col_values, min_categr_count=1, num_buckets=10):
+    def fit_categorical_col(self, col, col_series, min_categr_count=1, num_buckets=10):
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -206,7 +198,7 @@ class FeatureProcessor(object):
             tokenizer = Tokenizer(min_freq=min_categr_count, 
                                   na_value=col.get("fill_na", ""), 
                                   remap=col.get("remap", True))
-            tokenizer.fit_on_texts(col_values)
+            tokenizer.fit_on_texts(col_series)
             if "share_embedding" in col:
                 self.feature_map.features[name]["share_embedding"] = col["share_embedding"]
                 tknzr_name = col["share_embedding"] + "::tokenizer"
@@ -225,20 +217,18 @@ class FeatureProcessor(object):
             if category_processor == "quantile_bucket": # transform numeric value to bucket
                 num_buckets = col.get("num_buckets", num_buckets)
                 qtf = sklearn_preprocess.QuantileTransformer(n_quantiles=num_buckets + 1)
-                qtf.fit(col_values)
+                qtf.fit(col_series.values)
                 boundaries = qtf.quantiles_[1:-1]
                 self.feature_map.features[name]["vocab_size"] = num_buckets
                 self.processor_dict[name + "::boundaries"] = boundaries
             elif category_processor == "hash_bucket":
                 num_buckets = col.get("num_buckets", num_buckets)
-                uniques = Counter(col_values)
-                num_buckets = min(num_buckets, len(uniques))
                 self.feature_map.features[name]["vocab_size"] = num_buckets
                 self.processor_dict[name + "::num_buckets"] = num_buckets
             else:
                 raise NotImplementedError("category_processor={} not supported.".format(category_processor))
 
-    def fit_sequence_col(self, col, col_values, min_categr_count=1):
+    def fit_sequence_col(self, col, col_series, min_categr_count=1):
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -259,7 +249,7 @@ class FeatureProcessor(object):
         tokenizer = Tokenizer(min_freq=min_categr_count, splitter=splitter, 
                               na_value=na_value, max_len=max_len, padding=padding,
                               remap=col.get("remap", True))
-        tokenizer.fit_on_texts(col_values)
+        tokenizer.fit_on_texts(col_series)
         if "share_embedding" in col:
             self.feature_map.features[name]["share_embedding"] = col["share_embedding"]
             tknzr_name = col["share_embedding"] + "::tokenizer"
@@ -275,22 +265,22 @@ class FeatureProcessor(object):
                                                 "vocab_size": tokenizer.vocab_size()})
 
     def transform(self, ddf):
-        logging.info("Transform feature columns...")
+        logging.info("Transform feature columns with ID mapping...")
         data_dict = dict()
         for feature, feature_spec in self.feature_map.features.items():
             if feature in ddf.columns:
                 feature_type = feature_spec["type"]
-                col_values = ddf.loc[:, feature].values
+                col_series = ddf[feature]
                 if feature_type == "meta":
                     if feature + "::tokenizer" in self.processor_dict:
                         tokenizer = self.processor_dict[feature + "::tokenizer"]
-                        data_dict[feature] = tokenizer.encode_meta(col_values)
+                        data_dict[feature] = tokenizer.encode_meta(col_series)
                         # Update vocab in tokenizer
                         self.processor_dict[feature + "::tokenizer"] = tokenizer
                     else:
-                        data_dict[feature] = col_values.astype(self.dtype_dict[feature])
+                        data_dict[feature] = col_series.values
                 elif feature_type == "numeric":
-                    col_values = col_values.astype(float)
+                    col_values = col_series.values
                     normalizer = self.processor_dict.get(feature + "::normalizer")
                     if normalizer:
                          col_values = normalizer.transform(col_values)
@@ -298,16 +288,16 @@ class FeatureProcessor(object):
                 elif feature_type == "categorical":
                     category_processor = feature_spec.get("category_processor")
                     if category_processor is None:
-                        data_dict[feature] = self.processor_dict.get(feature + "::tokenizer").encode_category(col_values)
+                        data_dict[feature] = self.processor_dict.get(feature + "::tokenizer").encode_category(col_series)
                     elif category_processor == "numeric_bucket":
                         raise NotImplementedError
                     elif category_processor == "hash_bucket":
                         raise NotImplementedError
                 elif feature_type == "sequence":
-                    data_dict[feature] = self.processor_dict.get(feature + "::tokenizer").encode_sequence(col_values)
+                    data_dict[feature] = self.processor_dict.get(feature + "::tokenizer").encode_sequence(col_series)
         for label in self.feature_map.labels:
             if label in ddf.columns:
-                data_dict[label] = ddf.loc[:, label].values
+                data_dict[label] = ddf[label].values
         return data_dict
 
     def load_pickle(self, pickle_file=None):
@@ -335,6 +325,6 @@ class FeatureProcessor(object):
         with open(vocab_file, "w") as fd:
             fd.write(json.dumps(vocab, indent=4))
 
-    def copy_from(self, ddf, src_name):
-        return ddf[src_name]
-
+    def copy_from(self, ddf, name, src_name):
+        ddf = ddf.with_columns(pl.col(src_name).alias(name))
+        return ddf

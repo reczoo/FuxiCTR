@@ -16,16 +16,17 @@
 
 from collections import Counter
 import numpy as np
-import pandas as pd
 import h5py
 from tqdm import tqdm
+import polars as pl
 from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing as mp
 
 
 class Tokenizer(object):
     def __init__(self, max_features=None, na_value="", min_freq=1, splitter=None, remap=True,
-                 lower=False, max_len=0, padding="pre", num_workers=8):
+                 lower=False, max_len=0, padding="pre"):
         self._max_features = max_features
         self._na_value = na_value
         self._min_freq = min_freq
@@ -34,24 +35,23 @@ class Tokenizer(object):
         self.vocab = dict()
         self.max_len = max_len
         self.padding = padding
-        self.num_workers = num_workers
         self.remap = remap
 
-    def fit_on_texts(self, texts):
+    def fit_on_texts(self, series):
+        max_len = 0
         word_counts = Counter()
-        if self._splitter is not None: # for sequence
-            max_len = 0
-            with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
-                chunks = np.array_split(texts, self.num_workers)
-                tasks = [executor.submit(count_tokens, chunk, self._splitter) for chunk in chunks]
-                for future in tqdm(as_completed(tasks), total=len(tasks)):
-                    block_word_counts, block_max_len = future.result()
-                    word_counts.update(block_word_counts)
-                    max_len = max(max_len, block_max_len)
-            if self.max_len == 0:  # if argument max_len not given
-                self.max_len = max_len
-        else:
-            word_counts = Counter(list(texts))
+        with ProcessPoolExecutor(max_workers=(mp.cpu_count() // 2)) as executor:
+            chunk_size = 1000000
+            tasks = []
+            for idx in range(0, len(series), chunk_size):
+                data_chunk = series.iloc[idx: (idx + chunk_size)]
+                tasks.append(executor.submit(count_tokens, data_chunk, self._splitter))
+            for future in tqdm(as_completed(tasks), total=len(tasks)):
+                chunk_word_counts, chunk_max_len = future.result()
+                word_counts.update(chunk_word_counts)
+                max_len = max(max_len, chunk_max_len)
+        if self.max_len == 0:  # if argument max_len not given
+            self.max_len = max_len
         self.build_vocab(word_counts)
 
     def build_vocab(self, word_counts):
@@ -101,30 +101,28 @@ class Tokenizer(object):
         if new_words > 0:
             self.vocab["__OOV__"] = self.vocab_size()
 
-    def encode_meta(self, values):
-        word_counts = Counter(list(values))
+    def encode_meta(self, series):
+        word_counts = dict(series.value_counts())
         if len(self.vocab) == 0:
             self.build_vocab(word_counts)
         else: # for considering meta data in test data
             self.update_vocab(word_counts.keys())
-        meta_values = [self.vocab.get(x, self.vocab["__OOV__"]) for x in values]
-        return np.array(meta_values)
+        series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
+        return series.values
 
-    def encode_category(self, categories):
-        category_indices = [self.vocab.get(x, self.vocab["__OOV__"]) for x in categories]
-        return np.array(category_indices)
+    def encode_category(self, series):
+        series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
+        return series.values
 
-    def encode_sequence(self, texts):
-        sequence_list = []
-        for text in texts:
-            if pd.isnull(text) or text == '':
-                sequence_list.append([])
-            else:
-                sequence_list.append([self.vocab.get(x, self.vocab["__OOV__"]) if x != self._na_value \
-                                      else self.vocab["__PAD__"] for x in text.split(self._splitter)])
-        sequence_list = pad_sequences(sequence_list, maxlen=self.max_len, value=self.vocab["__PAD__"],
-                                      padding=self.padding, truncating=self.padding)
-        return np.array(sequence_list)
+    def encode_sequence(self, series):
+        series = series.map(
+            lambda text: [self.vocab.get(x, self.vocab["__OOV__"]) if x != self._na_value \
+            else self.vocab["__PAD__"] for x in text.split(self._splitter)]
+        )
+        seqs = pad_sequences(series.to_list(), maxlen=self.max_len,
+                             value=self.vocab["__PAD__"],
+                             padding=self.padding, truncating=self.padding)
+        return np.array(seqs)
     
     def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
         if pretrain_path.endswith(".h5"):
@@ -144,12 +142,12 @@ class Tokenizer(object):
                     vocab_size += 1
 
 
-def count_tokens(texts, splitter):
-    word_counts = Counter()
+def count_tokens(series, splitter=None):
     max_len = 0
-    for text in texts:
-        text_split = text.split(splitter)
-        max_len = max(max_len, len(text_split))
-        for token in text_split:
-            word_counts[token] += 1
-    return word_counts, max_len
+    if splitter is not None: # for sequence
+        series = series.map(lambda text: text.split(splitter))
+        max_len = series.str.len().max()
+        word_counts = series.explode().value_counts()
+    else:
+        word_counts = series.value_counts()
+    return dict(word_counts), max_len

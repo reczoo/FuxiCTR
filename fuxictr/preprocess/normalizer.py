@@ -33,8 +33,7 @@ class Normalizer(object):
 
     def fit(self, X):
         if not self.callable:
-            null_index = np.isnan(X)
-            self.normalizer.fit(X[~null_index].reshape(-1, 1))
+            self.normalizer.fit(X.reshape(-1, 1))
 
     def transform(self, X):
         if self.callable:

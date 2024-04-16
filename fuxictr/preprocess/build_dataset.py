@@ -21,6 +21,7 @@ import logging
 import numpy as np
 import gc
 import multiprocessing as mp
+import polars as pl
 
 
 def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0, 
@@ -53,28 +54,28 @@ def save_npz(darray_dict, data_path):
     np.savez(data_path, **darray_dict)
 
 
-def transform_block(feature_encoder, df_block, filename, preprocess=False):
-    if preprocess:
-        df_block = feature_encoder.preprocess(df_block)
+def transform_block(feature_encoder, df_block, filename):
     darray_dict = feature_encoder.transform(df_block)
     save_npz(darray_dict, os.path.join(feature_encoder.data_dir, filename))
 
 
-def transform(feature_encoder, ddf, filename, preprocess=False, block_size=0):
+def transform(feature_encoder, ddf, filename, block_size=0):
     if block_size > 0:
         pool = mp.Pool(mp.cpu_count() // 2)
         block_id = 0
         for idx in range(0, len(ddf), block_size):
-            df_block = ddf[idx: (idx + block_size)]
-            pool.apply_async(transform_block, args=(feature_encoder,
-                                                    df_block,
-                                                    '{}/part_{:05d}.npz'.format(filename, block_id),
-                                                    preprocess))
+            df_block = ddf.iloc[idx:(idx + block_size)]
+            pool.apply_async(
+                transform_block, 
+                args=(feature_encoder,
+                      df_block,
+                      '{}/part_{:05d}.npz'.format(filename, block_id))
+            )
             block_id += 1
         pool.close()
         pool.join()
     else:
-        transform_block(feature_encoder, ddf, filename, preprocess)
+        transform_block(feature_encoder, ddf, filename)
 
 
 def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None, valid_size=0, 
@@ -96,12 +97,12 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
             valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
             test_ddf = feature_encoder.read_csv(test_data, **kwargs)
             train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf, 
-                                                            valid_size, test_size, split_type)
+                                                              valid_size, test_size, split_type)
         
         # fit and transform train_ddf
         train_ddf = feature_encoder.preprocess(train_ddf)
         feature_encoder.fit(train_ddf, **kwargs)
-        transform(feature_encoder, train_ddf, 'train', preprocess=False, block_size=data_block_size)
+        transform(feature_encoder, train_ddf, 'train', block_size=data_block_size)
         del train_ddf
         gc.collect()
 
@@ -109,7 +110,8 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         if valid_ddf is None and (valid_data is not None):
             valid_ddf = feature_encoder.read_csv(valid_data, **kwargs)
         if valid_ddf is not None:
-            transform(feature_encoder, valid_ddf, 'valid', preprocess=True, block_size=data_block_size)
+            valid_ddf = feature_encoder.preprocess(valid_ddf)
+            transform(feature_encoder, valid_ddf, 'valid', block_size=data_block_size)
             del valid_ddf
             gc.collect()
 
@@ -117,7 +119,8 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
         if test_ddf is None and (test_data is not None):
             test_ddf = feature_encoder.read_csv(test_data, **kwargs)
         if test_ddf is not None:
-            transform(feature_encoder, test_ddf, 'test', preprocess=True, block_size=data_block_size)
+            test_ddf = feature_encoder.preprocess(test_ddf)
+            transform(feature_encoder, test_ddf, 'test', block_size=data_block_size)
             del test_ddf
             gc.collect()
         logging.info("Transform csv data to npz done.")

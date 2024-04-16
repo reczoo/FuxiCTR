@@ -74,6 +74,8 @@ class NpzBlockDataLoader(data.DataLoader):
         datapipe = BlockDataPipe(data_blocks, feature_map)
         if shuffle:
             datapipe = datapipe.shuffle(buffer_size=buffer_size)
+        else:
+            num_workers = 1 # multiple workers cannot keep the order of data reading 
         super(NpzBlockDataLoader, self).__init__(dataset=datapipe, batch_size=batch_size,
                                                  num_workers=num_workers)
 

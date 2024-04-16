@@ -4,6 +4,10 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of NVTabular data
 
+**FuxiCTR v2.2.2, 2024-04-18**
++ [Feature] Update to use polars instead of pandas for faster feature processing
++ [Fix] When num_workers > 1, NpzBlockDataLoader cannot keep the reading order of samples ([#86](https://github.com/xue-pai/FuxiCTR/issues/86))
+
 **FuxiCTR v2.2.1, 2024-04-16**
 + [Fix] Fix issue of evaluation not performed at epoch end when streaming=True ([#85](https://github.com/xue-pai/FuxiCTR/issues/85))
 + [Fix] Fix issue when loading pretrain_emb in npz format ([#84](https://github.com/xue-pai/FuxiCTR/issues/84))
