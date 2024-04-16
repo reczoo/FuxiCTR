@@ -127,9 +127,13 @@ class Tokenizer(object):
         return np.array(sequence_list)
     
     def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
-        with h5py.File(pretrain_path, 'r') as hf:
-            keys = hf["key"][:]
-            keys = keys.astype(feature_dtype) # in case mismatch of dtype between int and str
+        if pretrain_path.endswith(".h5"):
+            with h5py.File(pretrain_path, 'r') as hf:
+                keys = hf["key"][:]
+                # in case mismatch of dtype between int and str
+                keys = keys.astype(feature_dtype)
+        elif pretrain_path.endswith(".npz"):
+            keys = np.load(pretrain_path)["key"]
         # Update vocab with pretrained keys in case new tokens appear in validation or test set
         # Do NOT update OOV index here since it is used in PretrainedEmbedding
         if expand_vocab:

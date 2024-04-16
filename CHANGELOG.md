@@ -4,6 +4,10 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of NVTabular data
 
+**FuxiCTR v2.2.1, 2024-04-16**
++ [Fix] Fix issue of evaluation not performed at epoch end when streaming=True ([#85](https://github.com/xue-pai/FuxiCTR/issues/85))
++ [Fix] Fix issue when loading pretrain_emb in npz format ([#84](https://github.com/xue-pai/FuxiCTR/issues/84))
+
 **FuxiCTR v2.2.0, 2024-02-17**
 + [Feature] Add support of npz format for pretrained_emb
 + [Refactor] Change data format from h5 to npz
@@ -16,7 +20,7 @@
 + [Feature] Add GDCN model
 + [Refactor] Rename FINAL model to FinalNet
 + [Refactor] Update RecZoo URLs
-+ [Fix] Fix bug #75
++ [Fix] Fix bug [#75](https://github.com/xue-pai/FuxiCTR/issues/75)
 + [Fix] Fix h5 file extenstion issue
 + [Fix] Fix typo in FinalNet
  

@@ -82,9 +82,8 @@ class NpzBlockDataLoader(data.DataLoader):
 
     def count_batches_and_samples(self):
         num_samples = 0
-        num_batches = 0
         for block_path in self.data_blocks:
             block_size = np.load(block_path)[self.feature_map.labels[0]].shape[0]
             num_samples += block_size
-            num_batches += int(np.ceil(block_size * 1.0 / self.batch_size))
+        num_batches = int(np.ceil(num_samples / self.batch_size))
         return num_batches, num_samples
