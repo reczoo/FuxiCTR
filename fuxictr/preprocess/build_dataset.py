@@ -60,13 +60,14 @@ def transform_block(feature_encoder, df_block, filename):
 
 
 def transform(feature_encoder, ddf, filename, block_size=0):
+    ddf = ddf.collect().to_pandas()
     if block_size > 0:
         pool = mp.Pool(mp.cpu_count() // 2)
         block_id = 0
         for idx in range(0, len(ddf), block_size):
             df_block = ddf.iloc[idx:(idx + block_size)]
             pool.apply_async(
-                transform_block, 
+                transform_block,
                 args=(feature_encoder,
                       df_block,
                       '{}/part_{:05d}.npz'.format(filename, block_id))
