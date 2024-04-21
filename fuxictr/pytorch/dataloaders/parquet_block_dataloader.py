@@ -21,18 +21,23 @@ from itertools import chain
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data import IterDataPipe, DataLoader, get_worker_info
 import glob
+import polars as pl
+import pandas as pd
 import os
 
 
-class NpzIterDataPipe(IterDataPipe):
+class ParquetIterDataPipe(IterDataPipe):
     def __init__(self, data_blocks, feature_map):
         self.feature_map = feature_map
         self.data_blocks = data_blocks
-        
+
     def load_data(self, data_path):
-        data_dict = np.load(data_path)
+        df = pd.read_parquet(data_path)
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
-        data_arrays = [data_dict[col] for col in all_cols]
+        data_arrays = []
+        for col in all_cols:
+            array = np.array(df[col].to_list())
+            data_arrays.append(array)
         return np.column_stack(data_arrays)
 
     def read_block(self, data_block):
@@ -53,11 +58,11 @@ class NpzIterDataPipe(IterDataPipe):
         return chain.from_iterable(map(self.read_block, block_list))
 
 
-class NpzBlockDataLoader(DataLoader):
+class ParquetBlockDataLoader(DataLoader):
     def __init__(self, feature_map, data_path, split="train", batch_size=32, shuffle=False,
                  num_workers=1, buffer_size=100000, **kwargs):
-        if not data_path.endswith("npz"):
-            data_path = os.path.join(data_path, "*.npz")
+        if not data_path.endswith("parquet"):
+            data_path = os.path.join(data_path, "*.parquet")
         data_blocks = sorted(glob.glob(data_path)) # sort by part name
         assert len(data_blocks) > 0, f"invalid data_path: {data_path}"
         self.data_blocks = data_blocks
@@ -65,7 +70,7 @@ class NpzBlockDataLoader(DataLoader):
         self.feature_map = feature_map
         self.batch_size = batch_size
         self.num_batches, self.num_samples = self.count_batches_and_samples()
-        datapipe = NpzIterDataPipe(self.data_blocks, feature_map)
+        datapipe = ParquetIterDataPipe(self.data_blocks, feature_map)
         if shuffle:
             datapipe = datapipe.shuffle(buffer_size=buffer_size)
         elif split == "test":
@@ -80,9 +85,9 @@ class NpzBlockDataLoader(DataLoader):
 
     def count_batches_and_samples(self):
         num_samples = 0
-        for block_path in self.data_blocks:
-            block_size = np.load(block_path)[self.feature_map.labels[0]].shape[0]
-            num_samples += block_size
+        for data_block in self.data_blocks:
+            df = pl.scan_parquet(data_block)
+            num_samples += df.select(pl.count()).collect().item()
         num_batches = int(np.ceil(num_samples / self.batch_size))
         return num_batches, num_samples
 

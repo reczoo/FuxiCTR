@@ -22,6 +22,7 @@ import polars as pl
 from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
+from ..utils import load_pretrain_emb
 
 
 class Tokenizer(object):
@@ -96,7 +97,7 @@ class Tokenizer(object):
         new_words = 0
         for word in word_list:
             if word not in self.vocab:
-                self.vocab[word] = self.vocab["__OOV__"] + new_words
+                self.vocab[word] = self.vocab.get("__OOV__", 0) + new_words
                 new_words += 1
         if new_words > 0:
             self.vocab["__OOV__"] = self.vocab_size()
@@ -122,16 +123,12 @@ class Tokenizer(object):
         seqs = pad_sequences(series.to_list(), maxlen=self.max_len,
                              value=self.vocab["__PAD__"],
                              padding=self.padding, truncating=self.padding)
-        return np.array(seqs)
+        return seqs.tolist()
     
     def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
-        if pretrain_path.endswith(".h5"):
-            with h5py.File(pretrain_path, 'r') as hf:
-                keys = hf["key"][:]
-                # in case mismatch of dtype between int and str
-                keys = keys.astype(feature_dtype)
-        elif pretrain_path.endswith(".npz"):
-            keys = np.load(pretrain_path)["key"]
+        keys = load_pretrain_emb(pretrain_path, keys=["key"])
+        # in case mismatch of dtype between int and str
+        keys = keys.astype(feature_dtype)
         # Update vocab with pretrained keys in case new tokens appear in validation or test set
         # Do NOT update OOV index here since it is used in PretrainedEmbedding
         if expand_vocab:

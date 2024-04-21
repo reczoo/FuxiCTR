@@ -20,6 +20,9 @@ import logging.config
 import yaml
 import glob
 import json
+import h5py
+import numpy as np
+import pandas as pd
 from collections import OrderedDict
 
 
@@ -90,6 +93,7 @@ def print_to_json(data, sort_keys=True):
 def print_to_list(data):
     return ' - '.join('{}: {:.6f}'.format(k, v) for k, v in data.items())
 
+
 class Monitor(object):
     def __init__(self, kv):
         if isinstance(kv, str):
@@ -104,3 +108,29 @@ class Monitor(object):
 
     def get_metrics(self):
         return list(self.kv_pairs.keys())
+
+
+def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
+    if type(keys) != list:
+        keys = [keys]
+    if pretrain_path.endswith("h5"):
+        with h5py.File(pretrain_path, 'r') as hf:
+            values = [hf[k][:] for k in keys]
+    elif pretrain_path.endswith("npz"):
+        npz = np.load(pretrain_path)
+        values = [npz[k] for k in keys]
+    elif pretrain_path.endswith("parquet"):
+        df = pd.read_parquet(pretrain_path)
+        values = [df[k].values for k in keys]
+    else:
+        raise ValueError(f"Embedding format not supported: {pretrain_path}")
+    return values[0] if len(values) == 1 else values
+
+
+def not_in_whitelist(element, whitelist=[]):
+    if not whitelist:
+        return False
+    elif type(whitelist) == list:
+        return element not in whitelist
+    else:
+        return element != whitelist

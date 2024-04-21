@@ -52,11 +52,10 @@ if __name__ == '__main__':
 
     data_dir = os.path.join(params['data_root'], params['dataset_id'])
     feature_map_json = os.path.join(data_dir, "feature_map.json")
-    if params["data_format"] == "csv":
-        # Build feature_map and transform data
-        feature_encoder = FeatureProcessor(**params)
-        params["train_data"], params["valid_data"], params["test_data"] = \
-            build_dataset(feature_encoder, **params)
+    # Build feature_map and transform data
+    feature_encoder = FeatureProcessor(**params)
+    params["train_data"], params["valid_data"], params["test_data"] = \
+        build_dataset(feature_encoder, **params)
     feature_map = FeatureMap(params['dataset_id'], data_dir)
     feature_map.load(feature_map_json, params)
     logging.info("Feature specs: " + print_to_json(feature_map.features))

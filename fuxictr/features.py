@@ -41,13 +41,13 @@ class FeatureMap(object):
             feature_map = json.load(fd) #, object_pairs_hook=OrderedDict
         if feature_map["dataset_id"] != self.dataset_id:
             raise RuntimeError("dataset_id={} does not match feature_map!".format(self.dataset_id))
-        self.num_fields = feature_map["num_fields"]
         self.labels = feature_map.get("labels", [])
         self.total_features = feature_map.get("total_features", 0)
         self.input_length = feature_map.get("input_length", 0)
         self.group_id = feature_map.get("group_id", None)
         self.default_emb_dim = params.get("embedding_dim", None)
         self.features = OrderedDict((k, v) for x in feature_map["features"] for k, v in x.items())
+        self.num_fields = self.get_num_fields()
         if params.get("use_features", None):
             self.features = OrderedDict((x, self.features[x]) for x in params["use_features"])
         if params.get("feature_specs", None):

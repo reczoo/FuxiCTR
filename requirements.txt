@@ -1,7 +1,6 @@
-torch
 keras_preprocessing
-PyYAML
 pandas
+PyYAML
 scikit-learn
 numpy
 h5py

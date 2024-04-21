@@ -1,4 +1,5 @@
 # =========================================================================
+# Copyright (C) 2023. FuxiCTR Authors. All rights reserved.
 # Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +23,7 @@ import os, sys
 import logging
 from fuxictr.metrics import evaluate_metrics
 from fuxictr.pytorch.torch_utils import get_device, get_optimizer, get_loss, get_regularizer
-from fuxictr.utils import Monitor
+from fuxictr.utils import Monitor, not_in_whitelist
 from tqdm import tqdm
 
 
@@ -102,26 +103,27 @@ class BaseModel(nn.Module):
         self.apply(reset_custom_params)
 
     def get_inputs(self, inputs, feature_source=None):
-        if feature_source and type(feature_source) == str:
-            feature_source = [feature_source]
         X_dict = dict()
-        for feature, spec in self.feature_map.features.items():
-            if (feature_source is not None) and (spec["source"] not in feature_source):
+        for feature in inputs.keys():
+            if feature in self.feature_map.labels:
                 continue
+            spec = self.feature_map.features[feature]
             if spec["type"] == "meta":
                 continue
-            X_dict[feature] = inputs[:, self.feature_map.get_column_index(feature)].to(self.device)
+            if feature_source and not_in_whitelist(spec["source"], feature_source):
+                continue
+            X_dict[feature] = inputs[feature].to(self.device)
         return X_dict
 
     def get_labels(self, inputs):
         """ Please override get_labels() when using multiple labels!
         """
         labels = self.feature_map.labels
-        y = inputs[:, self.feature_map.get_column_index(labels[0])].to(self.device)
+        y = inputs[labels[0]].to(self.device)
         return y.float().view(-1, 1)
                 
     def get_group_id(self, inputs):
-        return inputs[:, self.feature_map.get_column_index(self.feature_map.group_id)]
+        return inputs[self.feature_map.group_id]
 
     def model_to_device(self):
         self.to(device=self.device)

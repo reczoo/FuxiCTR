@@ -1,10 +1,22 @@
 ## FuxiCTR Versions
 
-### FuxiCTR v2.2
+### FuxiCTR v2.3
 [Doing] Add support for saving pb file, exporting embeddings
-[Doing] Add support of NVTabular data
+[Doing] Add support of multi-gpu training
 
-**FuxiCTR v2.2.2, 2024-04-18**
+**FuxiCTR v2.3.0, 2024-04-20**
++ [Refactor] Support reading CSV and Parquet files as inputs
++ [Feature] Add dataloader for parquet
++ [Feature] Add the `rebuild_dataset=False` setting to skip rebuiding when the input dataset has already been preprocessed with ID feature mapping. This enables customized feature mapping instead of using FuxiCTR Preprocessor (which is slow for large dataset).
+
+-------------------------------
+
+### FuxiCTR v2.2
+
+**FuxiCTR v2.2.3, 2024-04-20**
++ [Fix] Quick fix to v2.2.2 that miss one line when committing
+
+**FuxiCTR v2.2.2, 2024-04-18 (Deprecated)**
 + [Feature] Update to use polars instead of pandas for faster feature processing
 + [Fix] When num_workers > 1, NpzBlockDataLoader cannot keep the reading order of samples ([#86](https://github.com/xue-pai/FuxiCTR/issues/86))
 

@@ -17,12 +17,12 @@
 
 import torch
 from torch import nn
-import h5py
 import os
 import io
 import json
 import numpy as np
 import logging
+from ....utils import load_pretrain_emb
 
 
 class PretrainedEmbedding(nn.Module):
@@ -66,17 +66,6 @@ class PretrainedEmbedding(nn.Module):
             nn.init.zeros_(self.id_embedding.weight) # set oov token embeddings to zeros
             embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])
 
-    def get_pretrained_embedding(self, pretrain_path):
-        logging.info("Loading pretrained_emb: {}".format(pretrain_path))
-        if pretrain_path.endswith("h5"):
-            with h5py.File(pretrain_path, 'r') as hf:
-                keys = hf["key"][:]
-                embeddings = hf["value"][:]
-        elif pretrain_path.endswith("npz"):
-            npz = np.load(pretrain_path)
-            keys, embeddings = npz["key"], npz["value"]
-        return keys, embeddings
-
     def load_feature_vocab(self, vocab_path, feature_name):
         with io.open(vocab_path, "r", encoding="utf-8") as fd:
             vocab = json.load(fd)
@@ -94,7 +83,8 @@ class PretrainedEmbedding(nn.Module):
             embedding_matrix = np.random.normal(loc=0, scale=1.e-4, size=(vocab_size, pretrain_dim))
             if padding_idx:
                 embedding_matrix[padding_idx, :] = np.zeros(pretrain_dim) # set as zero for PAD
-        keys, embeddings = self.get_pretrained_embedding(pretrain_path)
+        logging.info("Loading pretrained_emb: {}".format(pretrain_path))
+        keys, embeddings = load_pretrain_emb(pretrain_path, keys=["key", "value"])
         assert embeddings.shape[-1] == pretrain_dim, f"pretrain_dim={pretrain_dim} not correct."
         vocab, vocab_type = self.load_feature_vocab(vocab_path, feature_name)
         keys = keys.astype(vocab_type) # ensure the same dtype between pretrained keys and vocab keys

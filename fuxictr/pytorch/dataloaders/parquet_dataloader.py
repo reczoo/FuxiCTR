@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
+# Copyright (C) 2024. FuxiCTR Authors. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
+import pandas as pd
+import polars as pl
 
 
-class NpzDataset(Dataset):
+class ParquetDataset(Dataset):
     def __init__(self, feature_map, data_path):
         self.feature_map = feature_map
         self.darray = self.load_data(data_path)
@@ -32,23 +34,30 @@ class NpzDataset(Dataset):
         return self.darray.shape[0]
 
     def load_data(self, data_path):
-        data_dict = np.load(data_path) # dict of arrays
+        df = pl.read_parquet(data_path)
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
-        data_arrays = [data_dict[col] for col in all_cols]
+        data_arrays = []
+        for col in all_cols:
+            if df[col].dtype != pl.List:
+                array = np.array(df[col])
+            else:
+                array = np.array(df[col].to_list())
+            data_arrays.append(array)
         return np.column_stack(data_arrays)
 
 
-class NpzDataLoader(DataLoader):
-    def __init__(self, feature_map, data_path, batch_size=32, shuffle=False, num_workers=1, **kwargs):
-        if not data_path.endswith(".npz"):
-            data_path += ".npz"
-        self.dataset = NpzDataset(feature_map, data_path)
-        super(NpzDataLoader, self).__init__(dataset=self.dataset, batch_size=batch_size,
-                                            shuffle=shuffle, num_workers=num_workers,
-                                            collate_fn=BatchCollator(feature_map))
+class ParquetDataLoader(DataLoader):
+    def __init__(self, feature_map, data_path, batch_size=32, shuffle=False,
+                 num_workers=1, **kwargs):
+        if not data_path.endswith(".parquet"):
+            data_path += ".parquet"
+        self.dataset = ParquetDataset(feature_map, data_path)
+        super().__init__(dataset=self.dataset, batch_size=batch_size,
+                         shuffle=shuffle, num_workers=num_workers,
+                         collate_fn=BatchCollator(feature_map))
         self.num_samples = len(self.dataset)
         self.num_blocks = 1
-        self.num_batches = int(np.ceil(self.num_samples * 1.0 / self.batch_size))
+        self.num_batches = int(np.ceil(self.num_samples / self.batch_size))
 
     def __len__(self):
         return self.num_batches

@@ -3,7 +3,7 @@
 </div>
 
 <div align="center">
-<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/python-3.6+-blue" style="max-width: 100%;" alt="Python version"></a>
+<a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/python-3.9+-blue" style="max-width: 100%;" alt="Python version"></a>
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/pytorch-1.10+-blue" style="max-width: 100%;" alt="Pytorch version"></a>
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/tensorflow-2.1+-blue" style="max-width: 100%;" alt="Pytorch version"></a>
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/v/fuxictr.svg" style="max-width: 100%;" alt="Pypi version"></a>
@@ -102,7 +102,7 @@ We have benchmarked FuxiCTR models on a set of open datasets as follows:
 
 FuxiCTR has the following dependencies:
 
-+ python 3.6+
++ python 3.9+
 + pytorch 1.10+ (required only for Torch models)
 + tensorflow 2.1+ (required only for TF models)
 

@@ -22,6 +22,7 @@ import numpy as np
 from collections import OrderedDict
 from .pretrained_embedding import PretrainedEmbedding
 from fuxictr.pytorch.torch_utils import get_initializer
+from fuxictr.utils import not_in_whitelist
 from fuxictr.pytorch import layers
 
 
@@ -144,18 +145,15 @@ class FeatureEmbeddingDict(nn.Module):
         else:
             return True
 
-    def dict2tensor(self, embedding_dict, feature_list=[], feature_source=[], feature_type=[], flatten_emb=False):
-        if type(feature_source) != list:
-            feature_source = [feature_source]
-        if type(feature_type) != list:
-            feature_type = [feature_type]
+    def dict2tensor(self, embedding_dict, flatten_emb=False, feature_list=[], feature_source=[],
+                    feature_type=[]):
         feature_emb_list = []
         for feature, feature_spec in self._feature_map.features.items():
-            if feature_source and feature_spec["source"] not in feature_source:
+            if feature_list and not_in_whitelist(feature, feature_list):
                 continue
-            if feature_type and feature_spec["type"] not in feature_type:
+            if feature_source and not_in_whitelist(feature_spec["source"], feature_source):
                 continue
-            if feature_list and feature not in feature_list:
+            if feature_type and not_in_whitelist(feature_spec["type"], feature_type):
                 continue
             if feature in embedding_dict:
                 feature_emb_list.append(embedding_dict[feature])
@@ -166,15 +164,12 @@ class FeatureEmbeddingDict(nn.Module):
         return feature_emb
 
     def forward(self, inputs, feature_source=[], feature_type=[]):
-        if type(feature_source) != list:
-            feature_source = [feature_source]
-        if type(feature_type) != list:
-            feature_type = [feature_type]
         feature_emb_dict = OrderedDict()
-        for feature, feature_spec in self._feature_map.features.items():
-            if feature_source and feature_spec["source"] not in feature_source:
+        for feature in inputs.keys():
+            feature_spec = self._feature_map.features[feature]
+            if feature_source and not_in_whitelist(feature_spec["source"], feature_source):
                 continue
-            if feature_type and feature_spec["type"] not in feature_type:
+            if feature_type and not_in_whitelist(feature_spec["type"], feature_type):
                 continue
             if feature in self.embedding_layers:
                 if feature_spec["type"] == "numeric":
