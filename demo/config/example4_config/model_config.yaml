@@ -12,7 +12,7 @@ Base:
     feature_specs: null
     feature_config: null
 
-DeepFM_test_pretrain: 
+DeepFM_test_csv:
     model: DeepFM
     dataset_id: tiny_example4
     loss: 'binary_crossentropy'
@@ -27,10 +27,9 @@ DeepFM_test_pretrain:
     batch_norm: False
     net_dropout: 0
     batch_size: 128
-    embedding_dim: 8
+    embedding_dim: 4
     epochs: 1
     shuffle: True
-    seed: 2023
+    seed: 2019
     monitor: 'AUC'
     monitor_mode: 'max'
-

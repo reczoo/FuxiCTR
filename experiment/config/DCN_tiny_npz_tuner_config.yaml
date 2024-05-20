@@ -16,4 +16,3 @@ tuner_space:
     group_id: user_id
     metrics: [[gAUC, AUC, logloss]]
     monitor: {"gAUC": 1, "AUC": 1}
-

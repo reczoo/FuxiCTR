@@ -5,3 +5,4 @@ tiny_npz:
     train_data: ../../../data/tiny_npz/train.npz
     valid_data: ../../../data/tiny_npz/valid.npz
     test_data: ../../../data/tiny_npz/test.npz
+    

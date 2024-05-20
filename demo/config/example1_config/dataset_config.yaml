@@ -11,4 +11,3 @@ tiny_example1:
                  "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
                  active: True, dtype: str, type: categorical}]
     label_col: {name: clk, dtype: float}
-

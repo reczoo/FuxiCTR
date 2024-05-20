@@ -181,9 +181,11 @@ class FeatureProcessor(object):
         feature_type = col["type"]
         feature_source = col.get("source", "")
         self.feature_map.features[name] = {"source": feature_source,
-                                                "type": feature_type}
+                                           "type": feature_type}
         if "feature_encoder" in col:
             self.feature_map.features[name]["feature_encoder"] = col["feature_encoder"]
+        if "embedding_dim" in col:
+            self.feature_map.features[name]["embedding_dim"] = col["embedding_dim"]
         if "normalizer" in col:
             normalizer = Normalizer(col["normalizer"])
             if self.rebuild_dataset:
@@ -196,7 +198,7 @@ class FeatureProcessor(object):
         feature_source = col.get("source", "")
         min_categr_count = col.get("min_categr_count", min_categr_count)
         self.feature_map.features[name] = {"source": feature_source,
-                                                "type": feature_type}
+                                           "type": feature_type}
         if "feature_encoder" in col:
             self.feature_map.features[name]["feature_encoder"] = col["feature_encoder"]
         if "embedding_dim" in col:

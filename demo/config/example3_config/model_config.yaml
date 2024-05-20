@@ -12,9 +12,9 @@ Base:
     feature_specs: null
     feature_config: null
 
-DeepFM_test_csv:
+DeepFM_test_npz:
     model: DeepFM
-    dataset_id: tiny_example3
+    dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -30,6 +30,6 @@ DeepFM_test_csv:
     embedding_dim: 4
     epochs: 1
     shuffle: True
-    seed: 2019
+    seed: 2023
     monitor: 'AUC'
     monitor_mode: 'max'

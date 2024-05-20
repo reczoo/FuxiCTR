@@ -12,9 +12,9 @@ Base:
     feature_specs: null
     feature_config: null
 
-DeepFM_test_parquet:
+DeepFM_test_csv:
     model: DeepFM
-    dataset_id: tiny_parquet
+    dataset_id: tiny_example7
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -30,6 +30,6 @@ DeepFM_test_parquet:
     embedding_dim: 4
     epochs: 1
     shuffle: True
-    seed: 2023
+    seed: 2019
     monitor: 'AUC'
     monitor_mode: 'max'

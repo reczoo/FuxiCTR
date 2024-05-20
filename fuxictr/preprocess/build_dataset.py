@@ -72,7 +72,7 @@ def transform(feature_encoder, ddf, filename, block_size=0):
         pool.close()
         pool.join()
     else:
-        transform_block(feature_encoder, ddf, filename)
+        transform_block(feature_encoder, ddf, filename + ".parquet")
 
 
 def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None,
@@ -122,7 +122,7 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
             transform(feature_encoder, test_ddf, 'test', block_size=data_block_size)
             del test_ddf
             gc.collect()
-        logging.info("Transform csv data to npz done.")
+        logging.info("Transform csv data to parquet done.")
 
         train_data, valid_data, test_data = (
             os.path.join(feature_encoder.data_dir, "train"), \

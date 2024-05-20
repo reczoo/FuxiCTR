@@ -62,14 +62,14 @@ if __name__ == '__main__':
     use_custom_processor = True 
     if use_custom_processor:
         feature_encoder = CustomFeatureProcessor(feature_cols=params["feature_cols"],
-                                        label_col=params["label_col"],
-                                        dataset_id=params["dataset_id"], 
-                                        data_root=params["data_root"])
+                                                 label_col=params["label_col"],
+                                                 dataset_id=params["dataset_id"], 
+                                                 data_root=params["data_root"])
     else:
         feature_encoder = FeatureProcessor(feature_cols=params["feature_cols"],
-                                        label_col=params["label_col"],
-                                        dataset_id=params["dataset_id"], 
-                                        data_root=params["data_root"])
+                                           label_col=params["label_col"],
+                                           dataset_id=params["dataset_id"], 
+                                           data_root=params["data_root"])
 
     # Build dataset from csv to npz, and remap data paths to npz files
     params["train_data"], params["valid_data"], params["test_data"] = \
@@ -90,6 +90,7 @@ if __name__ == '__main__':
                                           train_data=params['train_data'],
                                           valid_data=params['valid_data'],
                                           batch_size=params['batch_size'],
+                                          data_format=params["data_format"],
                                           shuffle=params['shuffle']).make_iterator()
 
     # Model initialization and fitting
@@ -104,10 +105,6 @@ if __name__ == '__main__':
                               stage='test',
                               test_data=params['test_data'],
                               batch_size=params['batch_size'],
+                              data_format=params["data_format"],
                               shuffle=False).make_iterator()
     model.evaluate(test_gen)
-
-
-
-
-

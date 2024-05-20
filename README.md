@@ -103,8 +103,8 @@ We have benchmarked FuxiCTR models on a set of open datasets as follows:
 FuxiCTR has the following dependencies:
 
 + python 3.9+
-+ pytorch 1.10+ (required only for Torch models)
-+ tensorflow 2.1+ (required only for TF models)
++ pytorch 1.10+ (required only for torch models)
++ tensorflow 2.1+ (required only for tensorflow models)
 
 Please install other required packages via `pip install -r requirements.txt`.
 
@@ -116,8 +116,8 @@ Please install other required packages via `pip install -r requirements.txt`.
    
    ```
    cd demo
-   python example1_build_dataset_to_h5.py
-   python example2_DeepFM_with_h5_input.py
+   python example1_build_dataset_to_parquet.py
+   python example2_DeepFM_with_parquet_input.py
    ```
 
 2. Run a model on tiny data
@@ -155,7 +155,7 @@ Please install other required packages via `pip install -r requirements.txt`.
 
 If you find our code or benchmarks helpful in your research, please cite the following papers.
 
-+ Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [BARS-CTR: Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
++ Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
 + Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
 
 ## Discussion
