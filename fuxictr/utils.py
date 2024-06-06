@@ -1,4 +1,5 @@
 # =========================================================================
+# Copyright (C) 2024. The FuxiCTR Library. All rights reserved.
 # Copyright (C) 2023. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +25,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
+import fuxictr
 
 
 def load_config(config_dir, experiment_id):
@@ -83,6 +85,7 @@ def set_logger(params):
                         format='%(asctime)s P%(process)d %(levelname)s %(message)s',
                         handlers=[logging.FileHandler(log_file, mode='w'),
                                   logging.StreamHandler()])
+    logging.info("FuxiCTR version: " + fuxictr.__version__)
 
 def print_to_json(data, sort_keys=True):
     new_data = dict((k, str(v)) for k, v in data.items())

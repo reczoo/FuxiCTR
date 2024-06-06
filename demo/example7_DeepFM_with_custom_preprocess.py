@@ -10,7 +10,8 @@ from fuxictr.pytorch.torch_utils import seed_everything
 from fuxictr.pytorch.dataloaders import RankDataLoader
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 from model_zoo import DeepFM
-import pandas as pd 
+import pandas as pd
+
 
 class CustomFeatureProcessor(FeatureProcessor):
     '''
@@ -49,7 +50,7 @@ class CustomFeatureProcessor(FeatureProcessor):
 
 if __name__ == '__main__':
     # Load params from config files
-    config_dir = './config/example6_config'
+    config_dir = './config/example7_config'
     experiment_id = 'DeepFM_test_csv' # corresponds to input `data/tiny_npz`
     params = load_config(config_dir, experiment_id)
 

@@ -1,4 +1,5 @@
 # =========================================================================
+# Copyright (C) 2024. The FuxiCTR Library. All rights reserved.
 # Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,10 +22,10 @@ from fuxictr.pytorch.models import BaseModel
 from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
-class ONNv2(BaseModel):
+class ONN(BaseModel):
     def __init__(self, 
                  feature_map, 
-                 model_id="ONNv2", 
+                 model_id="ONN", 
                  gpu=-1, 
                  learning_rate=1e-3, 
                  embedding_dim=2, 
@@ -32,45 +33,54 @@ class ONNv2(BaseModel):
                  net_regularizer=None,
                  hidden_units=[64, 64, 64], 
                  hidden_activations="ReLU",
-                 net_dropout=0,
-                 batch_norm=False,
+                 embedding_dropout=0,
+                 net_dropout = 0,
+                 batch_norm = False,
                  **kwargs):
-        super(ONNv2, self).__init__(feature_map, 
-                                    model_id=model_id, 
-                                    gpu=gpu, 
-                                    embedding_regularizer=embedding_regularizer, 
-                                    net_regularizer=net_regularizer,
-                                    **kwargs)
+        super(ONN, self).__init__(feature_map, 
+                                  model_id=model_id, 
+                                  gpu=gpu, 
+                                  embedding_regularizer=embedding_regularizer, 
+                                  net_regularizer=net_regularizer,
+                                  **kwargs) 
         self.num_fields = feature_map.num_fields
-        self.embedding_dim = embedding_dim
-        self.interact_units = int(self.num_fields * (self.num_fields - 1) / 2)
-        self.dnn = MLP_Block(input_dim=embedding_dim * self.num_fields + self.interact_units,
+        input_dim = embedding_dim * self.num_fields + int(self.num_fields * (self.num_fields - 1) / 2)
+        self.dnn = MLP_Block(input_dim=input_dim,
                              output_dim=1, 
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             output_activation=None,
-                             dropout_rates=net_dropout,
+                             output_activation=None, 
+                             dropout_rates=net_dropout, 
                              batch_norm=batch_norm)
-        self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim * self.num_fields) # b x f x dim*f
-        self.diag_mask = torch.eye(self.num_fields).bool().to(self.device)
-        self.triu_mask = torch.triu(torch.ones(self.num_fields, self.num_fields), 1).bool().to(self.device)
+        self.embedding_layers = nn.ModuleList([FeatureEmbedding(feature_map, embedding_dim) 
+                                               for _ in range(self.num_fields)]) # f x f x bs x dim
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
 
     def forward(self, inputs):
+        """
+        Inputs: [X, y]
+        """
         X = self.get_inputs(inputs)
-        field_wise_emb = self.embedding_layer(X).view(-1, self.num_fields, self.num_fields, self.embedding_dim)
-        batch_size = field_wise_emb.shape[0]
-        diag_embedding = torch.masked_select(field_wise_emb, self.diag_mask.unsqueeze(-1)).view(batch_size, -1)
-        ffm_out = self.ffm_interaction(field_wise_emb)
+        field_aware_emb_list = [each_layer(X) for each_layer in self.embedding_layers] # list of emb tensors
+        diag_embedding = field_aware_emb_list[0].flatten(start_dim=1)
+        ffm_out = self.field_aware_interaction(field_aware_emb_list[1:])
         dnn_input = torch.cat([diag_embedding, ffm_out], dim=1)
         y_pred = self.dnn(dnn_input)
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}
         return return_dict
 
-    def ffm_interaction(self, field_wise_emb):
-        out = (field_wise_emb.transpose(1, 2) * field_wise_emb).sum(dim=-1)
-        out = torch.masked_select(out, self.triu_mask).view(-1, self.interact_units)
-        return out
+    def field_aware_interaction(self, field_aware_emb_list):
+        interaction = []
+        for i in range(self.num_fields - 1):
+            for j in range(i + 1, self.num_fields):
+                v_ij = field_aware_emb_list[j - 1][:, i, :]
+                v_ji = field_aware_emb_list[i][:, j, :]
+                dot = torch.sum(v_ij * v_ji, dim=1, keepdim=True)
+                interaction.append(dot)
+        return torch.cat(interaction, dim=1)
+
+
+
