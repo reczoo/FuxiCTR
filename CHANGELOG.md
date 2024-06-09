@@ -4,6 +4,11 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.1, 2024-06-09**
++ [Fix] Fix customized preprossors based on polars and update demos
++ [Doc] Add copyrights
++ [Feature] Add `embedding_dim` setting to numeric features
+  
 **FuxiCTR v2.3.0, 2024-04-20**
 + [Refactor] Support reading CSV and Parquet files as inputs
 + [Feature] Add dataloader for parquet

@@ -13,8 +13,8 @@ from .DESTINE.src import DESTINE
 from .DIEN.src import DIEN
 from .DIN.src import DIN
 from .DLRM.src import DLRM
-from .DMIN.model import DMIN
-from .DMR.model import DMR
+from .DMIN.src import DMIN
+from .DMR.src import DMR
 from .DNN.DNN_torch.src import DNN
 from .DSSM.src import DSSM
 from .EDCN.src import EDCN
@@ -36,11 +36,11 @@ from .LorentzFM.src import LorentzFM
 from .LR.src import LR
 from .MaskNet.src import MaskNet
 from .NFM.src import NFM
-from .ONN.ONN_torch.model import ONN, ONNv2
+from .ONN.ONN_torch.src import ONN, ONNv2
 from .PNN.src import PNN
 from .SAM.src import SAM
 from .SDIM.src import SDIM
 from .WideDeep.WideDeep_torch.src import WideDeep
 from .xDeepFM.src import xDeepFM
-from .PEPNet.model import PPNet
+from .PEPNet.src import PPNet
 from .multitask import SharedBottom, MMoE

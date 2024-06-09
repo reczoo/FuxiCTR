@@ -16,14 +16,15 @@
 # =========================================================================
 
 
-import pandas as pd
-from fuxictr.preprocess import FeatureProcessor as BaseFeatureProcessor
+from fuxictr.preprocess import FeatureProcessor
+import polars as pl
 
-class FeatureProcessor(BaseFeatureProcessor):
-    def extract_country_code(self, df, col_name):
-        return df[col_name].apply(lambda isrc: isrc[0:2] if not pd.isnull(isrc) else "")
 
-    def bucketize_age(self, df, col_name):
+class CustomizedFeatureProcessor(FeatureProcessor):
+    def extract_country_code(self, col_name=None):
+        return pl.col(col_name).apply(lambda isrc: isrc[0:2] if not pl.is_null(isrc) else "")
+
+    def bucketize_age(self, col_name=None):
         def _bucketize(age):
             if pd.isnull(age):
                 return ""
@@ -45,4 +46,4 @@ class FeatureProcessor(BaseFeatureProcessor):
                     return "6"
                 else:
                     return "7"
-        return df[col_name].apply(_bucketize)
+        return pl.col(col_name).apply(_bucketize)

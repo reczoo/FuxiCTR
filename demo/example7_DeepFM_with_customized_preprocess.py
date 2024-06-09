@@ -1,57 +1,62 @@
+# =========================================================================
+# Copyright (C) 2024. The FuxiCTR Library. All rights reserved.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========================================================================
+
 import sys
 sys.path.append('../')
 import os
 import logging
 from datetime import datetime
-from fuxictr import datasets
 from fuxictr.utils import load_config, set_logger, print_to_json
 from fuxictr.features import FeatureMap
 from fuxictr.pytorch.torch_utils import seed_everything
 from fuxictr.pytorch.dataloaders import RankDataLoader
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 from model_zoo import DeepFM
-import pandas as pd
+import polars as pl
+from datetime import datetime
 
 
-class CustomFeatureProcessor(FeatureProcessor):
-    '''
-    In the config/dataset_config.yaml file, the 'extract_country_code' and 'bucketize_age' processors are utilized. 
-    Therefore, it is necessary to create a new class that inherits from the 'FeatureProcessor' class and implement 
-    the respective functions for these two processors. 
-    Each Process Function should accept two arguments: df and col_name.
-    '''
-    def extract_country_code(self, df, col_name):
-        return df[col_name].apply(lambda isrc: isrc[0:2] if not pd.isnull(isrc) else "")
+class CustomizedFeatureProcessor(FeatureProcessor):
+    """
+    This is a demo for implementing customized feature processing functions.
 
-    def bucketize_age(self, df, col_name):
-        def _bucketize(age):
-            if pd.isnull(age):
-                return ""
-            else:
-                age = float(age)
-                if age < 1 or age > 95:
-                    return ""
-                elif age <= 10:
-                    return "1"
-                elif age <=20:
-                    return "2"
-                elif age <=30:
-                    return "3"
-                elif age <=40:
-                    return "4"
-                elif age <=50:
-                    return "5"
-                elif age <=60:
-                    return "6"
-                else:
-                    return "7"
-        return df[col_name].apply(_bucketize)
-    
+    In the config/example7_config/dataset_config.yaml file, the 'convert_weekday' and 'convert_hour'
+    processors are called. Hence, it is necessary to implement the two functions by inheriting from
+    'fuxictr.preprocess.FeatureProcessor'. Some concrete examples can be found in 'fuxictr.datasets'.
+
+    Each processor function ONLY accepts one argument: col_name, and returns an expression based on 
+    polars. We use polars instead of pandas for speedup.
+    """
+
+    def convert_weekday(self, col_name=None):
+        def _convert_weekday(timestamp):
+            dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+            return int(dt.strftime('%w'))
+        return pl.col("time_stamp").apply(_convert_weekday)
+
+    def convert_hour(self, col_name=None):
+        def _convert_hour(timestamp):
+            dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+            return int(dt.hour)
+        return pl.col("time_stamp").apply(_convert_hour)
 
 if __name__ == '__main__':
     # Load params from config files
     config_dir = './config/example7_config'
-    experiment_id = 'DeepFM_test_csv' # corresponds to input `data/tiny_npz`
+    experiment_id = 'DeepFM_test_csv'
     params = load_config(config_dir, experiment_id)
 
     # set up logger and random seed
@@ -60,19 +65,12 @@ if __name__ == '__main__':
     seed_everything(seed=params['seed'])
 
     # Set feature_encoder that defines how to preprocess data
-    use_custom_processor = True 
-    if use_custom_processor:
-        feature_encoder = CustomFeatureProcessor(feature_cols=params["feature_cols"],
+    feature_encoder = CustomizedFeatureProcessor(feature_cols=params["feature_cols"],
                                                  label_col=params["label_col"],
                                                  dataset_id=params["dataset_id"], 
                                                  data_root=params["data_root"])
-    else:
-        feature_encoder = FeatureProcessor(feature_cols=params["feature_cols"],
-                                           label_col=params["label_col"],
-                                           dataset_id=params["dataset_id"], 
-                                           data_root=params["data_root"])
 
-    # Build dataset from csv to npz, and remap data paths to npz files
+    # Build dataset
     params["train_data"], params["valid_data"], params["test_data"] = \
         build_dataset(feature_encoder, 
                       train_data=params["train_data"],

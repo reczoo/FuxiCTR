@@ -17,15 +17,16 @@
 
 
 import numpy as np
-from fuxictr.preprocess import FeatureProcessor as BaseFeatureProcessor
+from fuxictr.preprocess import FeatureProcessor
+import polars as pl
 
 
-class FeatureProcessor(BaseFeatureProcessor):
-    def convert_to_bucket(self, df, col_name):
+class CustomizedFeatureProcessor(FeatureProcessor):
+    def convert_to_bucket(self, col_name=None):
         def _convert_to_bucket(value):
             if value > 2:
                 value = int(np.floor(np.log(value) ** 2))
             else:
                 value = int(value)
             return value
-        return df[col_name].map(_convert_to_bucket).astype(int)
+        return pl.col(col_name).apply(_convert_to_bucket).cast(pl.Int32)

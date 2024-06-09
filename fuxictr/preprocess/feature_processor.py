@@ -51,8 +51,10 @@ class FeatureProcessor(object):
         self.feature_map = FeatureMap(dataset_id, self.data_dir)
         self.feature_map.labels = [col["name"] for col in self.label_cols]
         self.feature_map.group_id = kwargs.get("group_id", None)
-        self.dtype_dict = dict((feat["name"], eval(feat["dtype"]) if type(feat["dtype"]) == str else feat["dtype"]) 
-                                for feat in self.feature_cols + self.label_cols)
+        self.dtype_dict = dict(
+            (feat["name"], eval(feat["dtype"]) if type(feat["dtype"]) == str else feat["dtype"]) 
+            for feat in self.feature_cols + self.label_cols
+        )
         self.processor_dict = dict()
 
     def _complete_feature_cols(self, feature_cols):
@@ -94,13 +96,16 @@ class FeatureProcessor(object):
             if col.get("preprocess"):
                 preprocess_args = re.split(r"\(|\)", col["preprocess"])
                 preprocess_fn = getattr(self, preprocess_args[0])
-                ddf = preprocess_fn(ddf, name, *preprocess_args[1:-1])
-                ddf = ddf.with_columns(pl.col(name).cast(self.dtype_dict[name]))
+                ddf = ddf.with_columns(
+                    preprocess_fn(ddf, *preprocess_args[1:-1])
+                    .alias(name)
+                    .cast(self.dtype_dict[name])
+                )
         active_cols = [col["name"] for col in all_cols if col.get("active") != False]
         ddf = ddf.select(active_cols)
         return ddf
 
-    def fit(self, train_ddf, min_categr_count=1, num_buckets=10, rebuild_dataset=True, **kwargs):    
+    def fit(self, train_ddf, min_categr_count=1, num_buckets=10, rebuild_dataset=True, **kwargs):
         logging.info("Fit feature processor...")
         self.rebuild_dataset = rebuild_dataset
         for col in self.feature_cols:
@@ -346,6 +351,5 @@ class FeatureProcessor(object):
         with open(vocab_file, "w") as fd:
             fd.write(json.dumps(vocab, indent=4))
 
-    def copy_from(self, ddf, name, src_name):
-        ddf = ddf.with_columns(pl.col(src_name).alias(name))
-        return ddf
+    def copy_from(self, col_name):
+        return pl.col(col_name)
