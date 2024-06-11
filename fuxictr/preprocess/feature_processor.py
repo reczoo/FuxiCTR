@@ -97,7 +97,7 @@ class FeatureProcessor(object):
                 preprocess_args = re.split(r"\(|\)", col["preprocess"])
                 preprocess_fn = getattr(self, preprocess_args[0])
                 ddf = ddf.with_columns(
-                    preprocess_fn(ddf, *preprocess_args[1:-1])
+                    preprocess_fn(*preprocess_args[1:-1])
                     .alias(name)
                     .cast(self.dtype_dict[name])
                 )
