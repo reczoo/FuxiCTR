@@ -120,12 +120,14 @@ class FeatureProcessor(object):
                     self.fit_meta_col(col)
                 elif col["type"] == "numeric":
                     self.fit_numeric_col(col, col_series)
+                elif col["type"] == "embedding":
+                    self.fit_embedding_col(col)
                 elif col["type"] == "categorical":
                     self.fit_categorical_col(col, col_series,
                                              min_categr_count=min_categr_count,
                                              num_buckets=num_buckets)
                 elif col["type"] == "sequence":
-                    self.fit_sequence_col(col, col_series, 
+                    self.fit_sequence_col(col, col_series,
                                           min_categr_count=min_categr_count)
                 else:
                     raise NotImplementedError("feature type={}".format(col["type"]))
@@ -197,6 +199,17 @@ class FeatureProcessor(object):
             if self.rebuild_dataset:
                 normalizer.fit(col_series.dropna().values)
             self.processor_dict[name + "::normalizer"] = normalizer
+
+    def fit_embedding_col(self, col):
+        name = col["name"]
+        feature_type = col["type"]
+        feature_source = col.get("source", "")
+        self.feature_map.features[name] = {"source": feature_source,
+                                           "type": feature_type}
+        if "feature_encoder" in col:
+            self.feature_map.features[name]["feature_encoder"] = col["feature_encoder"]
+        if "embedding_dim" in col:
+            self.feature_map.features[name]["embedding_dim"] = col["embedding_dim"]
 
     def fit_categorical_col(self, col, col_series, min_categr_count=1, num_buckets=10):
         name = col["name"]

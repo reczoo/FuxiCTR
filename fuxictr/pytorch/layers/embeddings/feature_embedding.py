@@ -103,9 +103,11 @@ class FeatureEmbeddingDict(nn.Module):
                                                                              pretrain_usage)
                     else:
                         padding_idx = feature_spec.get("padding_idx", None)
-                        self.embedding_layers[feature] = nn.Embedding(feature_spec["vocab_size"], 
+                        self.embedding_layers[feature] = nn.Embedding(feature_spec["vocab_size"],
                                                                       feat_dim, 
                                                                       padding_idx=padding_idx)
+                elif feature_spec["type"] == "embedding":
+                    self.embedding_layers[feature] = nn.Identity()
         self.reset_parameters()
 
     def get_feature_encoder(self, encoder):
@@ -181,6 +183,9 @@ class FeatureEmbeddingDict(nn.Module):
                     embeddings = self.embedding_layers[feature](inp)
                 elif feature_spec["type"] == "sequence":
                     inp = inputs[feature].long()
+                    embeddings = self.embedding_layers[feature](inp)
+                elif feature_spec["type"] == "embedding":
+                    inp = inputs[feature].float()
                     embeddings = self.embedding_layers[feature](inp)
                 else:
                     raise NotImplementedError

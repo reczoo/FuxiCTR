@@ -4,6 +4,11 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.2, 2024-07-14**
++ [Fix] Fix typo error in copy_from of version v2.3.1
++ [Feature] Add TransAct model
++ [Feature] Add new feature type `embedding`, supporting [`meta`, `numeric`, `embedding`, `categorical`, `sequence`]
+
 **FuxiCTR v2.3.1, 2024-06-09**
 + [Fix] Fix customized preprossors based on polars and update demos
 + [Doc] Add copyrights
