@@ -43,4 +43,5 @@ from .SDIM.src import SDIM
 from .WideDeep.WideDeep_torch.src import WideDeep
 from .xDeepFM.src import xDeepFM
 from .PEPNet.src import PPNet
+from .TransAct.src import TransAct
 from .multitask import SharedBottom, MMoE
