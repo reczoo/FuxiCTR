@@ -325,7 +325,7 @@ class DynamicGRU(nn.Module):
         if gru_type == "AUGRU":
             self.gru_cell = AUGRUCell(input_size, hidden_size, bias=bias)
         elif gru_type == "AGRU":
-            self.gru_cell = AUGRUCell(input_size, hidden_size, bias=bias)
+            self.gru_cell = AGRUCell(input_size, hidden_size, bias=bias)
     
     def forward(self, packed_seq_emb, attn_score=None, h=None):
         assert isinstance(packed_seq_emb, PackedSequence) and isinstance(attn_score, PackedSequence), \

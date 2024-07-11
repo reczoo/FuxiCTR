@@ -4,10 +4,13 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
-**FuxiCTR v2.3.2, 2024-07-14**
-+ [Fix] Fix typo error in copy_from of version v2.3.1
+**FuxiCTR v2.3.2, 2024-07-11**
 + [Feature] Add TransAct model
 + [Feature] Add new feature type `embedding`, supporting [`meta`, `numeric`, `embedding`, `categorical`, `sequence`]
++ [Fix] Fix typo error in copy_from of version v2.3.1
++ [Fix] Fix issue in build_dataset for skipping rebuilding dataset
++ [Fix] Fix typo error in DIEN (AUGRUCell->AGRUCell)
++ [Fix] Fix typo error in feature_embedding of tf version ([#94](https://github.com/reczoo/FuxiCTR/issues/94))
 
 **FuxiCTR v2.3.1, 2024-06-09**
 + [Fix] Fix customized preprossors based on polars and update demos

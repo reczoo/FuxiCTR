@@ -82,47 +82,47 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
     if rebuild_dataset:
         feature_map_path = os.path.join(feature_encoder.data_dir, "feature_map.json")
         if os.path.exists(feature_map_path):
-            logging.warn(f"Skip rebuilding {feature_map_path}. " 
+            logging.warn(f"Skip rebuilding {feature_map_path}. "
                 + "Please delete it manually if rebuilding is required.")
+        else:
+            # Load data files
+            train_ddf = feature_encoder.read_data(train_data, **kwargs)
+            valid_ddf = None
+            test_ddf = None
 
-        # Load data files
-        train_ddf = feature_encoder.read_data(train_data, **kwargs)
-        valid_ddf = None
-        test_ddf = None
-
-        # Split data for train/validation/test
-        if valid_size > 0 or test_size > 0:
-            valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
-            test_ddf = feature_encoder.read_data(test_data, **kwargs)
-            # TODO: check split_train_test in lazy mode
-            train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf, 
-                                                              valid_size, test_size, split_type)
-        
-        # fit and transform train_ddf
-        train_ddf = feature_encoder.preprocess(train_ddf)
-        feature_encoder.fit(train_ddf, rebuild_dataset=True, **kwargs)
-        transform(feature_encoder, train_ddf, 'train', block_size=data_block_size)
-        del train_ddf
-        gc.collect()
-
-        # Transfrom valid_ddf
-        if valid_ddf is None and (valid_data is not None):
-            valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
-        if valid_ddf is not None:
-            valid_ddf = feature_encoder.preprocess(valid_ddf)
-            transform(feature_encoder, valid_ddf, 'valid', block_size=data_block_size)
-            del valid_ddf
+            # Split data for train/validation/test
+            if valid_size > 0 or test_size > 0:
+                valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
+                test_ddf = feature_encoder.read_data(test_data, **kwargs)
+                # TODO: check split_train_test in lazy mode
+                train_ddf, valid_ddf, test_ddf = split_train_test(train_ddf, valid_ddf, test_ddf, 
+                                                                valid_size, test_size, split_type)
+            
+            # fit and transform train_ddf
+            train_ddf = feature_encoder.preprocess(train_ddf)
+            feature_encoder.fit(train_ddf, rebuild_dataset=True, **kwargs)
+            transform(feature_encoder, train_ddf, 'train', block_size=data_block_size)
+            del train_ddf
             gc.collect()
 
-        # Transfrom test_ddf
-        if test_ddf is None and (test_data is not None):
-            test_ddf = feature_encoder.read_data(test_data, **kwargs)
-        if test_ddf is not None:
-            test_ddf = feature_encoder.preprocess(test_ddf)
-            transform(feature_encoder, test_ddf, 'test', block_size=data_block_size)
-            del test_ddf
-            gc.collect()
-        logging.info("Transform csv data to parquet done.")
+            # Transfrom valid_ddf
+            if valid_ddf is None and (valid_data is not None):
+                valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
+            if valid_ddf is not None:
+                valid_ddf = feature_encoder.preprocess(valid_ddf)
+                transform(feature_encoder, valid_ddf, 'valid', block_size=data_block_size)
+                del valid_ddf
+                gc.collect()
+
+            # Transfrom test_ddf
+            if test_ddf is None and (test_data is not None):
+                test_ddf = feature_encoder.read_data(test_data, **kwargs)
+            if test_ddf is not None:
+                test_ddf = feature_encoder.preprocess(test_ddf)
+                transform(feature_encoder, test_ddf, 'test', block_size=data_block_size)
+                del test_ddf
+                gc.collect()
+            logging.info("Transform csv data to parquet done.")
 
         train_data, valid_data, test_data = (
             os.path.join(feature_encoder.data_dir, "train"), \

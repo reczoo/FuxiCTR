@@ -91,7 +91,7 @@ class FeatureEmbeddingDict(Layer):
                     continue
 
                 if feature_spec["type"] == "numeric":
-                    self.embedding_layers[feature] = tf.keras.layers.Dense(feat_emb_dim, user_bias=False)
+                    self.embedding_layers[feature] = tf.keras.layers.Dense(feat_emb_dim, use_bias=False)
                 elif feature_spec["type"] == "categorical":
                     padding_idx = feature_spec.get("padding_idx", None)
                     embedding_matrix = Embedding(feature_spec["vocab_size"], 
