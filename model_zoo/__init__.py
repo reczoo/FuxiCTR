@@ -6,6 +6,7 @@ from .BST.src import BST
 from .CCPM.src import CCPM
 from .DCN.DCN_torch.src import DCN
 from .DCNv2.src import DCNv2
+from .DCNv3.src import DCNv3
 from .DeepCrossing.src import DeepCrossing
 from .DeepFM.DeepFM_torch.src import DeepFM
 from .DeepIM.src import DeepIM
