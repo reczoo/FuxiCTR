@@ -1,0 +1,288 @@
+2024-07-28 15:44:48,755 P2008329 INFO FuxiCTR version: 2.3.2
+2024-07-28 15:44:48,756 P2008329 INFO Params: {
+    "batch_norm": "True",
+    "batch_size": "4096",
+    "data_format": "csv",
+    "data_root": "../../data/ml/",
+    "dataset_id": "ml",
+    "debug": "False",
+    "debug_mode": "False",
+    "early_stop_patience": "2",
+    "embedding_dim": "10",
+    "embedding_regularizer": "0.01",
+    "epochs": "100",
+    "eval_steps": "None",
+    "every_x_epochs": "1",
+    "feature_cols": "[{'active': True, 'dtype': 'float', 'name': ['user_id', 'item_id', 'tag_id'], 'type': 'categorical'}]",
+    "feature_config": "None",
+    "feature_specs": "None",
+    "gpu": "2",
+    "group_id": "None",
+    "label_col": "{'dtype': 'float', 'name': 'label'}",
+    "layer_norm": "True",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['AUC', 'logloss']",
+    "min_categr_count": "1",
+    "model": "EulerNet",
+    "model_id": "EulerNet_mltag",
+    "model_root": "./Movielens/EulerNet_movielenslatest_x1/",
+    "monitor": "AUC",
+    "monitor_mode": "max",
+    "net_ex_dropout": "0.0",
+    "net_im_dropout": "0.0",
+    "net_regularizer": "1e-05",
+    "num_workers": "3",
+    "optimizer": "adam",
+    "patience": "2",
+    "pickle_feature_encoder": "True",
+    "save_best_only": "True",
+    "seed": "2021",
+    "shape": "[52]",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../data/ml/test.csv",
+    "train_data": "../../data/ml/train.csv",
+    "use_features": "None",
+    "use_hdf5": "True",
+    "valid_data": "../../data/ml/valid.csv",
+    "verbose": "1"
+}
+2024-07-28 15:44:48,785 P2008329 INFO Set up feature processor...
+2024-07-28 15:44:48,801 P2008329 WARNING Skip rebuilding ../../data/ml/ml/feature_map.json. Please delete it manually if rebuilding is required.
+2024-07-28 15:44:48,817 P2008329 INFO Load feature_map from json: ../../data/ml/ml/feature_map.json
+2024-07-28 15:44:48,818 P2008329 INFO Set column index...
+2024-07-28 15:44:48,834 P2008329 INFO Feature specs: {
+    "item_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 23606}",
+    "tag_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 49659}",
+    "user_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 16977}"
+}
+2024-07-28 15:44:52,801 P2008329 INFO Total number of parameters: 920520.
+2024-07-28 15:44:52,801 P2008329 INFO Loading datasets...
+2024-07-28 15:44:52,916 P2008329 INFO Train samples: total/1404801, blocks/1
+2024-07-28 15:44:52,949 P2008329 INFO Validation samples: total/401372, blocks/1
+2024-07-28 15:44:52,949 P2008329 INFO Loading train and validation data done.
+2024-07-28 15:44:52,949 P2008329 INFO Start training: 343 batches/epoch
+2024-07-28 15:44:52,949 P2008329 INFO ************ Epoch=1 start ************
+2024-07-28 15:45:02,973 P2008329 INFO Train loss: 0.409381
+2024-07-28 15:45:02,973 P2008329 INFO Evaluation @epoch 1 - batch 343: 
+2024-07-28 15:45:04,452 P2008329 INFO [Metrics] AUC: 0.924790
+2024-07-28 15:45:04,453 P2008329 INFO Save best model: monitor(max)=0.924790
+2024-07-28 15:45:04,980 P2008329 INFO ************ Epoch=1 end ************
+2024-07-28 15:45:14,242 P2008329 INFO Train loss: 0.351483
+2024-07-28 15:45:14,243 P2008329 INFO Evaluation @epoch 2 - batch 343: 
+2024-07-28 15:45:15,643 P2008329 INFO [Metrics] AUC: 0.929673
+2024-07-28 15:45:15,644 P2008329 INFO Save best model: monitor(max)=0.929673
+2024-07-28 15:45:16,177 P2008329 INFO ************ Epoch=2 end ************
+2024-07-28 15:45:24,163 P2008329 INFO Train loss: 0.349181
+2024-07-28 15:45:24,163 P2008329 INFO Evaluation @epoch 3 - batch 343: 
+2024-07-28 15:45:25,613 P2008329 INFO [Metrics] AUC: 0.931232
+2024-07-28 15:45:25,613 P2008329 INFO Save best model: monitor(max)=0.931232
+2024-07-28 15:45:26,096 P2008329 INFO ************ Epoch=3 end ************
+2024-07-28 15:45:34,452 P2008329 INFO Train loss: 0.347477
+2024-07-28 15:45:34,453 P2008329 INFO Evaluation @epoch 4 - batch 343: 
+2024-07-28 15:45:35,922 P2008329 INFO [Metrics] AUC: 0.932802
+2024-07-28 15:45:35,922 P2008329 INFO Save best model: monitor(max)=0.932802
+2024-07-28 15:45:36,361 P2008329 INFO ************ Epoch=4 end ************
+2024-07-28 15:45:44,700 P2008329 INFO Train loss: 0.352204
+2024-07-28 15:45:44,700 P2008329 INFO Evaluation @epoch 5 - batch 343: 
+2024-07-28 15:45:46,235 P2008329 INFO [Metrics] AUC: 0.934234
+2024-07-28 15:45:46,235 P2008329 INFO Save best model: monitor(max)=0.934234
+2024-07-28 15:45:46,748 P2008329 INFO ************ Epoch=5 end ************
+2024-07-28 15:45:55,161 P2008329 INFO Train loss: 0.352158
+2024-07-28 15:45:55,162 P2008329 INFO Evaluation @epoch 6 - batch 343: 
+2024-07-28 15:45:56,593 P2008329 INFO [Metrics] AUC: 0.936462
+2024-07-28 15:45:56,594 P2008329 INFO Save best model: monitor(max)=0.936462
+2024-07-28 15:45:56,999 P2008329 INFO ************ Epoch=6 end ************
+2024-07-28 15:46:05,398 P2008329 INFO Train loss: 0.353082
+2024-07-28 15:46:05,399 P2008329 INFO Evaluation @epoch 7 - batch 343: 
+2024-07-28 15:46:06,857 P2008329 INFO [Metrics] AUC: 0.937179
+2024-07-28 15:46:06,857 P2008329 INFO Save best model: monitor(max)=0.937179
+2024-07-28 15:46:07,470 P2008329 INFO ************ Epoch=7 end ************
+2024-07-28 15:46:15,703 P2008329 INFO Train loss: 0.353201
+2024-07-28 15:46:15,703 P2008329 INFO Evaluation @epoch 8 - batch 343: 
+2024-07-28 15:46:17,122 P2008329 INFO [Metrics] AUC: 0.938125
+2024-07-28 15:46:17,123 P2008329 INFO Save best model: monitor(max)=0.938125
+2024-07-28 15:46:17,679 P2008329 INFO ************ Epoch=8 end ************
+2024-07-28 15:46:26,468 P2008329 INFO Train loss: 0.356091
+2024-07-28 15:46:26,469 P2008329 INFO Evaluation @epoch 9 - batch 343: 
+2024-07-28 15:46:27,877 P2008329 INFO [Metrics] AUC: 0.940286
+2024-07-28 15:46:27,878 P2008329 INFO Save best model: monitor(max)=0.940286
+2024-07-28 15:46:28,276 P2008329 INFO ************ Epoch=9 end ************
+2024-07-28 15:46:36,469 P2008329 INFO Train loss: 0.358223
+2024-07-28 15:46:36,470 P2008329 INFO Evaluation @epoch 10 - batch 343: 
+2024-07-28 15:46:37,856 P2008329 INFO [Metrics] AUC: 0.941418
+2024-07-28 15:46:37,857 P2008329 INFO Save best model: monitor(max)=0.941418
+2024-07-28 15:46:38,362 P2008329 INFO ************ Epoch=10 end ************
+2024-07-28 15:46:46,789 P2008329 INFO Train loss: 0.357876
+2024-07-28 15:46:46,789 P2008329 INFO Evaluation @epoch 11 - batch 343: 
+2024-07-28 15:46:48,226 P2008329 INFO [Metrics] AUC: 0.941605
+2024-07-28 15:46:48,227 P2008329 INFO Save best model: monitor(max)=0.941605
+2024-07-28 15:46:48,820 P2008329 INFO ************ Epoch=11 end ************
+2024-07-28 15:46:56,909 P2008329 INFO Train loss: 0.358074
+2024-07-28 15:46:56,909 P2008329 INFO Evaluation @epoch 12 - batch 343: 
+2024-07-28 15:46:58,386 P2008329 INFO [Metrics] AUC: 0.943363
+2024-07-28 15:46:58,389 P2008329 INFO Save best model: monitor(max)=0.943363
+2024-07-28 15:46:58,979 P2008329 INFO ************ Epoch=12 end ************
+2024-07-28 15:47:07,480 P2008329 INFO Train loss: 0.361926
+2024-07-28 15:47:07,480 P2008329 INFO Evaluation @epoch 13 - batch 343: 
+2024-07-28 15:47:08,981 P2008329 INFO [Metrics] AUC: 0.943930
+2024-07-28 15:47:08,981 P2008329 INFO Save best model: monitor(max)=0.943930
+2024-07-28 15:47:09,436 P2008329 INFO ************ Epoch=13 end ************
+2024-07-28 15:47:17,836 P2008329 INFO Train loss: 0.363979
+2024-07-28 15:47:17,836 P2008329 INFO Evaluation @epoch 14 - batch 343: 
+2024-07-28 15:47:19,260 P2008329 INFO [Metrics] AUC: 0.945362
+2024-07-28 15:47:19,260 P2008329 INFO Save best model: monitor(max)=0.945362
+2024-07-28 15:47:19,537 P2008329 INFO ************ Epoch=14 end ************
+2024-07-28 15:47:28,097 P2008329 INFO Train loss: 0.364706
+2024-07-28 15:47:28,098 P2008329 INFO Evaluation @epoch 15 - batch 343: 
+2024-07-28 15:47:29,575 P2008329 INFO [Metrics] AUC: 0.946418
+2024-07-28 15:47:29,576 P2008329 INFO Save best model: monitor(max)=0.946418
+2024-07-28 15:47:30,084 P2008329 INFO ************ Epoch=15 end ************
+2024-07-28 15:47:38,112 P2008329 INFO Train loss: 0.365531
+2024-07-28 15:47:38,113 P2008329 INFO Evaluation @epoch 16 - batch 343: 
+2024-07-28 15:47:39,595 P2008329 INFO [Metrics] AUC: 0.946978
+2024-07-28 15:47:39,595 P2008329 INFO Save best model: monitor(max)=0.946978
+2024-07-28 15:47:40,115 P2008329 INFO ************ Epoch=16 end ************
+2024-07-28 15:47:48,382 P2008329 INFO Train loss: 0.366284
+2024-07-28 15:47:48,382 P2008329 INFO Evaluation @epoch 17 - batch 343: 
+2024-07-28 15:47:49,852 P2008329 INFO [Metrics] AUC: 0.947853
+2024-07-28 15:47:49,852 P2008329 INFO Save best model: monitor(max)=0.947853
+2024-07-28 15:47:50,415 P2008329 INFO ************ Epoch=17 end ************
+2024-07-28 15:47:58,768 P2008329 INFO Train loss: 0.367422
+2024-07-28 15:47:58,768 P2008329 INFO Evaluation @epoch 18 - batch 343: 
+2024-07-28 15:48:00,191 P2008329 INFO [Metrics] AUC: 0.948151
+2024-07-28 15:48:00,191 P2008329 INFO Save best model: monitor(max)=0.948151
+2024-07-28 15:48:00,605 P2008329 INFO ************ Epoch=18 end ************
+2024-07-28 15:48:09,153 P2008329 INFO Train loss: 0.366257
+2024-07-28 15:48:09,153 P2008329 INFO Evaluation @epoch 19 - batch 343: 
+2024-07-28 15:48:10,587 P2008329 INFO [Metrics] AUC: 0.948773
+2024-07-28 15:48:10,588 P2008329 INFO Save best model: monitor(max)=0.948773
+2024-07-28 15:48:11,106 P2008329 INFO ************ Epoch=19 end ************
+2024-07-28 15:48:19,316 P2008329 INFO Train loss: 0.367036
+2024-07-28 15:48:19,316 P2008329 INFO Evaluation @epoch 20 - batch 343: 
+2024-07-28 15:48:20,803 P2008329 INFO [Metrics] AUC: 0.949830
+2024-07-28 15:48:20,804 P2008329 INFO Save best model: monitor(max)=0.949830
+2024-07-28 15:48:21,315 P2008329 INFO ************ Epoch=20 end ************
+2024-07-28 15:48:29,872 P2008329 INFO Train loss: 0.368048
+2024-07-28 15:48:29,873 P2008329 INFO Evaluation @epoch 21 - batch 343: 
+2024-07-28 15:48:31,365 P2008329 INFO [Metrics] AUC: 0.950533
+2024-07-28 15:48:31,366 P2008329 INFO Save best model: monitor(max)=0.950533
+2024-07-28 15:48:31,813 P2008329 INFO ************ Epoch=21 end ************
+2024-07-28 15:48:39,767 P2008329 INFO Train loss: 0.369287
+2024-07-28 15:48:39,768 P2008329 INFO Evaluation @epoch 22 - batch 343: 
+2024-07-28 15:48:41,233 P2008329 INFO [Metrics] AUC: 0.951475
+2024-07-28 15:48:41,233 P2008329 INFO Save best model: monitor(max)=0.951475
+2024-07-28 15:48:41,786 P2008329 INFO ************ Epoch=22 end ************
+2024-07-28 15:48:50,108 P2008329 INFO Train loss: 0.369651
+2024-07-28 15:48:50,108 P2008329 INFO Evaluation @epoch 23 - batch 343: 
+2024-07-28 15:48:51,632 P2008329 INFO [Metrics] AUC: 0.951532
+2024-07-28 15:48:51,633 P2008329 INFO Save best model: monitor(max)=0.951532
+2024-07-28 15:48:52,186 P2008329 INFO ************ Epoch=23 end ************
+2024-07-28 15:49:00,392 P2008329 INFO Train loss: 0.369128
+2024-07-28 15:49:00,393 P2008329 INFO Evaluation @epoch 24 - batch 343: 
+2024-07-28 15:49:01,846 P2008329 INFO [Metrics] AUC: 0.951877
+2024-07-28 15:49:01,849 P2008329 INFO Save best model: monitor(max)=0.951877
+2024-07-28 15:49:02,314 P2008329 INFO ************ Epoch=24 end ************
+2024-07-28 15:49:10,376 P2008329 INFO Train loss: 0.369745
+2024-07-28 15:49:10,377 P2008329 INFO Evaluation @epoch 25 - batch 343: 
+2024-07-28 15:49:11,818 P2008329 INFO [Metrics] AUC: 0.953253
+2024-07-28 15:49:11,819 P2008329 INFO Save best model: monitor(max)=0.953253
+2024-07-28 15:49:12,270 P2008329 INFO ************ Epoch=25 end ************
+2024-07-28 15:49:20,791 P2008329 INFO Train loss: 0.369818
+2024-07-28 15:49:20,791 P2008329 INFO Evaluation @epoch 26 - batch 343: 
+2024-07-28 15:49:22,245 P2008329 INFO [Metrics] AUC: 0.953542
+2024-07-28 15:49:22,246 P2008329 INFO Save best model: monitor(max)=0.953542
+2024-07-28 15:49:22,700 P2008329 INFO ************ Epoch=26 end ************
+2024-07-28 15:49:30,838 P2008329 INFO Train loss: 0.371317
+2024-07-28 15:49:30,838 P2008329 INFO Evaluation @epoch 27 - batch 343: 
+2024-07-28 15:49:32,286 P2008329 INFO [Metrics] AUC: 0.953744
+2024-07-28 15:49:32,286 P2008329 INFO Save best model: monitor(max)=0.953744
+2024-07-28 15:49:32,721 P2008329 INFO ************ Epoch=27 end ************
+2024-07-28 15:49:40,929 P2008329 INFO Train loss: 0.371518
+2024-07-28 15:49:40,930 P2008329 INFO Evaluation @epoch 28 - batch 343: 
+2024-07-28 15:49:42,323 P2008329 INFO [Metrics] AUC: 0.954435
+2024-07-28 15:49:42,326 P2008329 INFO Save best model: monitor(max)=0.954435
+2024-07-28 15:49:42,783 P2008329 INFO ************ Epoch=28 end ************
+2024-07-28 15:49:51,072 P2008329 INFO Train loss: 0.372105
+2024-07-28 15:49:51,072 P2008329 INFO Evaluation @epoch 29 - batch 343: 
+2024-07-28 15:49:52,550 P2008329 INFO [Metrics] AUC: 0.954816
+2024-07-28 15:49:52,550 P2008329 INFO Save best model: monitor(max)=0.954816
+2024-07-28 15:49:52,997 P2008329 INFO ************ Epoch=29 end ************
+2024-07-28 15:50:01,660 P2008329 INFO Train loss: 0.371870
+2024-07-28 15:50:01,660 P2008329 INFO Evaluation @epoch 30 - batch 343: 
+2024-07-28 15:50:03,077 P2008329 INFO [Metrics] AUC: 0.955081
+2024-07-28 15:50:03,077 P2008329 INFO Save best model: monitor(max)=0.955081
+2024-07-28 15:50:03,537 P2008329 INFO ************ Epoch=30 end ************
+2024-07-28 15:50:12,145 P2008329 INFO Train loss: 0.372815
+2024-07-28 15:50:12,146 P2008329 INFO Evaluation @epoch 31 - batch 343: 
+2024-07-28 15:50:13,679 P2008329 INFO [Metrics] AUC: 0.955852
+2024-07-28 15:50:13,679 P2008329 INFO Save best model: monitor(max)=0.955852
+2024-07-28 15:50:14,025 P2008329 INFO ************ Epoch=31 end ************
+2024-07-28 15:50:21,996 P2008329 INFO Train loss: 0.372329
+2024-07-28 15:50:21,997 P2008329 INFO Evaluation @epoch 32 - batch 343: 
+2024-07-28 15:50:23,509 P2008329 INFO [Metrics] AUC: 0.956083
+2024-07-28 15:50:23,509 P2008329 INFO Save best model: monitor(max)=0.956083
+2024-07-28 15:50:23,955 P2008329 INFO ************ Epoch=32 end ************
+2024-07-28 15:50:32,342 P2008329 INFO Train loss: 0.371839
+2024-07-28 15:50:32,342 P2008329 INFO Evaluation @epoch 33 - batch 343: 
+2024-07-28 15:50:33,804 P2008329 INFO [Metrics] AUC: 0.956309
+2024-07-28 15:50:33,804 P2008329 INFO Save best model: monitor(max)=0.956309
+2024-07-28 15:50:34,240 P2008329 INFO ************ Epoch=33 end ************
+2024-07-28 15:50:42,268 P2008329 INFO Train loss: 0.371726
+2024-07-28 15:50:42,268 P2008329 INFO Evaluation @epoch 34 - batch 343: 
+2024-07-28 15:50:43,720 P2008329 INFO [Metrics] AUC: 0.956310
+2024-07-28 15:50:43,721 P2008329 INFO Save best model: monitor(max)=0.956310
+2024-07-28 15:50:44,342 P2008329 INFO ************ Epoch=34 end ************
+2024-07-28 15:50:52,660 P2008329 INFO Train loss: 0.372385
+2024-07-28 15:50:52,660 P2008329 INFO Evaluation @epoch 35 - batch 343: 
+2024-07-28 15:50:54,280 P2008329 INFO [Metrics] AUC: 0.956589
+2024-07-28 15:50:54,283 P2008329 INFO Save best model: monitor(max)=0.956589
+2024-07-28 15:50:54,993 P2008329 INFO ************ Epoch=35 end ************
+2024-07-28 15:51:03,577 P2008329 INFO Train loss: 0.372571
+2024-07-28 15:51:03,577 P2008329 INFO Evaluation @epoch 36 - batch 343: 
+2024-07-28 15:51:05,032 P2008329 INFO [Metrics] AUC: 0.957303
+2024-07-28 15:51:05,033 P2008329 INFO Save best model: monitor(max)=0.957303
+2024-07-28 15:51:05,346 P2008329 INFO ************ Epoch=36 end ************
+2024-07-28 15:51:13,342 P2008329 INFO Train loss: 0.372702
+2024-07-28 15:51:13,342 P2008329 INFO Evaluation @epoch 37 - batch 343: 
+2024-07-28 15:51:14,921 P2008329 INFO [Metrics] AUC: 0.957604
+2024-07-28 15:51:14,922 P2008329 INFO Save best model: monitor(max)=0.957604
+2024-07-28 15:51:15,330 P2008329 INFO ************ Epoch=37 end ************
+2024-07-28 15:51:23,247 P2008329 INFO Train loss: 0.372575
+2024-07-28 15:51:23,247 P2008329 INFO Evaluation @epoch 38 - batch 343: 
+2024-07-28 15:51:24,661 P2008329 INFO [Metrics] AUC: 0.957321
+2024-07-28 15:51:24,661 P2008329 INFO Monitor(max)=0.957321 STOP!
+2024-07-28 15:51:24,661 P2008329 INFO Reduce learning rate on plateau: 0.000100
+2024-07-28 15:51:24,791 P2008329 INFO ************ Epoch=38 end ************
+2024-07-28 15:51:33,149 P2008329 INFO Train loss: 0.267410
+2024-07-28 15:51:33,149 P2008329 INFO Evaluation @epoch 39 - batch 343: 
+2024-07-28 15:51:34,585 P2008329 INFO [Metrics] AUC: 0.968735
+2024-07-28 15:51:34,585 P2008329 INFO Save best model: monitor(max)=0.968735
+2024-07-28 15:51:35,078 P2008329 INFO ************ Epoch=39 end ************
+2024-07-28 15:51:43,238 P2008329 INFO Train loss: 0.180369
+2024-07-28 15:51:43,238 P2008329 INFO Evaluation @epoch 40 - batch 343: 
+2024-07-28 15:51:44,736 P2008329 INFO [Metrics] AUC: 0.970600
+2024-07-28 15:51:44,737 P2008329 INFO Save best model: monitor(max)=0.970600
+2024-07-28 15:51:45,309 P2008329 INFO ************ Epoch=40 end ************
+2024-07-28 15:51:53,713 P2008329 INFO Train loss: 0.138256
+2024-07-28 15:51:53,714 P2008329 INFO Evaluation @epoch 41 - batch 343: 
+2024-07-28 15:51:55,148 P2008329 INFO [Metrics] AUC: 0.970318
+2024-07-28 15:51:55,151 P2008329 INFO Monitor(max)=0.970318 STOP!
+2024-07-28 15:51:55,178 P2008329 INFO Reduce learning rate on plateau: 0.000010
+2024-07-28 15:51:55,306 P2008329 INFO ************ Epoch=41 end ************
+2024-07-28 15:52:03,639 P2008329 INFO Train loss: 0.108006
+2024-07-28 15:52:03,639 P2008329 INFO Evaluation @epoch 42 - batch 343: 
+2024-07-28 15:52:05,199 P2008329 INFO [Metrics] AUC: 0.970277
+2024-07-28 15:52:05,200 P2008329 INFO Monitor(max)=0.970277 STOP!
+2024-07-28 15:52:05,200 P2008329 INFO Reduce learning rate on plateau: 0.000001
+2024-07-28 15:52:05,200 P2008329 INFO ********* Epoch=42 early stop *********
+2024-07-28 15:52:05,342 P2008329 INFO Training finished.
+2024-07-28 15:52:05,342 P2008329 INFO Load best model: /home/camp/wxk2/FuXiCTR/FuxiCTR/model_zoo/EulerNet/Movielens/EulerNet_movielenslatest_x1/ml/EulerNet_mltag.model
+2024-07-28 15:52:05,354 P2008329 INFO ****** Validation evaluation ******
+2024-07-28 15:52:06,874 P2008329 INFO [Metrics] AUC: 0.970600 - logloss: 0.197913
+2024-07-28 15:52:06,997 P2008329 INFO ******** Test evaluation ********
+2024-07-28 15:52:06,998 P2008329 INFO Loading datasets...
+2024-07-28 15:52:07,016 P2008329 INFO Test samples: total/200686, blocks/1
+2024-07-28 15:52:07,050 P2008329 INFO Loading test data done.
+2024-07-28 15:52:08,084 P2008329 INFO [Metrics] AUC: 0.970296 - logloss: 0.198821
