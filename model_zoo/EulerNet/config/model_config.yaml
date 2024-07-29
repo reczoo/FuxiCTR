@@ -136,9 +136,9 @@ EulerNet_criteo_39x2_dp:
     model_structure: parallel
     monitor: AUC
     monitor_mode: max
-    net_regularizer: 0.0000
-    net_ex_dropout: 0.1
-    net_im_dropout: 0.1
+    net_regularizer: 0.0
+    net_ex_dropout: 0.2
+    net_im_dropout: 0.2
     layer_norm: true
     shape: [39, 39]
     optimizer: adam
