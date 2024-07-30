@@ -80,13 +80,12 @@ EulerNet_frappe:
     use_hdf5: true
     verbose: 1
 
-EulerNet_avazu_23_drop=0.1:
-    batch_norm: false
+EulerNet_avazux1:
     batch_size: 4096
     dataset_id: avazu
     debug: false
     embedding_dim: 10
-    embedding_regularizer: 0.005
+    embedding_regularizer: 0.05
     epochs: 100
     every_x_epochs: 1
     learning_rate: 0.001
@@ -94,14 +93,13 @@ EulerNet_avazu_23_drop=0.1:
     metrics: [AUC, logloss]
     model: EulerNet
     model_id: EulerNet_base
-    model_root: ./Avazu/EulerNet_avazu_x1_40_40_40_0.0_0.2_xavier_im/
     monitor: AUC
     monitor_mode: max
-    net_ex_dropout: 0.1
-    net_im_dropout: 0.1
-    layer_norm: true
-    shape: [23]
-    net_regularizer: 0.00000
+    net_ex_dropout: 0.0
+    net_im_dropout: 0.2
+    layer_norm: false
+    shape: [40, 40, 40]
+    net_regularizer: 0.0
     num_workers: 3
     optimizer: adam
     patience: 2
