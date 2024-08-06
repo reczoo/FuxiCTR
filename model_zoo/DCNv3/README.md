@@ -12,22 +12,8 @@ We introduces the next generation deep cross networks, DCNv3 and SDCNv3. The for
 ## Model Overview
 
 <div align="center">
-<img src="https://private-user-images.githubusercontent.com/73091798/351367651-b41ebfdd-98dc-4a4e-abb2-f748d8d904e9.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjIyNTIyNjIsIm5iZiI6MTcyMjI1MTk2MiwicGF0aCI6Ii83MzA5MTc5OC8zNTEzNjc2NTEtYjQxZWJmZGQtOThkYy00YTRlLWFiYjItZjc0OGQ4ZDkwNGU5LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA3MjklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNzI5VDExMTkyMlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTc0MjI3Yzc5M2JjNjVjZTcyOTZiNzUzOGQ4OTRhYTE1YTllOTIyMjg4YjIxYTI3N2Q5MjQzMmE3YjZjOTY0MGUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.pawQAJZfIHWAd_6n1_uRJ3d1bzAEp6t-wFRfy5WZeDA" width="600" alt="SDCNv3 model"/>
+    <img src="https://github.com/user-attachments/assets/6b0df396-d4ee-4475-ac02-21538ae0ef27" alt="SDCNv3" />
 </div>
-
-
-**Key components:**
-
-+ *SCNv3*: 
-  $$\mathbf{c}_l &= \mathbf{W}_l \mathbf{x}_l+\mathbf{b}_l$$
-  $$\mathbf{x}_{l+1} &= \mathbf{x}_1 \odot \left[\mathbf{c}_l\ ||\ \texttt{Mask}(\mathbf{c}_l)\right] + \mathbf{x}_l$$
-  
-+ *DCNv3*: 
-  $$\mathbf{c}_{l} &= \mathbf{W}_{l} \mathbf{x}_{2^{l-1}}+\mathbf{b}_{l}$$
-  $$\mathbf{x}_{{2^{l}}} &= \mathbf{x}_{2^{l-1}} \odot \left[\mathbf{c}_{l}\ ||\ \texttt{Mask}(\mathbf{c}_{l})\right] + \mathbf{x}_{2^{l-1}}$$
-
-+ *Self-Mask*: 
-  $$\texttt{Mask}(\mathbf{c}_{l}) = \mathbf{c}_{l} \odot max(0, \texttt{LayerNorm}(\mathbf{c}_{l}))$$
 
 ## Requirements
 
