@@ -1,0 +1,130 @@
+2024-07-31 10:32:39,193 P3242254 INFO Params: {
+    "batch_size": "4096",
+    "data_format": "csv",
+    "data_root": "../../data/",
+    "dataset_id": "iPinYou",
+    "debug_mode": "False",
+    "early_stop_patience": "2",
+    "embedding_dim": "16",
+    "embedding_regularizer": "0.001",
+    "epochs": "100",
+    "eval_steps": "None",
+    "feature_cols": "[{'active': True, 'dtype': 'str', 'name': ['weekday', 'hour', 'IP', 'region', 'city', 'adexchange', 'domain', 'slotid', 'slotwidth', 'slotheight', 'slotvisibility', 'slotformat', 'creative', 'advertiser', 'useragent', 'slotprice'], 'type': 'categorical'}]",
+    "feature_config": "None",
+    "feature_specs": "None",
+    "gpu": "3",
+    "group_id": "None",
+    "label_col": "{'dtype': 'float', 'name': 'click'}",
+    "layer_norm": "True",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['logloss', 'AUC']",
+    "min_categr_count": "2",
+    "model": "EulerNet",
+    "model_id": "EulerNet_iPinYou_16_0.0",
+    "model_root": "./checkpoints/",
+    "monitor": "{'AUC': 1, 'logloss': 0}",
+    "monitor_mode": "max",
+    "net_ex_dropout": "0.0",
+    "net_im_dropout": "0.0",
+    "net_regularizer": "0",
+    "num_heads": "1",
+    "num_workers": "3",
+    "optimizer": "adam",
+    "pickle_feature_encoder": "True",
+    "save_best_only": "True",
+    "seed": "2021",
+    "shape": "[16]",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../data/ipinyou/test.csv",
+    "train_data": "../../data/ipinyou/train.csv",
+    "use_features": "None",
+    "valid_data": "../../data/ipinyou/test.csv",
+    "verbose": "1"
+}
+2024-07-31 10:32:39,197 P3242254 INFO Set up feature processor...
+2024-07-31 10:32:39,268 P3242254 WARNING Skip rebuilding ../../data/iPinYou/feature_map.json. Please delete it manually if rebuilding is required.
+2024-07-31 10:32:39,286 P3242254 INFO Load feature_map from json: ../../data/iPinYou/feature_map.json
+2024-07-31 10:32:39,287 P3242254 INFO Set column index...
+2024-07-31 10:32:39,307 P3242254 INFO Feature specs: {
+    "IP": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 585532, 'vocab_size': 585533}",
+    "adexchange": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 6, 'vocab_size': 7}",
+    "advertiser": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 10, 'vocab_size': 11}",
+    "city": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 371, 'vocab_size': 372}",
+    "creative": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 132, 'vocab_size': 133}",
+    "domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 28622, 'vocab_size': 28623}",
+    "hour": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 25, 'vocab_size': 26}",
+    "region": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 36, 'vocab_size': 37}",
+    "slotformat": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 5, 'vocab_size': 6}",
+    "slotheight": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 15, 'vocab_size': 16}",
+    "slotid": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 50906, 'vocab_size': 50907}",
+    "slotprice": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 6, 'vocab_size': 7}",
+    "slotvisibility": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 12, 'vocab_size': 13}",
+    "slotwidth": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 22, 'vocab_size': 23}",
+    "useragent": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 41, 'vocab_size': 42}",
+    "weekday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 8, 'vocab_size': 9}"
+}
+2024-07-31 10:32:44,597 P3242254 INFO Total number of parameters: 10719265.
+2024-07-31 10:32:44,597 P3242254 INFO Loading data...
+2024-07-31 10:32:44,597 P3242254 INFO Loading data from h5: ../../data/iPinYou/train.h5
+2024-07-31 10:32:48,533 P3242254 INFO Train samples: total/15395258, blocks/1
+2024-07-31 10:32:48,533 P3242254 INFO Loading data from h5: ../../data/iPinYou/valid.h5
+2024-07-31 10:32:49,604 P3242254 INFO Validation samples: total/4100716, blocks/1
+2024-07-31 10:32:49,604 P3242254 INFO Loading train and validation data done.
+2024-07-31 10:32:49,604 P3242254 INFO Start training: 3759 batches/epoch
+2024-07-31 10:32:49,604 P3242254 INFO ************ Epoch=1 start ************
+2024-07-31 10:35:22,030 P3242254 INFO Train loss: 0.006728
+2024-07-31 10:35:22,031 P3242254 INFO Evaluation @epoch 1 - batch 3759: 
+2024-07-31 10:35:41,474 P3242254 INFO [Metrics] AUC: 0.753302 - logloss: 0.005707
+2024-07-31 10:35:41,480 P3242254 INFO Save best model: monitor(max)=0.753302
+2024-07-31 10:35:42,497 P3242254 INFO ************ Epoch=1 end ************
+2024-07-31 10:38:11,661 P3242254 INFO Train loss: 0.006087
+2024-07-31 10:38:11,662 P3242254 INFO Evaluation @epoch 2 - batch 3759: 
+2024-07-31 10:38:31,581 P3242254 INFO [Metrics] AUC: 0.747124 - logloss: 0.005678
+2024-07-31 10:38:31,588 P3242254 INFO Monitor(max)=0.747124 STOP!
+2024-07-31 10:38:31,645 P3242254 INFO Reduce learning rate on plateau: 0.000100
+2024-07-31 10:38:31,789 P3242254 INFO ************ Epoch=2 end ************
+2024-07-31 10:40:58,923 P3242254 INFO Train loss: 0.005763
+2024-07-31 10:40:58,923 P3242254 INFO Evaluation @epoch 3 - batch 3759: 
+2024-07-31 10:41:17,431 P3242254 INFO [Metrics] AUC: 0.777931 - logloss: 0.005586
+2024-07-31 10:41:17,438 P3242254 INFO Save best model: monitor(max)=0.777931
+2024-07-31 10:41:18,451 P3242254 INFO ************ Epoch=3 end ************
+2024-07-31 10:43:47,299 P3242254 INFO Train loss: 0.005732
+2024-07-31 10:43:47,300 P3242254 INFO Evaluation @epoch 4 - batch 3759: 
+2024-07-31 10:44:07,059 P3242254 INFO [Metrics] AUC: 0.777913 - logloss: 0.005555
+2024-07-31 10:44:07,066 P3242254 INFO Monitor(max)=0.777913 STOP!
+2024-07-31 10:44:07,131 P3242254 INFO Reduce learning rate on plateau: 0.000010
+2024-07-31 10:44:07,269 P3242254 INFO ************ Epoch=4 end ************
+2024-07-31 10:46:33,025 P3242254 INFO Train loss: 0.005600
+2024-07-31 10:46:33,025 P3242254 INFO Evaluation @epoch 5 - batch 3759: 
+2024-07-31 10:46:51,258 P3242254 INFO [Metrics] AUC: 0.781957 - logloss: 0.005543
+2024-07-31 10:46:51,262 P3242254 INFO Save best model: monitor(max)=0.781957
+2024-07-31 10:46:56,408 P3242254 INFO ************ Epoch=5 end ************
+2024-07-31 10:49:24,871 P3242254 INFO Train loss: 0.005567
+2024-07-31 10:49:24,872 P3242254 INFO Evaluation @epoch 6 - batch 3759: 
+2024-07-31 10:49:44,717 P3242254 INFO [Metrics] AUC: 0.783006 - logloss: 0.005540
+2024-07-31 10:49:44,721 P3242254 INFO Save best model: monitor(max)=0.783006
+2024-07-31 10:49:50,704 P3242254 INFO ************ Epoch=6 end ************
+2024-07-31 10:52:20,148 P3242254 INFO Train loss: 0.005547
+2024-07-31 10:52:20,149 P3242254 INFO Evaluation @epoch 7 - batch 3759: 
+2024-07-31 10:52:40,092 P3242254 INFO [Metrics] AUC: 0.782757 - logloss: 0.005541
+2024-07-31 10:52:40,099 P3242254 INFO Monitor(max)=0.782757 STOP!
+2024-07-31 10:52:40,134 P3242254 INFO Reduce learning rate on plateau: 0.000001
+2024-07-31 10:52:40,297 P3242254 INFO ************ Epoch=7 end ************
+2024-07-31 10:55:10,768 P3242254 INFO Train loss: 0.005482
+2024-07-31 10:55:10,769 P3242254 INFO Evaluation @epoch 8 - batch 3759: 
+2024-07-31 10:55:30,246 P3242254 INFO [Metrics] AUC: 0.782601 - logloss: 0.005540
+2024-07-31 10:55:30,250 P3242254 INFO Monitor(max)=0.782601 STOP!
+2024-07-31 10:55:30,306 P3242254 INFO Reduce learning rate on plateau: 0.000001
+2024-07-31 10:55:30,306 P3242254 INFO ********* Epoch==8 early stop *********
+2024-07-31 10:55:30,438 P3242254 INFO Training finished.
+2024-07-31 10:55:30,438 P3242254 INFO Load best model: /home/camp/wxk2/FuXiCTR/FuxiCTR/model_zoo/EulerNet/checkpoints/iPinYou/EulerNet_iPinYou_16_0.0.model
+2024-07-31 10:55:30,548 P3242254 INFO ****** Validation evaluation ******
+2024-07-31 10:55:49,733 P3242254 INFO [Metrics] logloss: 0.005540 - AUC: 0.783006
+2024-07-31 10:55:49,881 P3242254 INFO ******** Test evaluation ********
+2024-07-31 10:55:49,882 P3242254 INFO Loading data...
+2024-07-31 10:55:49,882 P3242254 INFO Loading data from h5: ../../data/iPinYou/test.h5
+2024-07-31 10:55:50,959 P3242254 INFO Test samples: total/4100716, blocks/1
+2024-07-31 10:55:50,960 P3242254 INFO Loading test data done.
+2024-07-31 10:56:10,985 P3242254 INFO [Metrics] logloss: 0.005540 - AUC: 0.783006

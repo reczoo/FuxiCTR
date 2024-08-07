@@ -1,0 +1,257 @@
+2024-07-28 15:41:36,132 P2000453 INFO FuxiCTR version: 2.3.2
+2024-07-28 15:41:36,133 P2000453 INFO Params: {
+    "batch_norm": "True",
+    "batch_size": "4096",
+    "crossing_layers": "3",
+    "data_format": "csv",
+    "data_root": "../../data/frappe/",
+    "dataset_id": "frappe",
+    "debug": "False",
+    "debug_mode": "False",
+    "early_stop_patience": "2",
+    "embedding_dim": "10",
+    "embedding_regularizer": "0.05",
+    "epochs": "100",
+    "eval_steps": "None",
+    "every_x_epochs": "1",
+    "feature_cols": "[{'active': True, 'dtype': 'float', 'name': ['user', 'item', 'daytime', 'weekday', 'isweekend', 'homework', 'cost', 'weather', 'country', 'city'], 'type': 'categorical'}]",
+    "feature_config": "None",
+    "feature_specs": "None",
+    "gpu": "2",
+    "group_id": "None",
+    "label_col": "{'dtype': 'float', 'name': 'label'}",
+    "layer_norm": "True",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['AUC', 'logloss']",
+    "min_categr_count": "1",
+    "model": "EulerNet",
+    "model_id": "EulerNet_frappe",
+    "model_root": "./Frappe/EulerNet_frappe_x1/",
+    "monitor": "AUC",
+    "monitor_mode": "max",
+    "net_ex_dropout": "0.0",
+    "net_im_dropout": "0.0",
+    "net_regularizer": "1e-05",
+    "num_workers": "3",
+    "optimizer": "adam",
+    "partition_block_size": "-1",
+    "patience": "2",
+    "pickle_feature_encoder": "True",
+    "save_best_only": "True",
+    "seed": "2021",
+    "shape": "[52]",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../data/frappe/test.csv",
+    "train_data": "../../data/frappe/train.csv",
+    "use_features": "None",
+    "use_hdf5": "True",
+    "valid_data": "../../data/frappe/valid.csv",
+    "verbose": "1"
+}
+2024-07-28 15:41:36,162 P2000453 INFO Set up feature processor...
+2024-07-28 15:41:36,185 P2000453 WARNING Skip rebuilding ../../data/frappe/frappe/feature_map.json. Please delete it manually if rebuilding is required.
+2024-07-28 15:41:36,210 P2000453 INFO Load feature_map from json: ../../data/frappe/frappe/feature_map.json
+2024-07-28 15:41:36,211 P2000453 INFO Set column index...
+2024-07-28 15:41:36,235 P2000453 INFO Feature specs: {
+    "city": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 235}",
+    "cost": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 4}",
+    "country": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 82}",
+    "daytime": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 9}",
+    "homework": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 5}",
+    "isweekend": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 4}",
+    "item": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 4084}",
+    "user": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 956}",
+    "weather": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 11}",
+    "weekday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 9}"
+}
+2024-07-28 15:41:40,784 P2000453 INFO Total number of parameters: 108889.
+2024-07-28 15:41:40,785 P2000453 INFO Loading datasets...
+2024-07-28 15:41:40,831 P2000453 INFO Train samples: total/202027, blocks/1
+2024-07-28 15:41:40,862 P2000453 INFO Validation samples: total/57722, blocks/1
+2024-07-28 15:41:40,876 P2000453 INFO Loading train and validation data done.
+2024-07-28 15:41:40,877 P2000453 INFO Start training: 50 batches/epoch
+2024-07-28 15:41:40,910 P2000453 INFO ************ Epoch=1 start ************
+2024-07-28 15:41:44,330 P2000453 INFO Train loss: 0.527924
+2024-07-28 15:41:44,331 P2000453 INFO Evaluation @epoch 1 - batch 50: 
+2024-07-28 15:41:45,044 P2000453 INFO [Metrics] AUC: 0.930382
+2024-07-28 15:41:45,045 P2000453 INFO Save best model: monitor(max)=0.930382
+2024-07-28 15:41:45,576 P2000453 INFO ************ Epoch=1 end ************
+2024-07-28 15:41:47,643 P2000453 INFO Train loss: 0.316136
+2024-07-28 15:41:47,643 P2000453 INFO Evaluation @epoch 2 - batch 50: 
+2024-07-28 15:41:48,245 P2000453 INFO [Metrics] AUC: 0.934582
+2024-07-28 15:41:48,245 P2000453 INFO Save best model: monitor(max)=0.934582
+2024-07-28 15:41:48,674 P2000453 INFO ************ Epoch=2 end ************
+2024-07-28 15:41:50,350 P2000453 INFO Train loss: 0.308870
+2024-07-28 15:41:50,351 P2000453 INFO Evaluation @epoch 3 - batch 50: 
+2024-07-28 15:41:50,932 P2000453 INFO [Metrics] AUC: 0.937357
+2024-07-28 15:41:50,932 P2000453 INFO Save best model: monitor(max)=0.937357
+2024-07-28 15:41:51,407 P2000453 INFO ************ Epoch=3 end ************
+2024-07-28 15:41:53,066 P2000453 INFO Train loss: 0.303788
+2024-07-28 15:41:53,067 P2000453 INFO Evaluation @epoch 4 - batch 50: 
+2024-07-28 15:41:53,668 P2000453 INFO [Metrics] AUC: 0.938694
+2024-07-28 15:41:53,668 P2000453 INFO Save best model: monitor(max)=0.938694
+2024-07-28 15:41:54,031 P2000453 INFO ************ Epoch=4 end ************
+2024-07-28 15:41:55,674 P2000453 INFO Train loss: 0.299287
+2024-07-28 15:41:55,675 P2000453 INFO Evaluation @epoch 5 - batch 50: 
+2024-07-28 15:41:56,250 P2000453 INFO [Metrics] AUC: 0.940473
+2024-07-28 15:41:56,251 P2000453 INFO Save best model: monitor(max)=0.940473
+2024-07-28 15:41:56,706 P2000453 INFO ************ Epoch=5 end ************
+2024-07-28 15:41:58,341 P2000453 INFO Train loss: 0.293236
+2024-07-28 15:41:58,342 P2000453 INFO Evaluation @epoch 6 - batch 50: 
+2024-07-28 15:41:58,913 P2000453 INFO [Metrics] AUC: 0.942922
+2024-07-28 15:41:58,914 P2000453 INFO Save best model: monitor(max)=0.942922
+2024-07-28 15:41:59,257 P2000453 INFO ************ Epoch=6 end ************
+2024-07-28 15:42:00,965 P2000453 INFO Train loss: 0.287777
+2024-07-28 15:42:00,966 P2000453 INFO Evaluation @epoch 7 - batch 50: 
+2024-07-28 15:42:01,524 P2000453 INFO [Metrics] AUC: 0.945842
+2024-07-28 15:42:01,525 P2000453 INFO Save best model: monitor(max)=0.945842
+2024-07-28 15:42:01,949 P2000453 INFO ************ Epoch=7 end ************
+2024-07-28 15:42:03,660 P2000453 INFO Train loss: 0.281825
+2024-07-28 15:42:03,661 P2000453 INFO Evaluation @epoch 8 - batch 50: 
+2024-07-28 15:42:04,221 P2000453 INFO [Metrics] AUC: 0.948526
+2024-07-28 15:42:04,222 P2000453 INFO Save best model: monitor(max)=0.948526
+2024-07-28 15:42:04,527 P2000453 INFO ************ Epoch=8 end ************
+2024-07-28 15:42:06,336 P2000453 INFO Train loss: 0.274631
+2024-07-28 15:42:06,337 P2000453 INFO Evaluation @epoch 9 - batch 50: 
+2024-07-28 15:42:06,922 P2000453 INFO [Metrics] AUC: 0.954366
+2024-07-28 15:42:06,923 P2000453 INFO Save best model: monitor(max)=0.954366
+2024-07-28 15:42:07,294 P2000453 INFO ************ Epoch=9 end ************
+2024-07-28 15:42:08,998 P2000453 INFO Train loss: 0.263588
+2024-07-28 15:42:08,998 P2000453 INFO Evaluation @epoch 10 - batch 50: 
+2024-07-28 15:42:09,586 P2000453 INFO [Metrics] AUC: 0.959248
+2024-07-28 15:42:09,586 P2000453 INFO Save best model: monitor(max)=0.959248
+2024-07-28 15:42:09,931 P2000453 INFO ************ Epoch=10 end ************
+2024-07-28 15:42:11,682 P2000453 INFO Train loss: 0.255581
+2024-07-28 15:42:11,683 P2000453 INFO Evaluation @epoch 11 - batch 50: 
+2024-07-28 15:42:12,314 P2000453 INFO [Metrics] AUC: 0.963268
+2024-07-28 15:42:12,314 P2000453 INFO Save best model: monitor(max)=0.963268
+2024-07-28 15:42:12,844 P2000453 INFO ************ Epoch=11 end ************
+2024-07-28 15:42:14,430 P2000453 INFO Train loss: 0.248306
+2024-07-28 15:42:14,431 P2000453 INFO Evaluation @epoch 12 - batch 50: 
+2024-07-28 15:42:15,010 P2000453 INFO [Metrics] AUC: 0.966615
+2024-07-28 15:42:15,010 P2000453 INFO Save best model: monitor(max)=0.966615
+2024-07-28 15:42:15,358 P2000453 INFO ************ Epoch=12 end ************
+2024-07-28 15:42:16,993 P2000453 INFO Train loss: 0.238902
+2024-07-28 15:42:16,993 P2000453 INFO Evaluation @epoch 13 - batch 50: 
+2024-07-28 15:42:17,570 P2000453 INFO [Metrics] AUC: 0.969468
+2024-07-28 15:42:17,571 P2000453 INFO Save best model: monitor(max)=0.969468
+2024-07-28 15:42:17,865 P2000453 INFO ************ Epoch=13 end ************
+2024-07-28 15:42:19,632 P2000453 INFO Train loss: 0.230831
+2024-07-28 15:42:19,633 P2000453 INFO Evaluation @epoch 14 - batch 50: 
+2024-07-28 15:42:20,199 P2000453 INFO [Metrics] AUC: 0.971951
+2024-07-28 15:42:20,200 P2000453 INFO Save best model: monitor(max)=0.971951
+2024-07-28 15:42:20,594 P2000453 INFO ************ Epoch=14 end ************
+2024-07-28 15:42:22,268 P2000453 INFO Train loss: 0.224417
+2024-07-28 15:42:22,268 P2000453 INFO Evaluation @epoch 15 - batch 50: 
+2024-07-28 15:42:22,839 P2000453 INFO [Metrics] AUC: 0.973290
+2024-07-28 15:42:22,839 P2000453 INFO Save best model: monitor(max)=0.973290
+2024-07-28 15:42:23,147 P2000453 INFO ************ Epoch=15 end ************
+2024-07-28 15:42:24,778 P2000453 INFO Train loss: 0.217771
+2024-07-28 15:42:24,778 P2000453 INFO Evaluation @epoch 16 - batch 50: 
+2024-07-28 15:42:25,369 P2000453 INFO [Metrics] AUC: 0.975106
+2024-07-28 15:42:25,369 P2000453 INFO Save best model: monitor(max)=0.975106
+2024-07-28 15:42:25,753 P2000453 INFO ************ Epoch=16 end ************
+2024-07-28 15:42:27,420 P2000453 INFO Train loss: 0.210915
+2024-07-28 15:42:27,420 P2000453 INFO Evaluation @epoch 17 - batch 50: 
+2024-07-28 15:42:27,994 P2000453 INFO [Metrics] AUC: 0.976645
+2024-07-28 15:42:27,994 P2000453 INFO Save best model: monitor(max)=0.976645
+2024-07-28 15:42:28,289 P2000453 INFO ************ Epoch=17 end ************
+2024-07-28 15:42:29,930 P2000453 INFO Train loss: 0.201636
+2024-07-28 15:42:29,930 P2000453 INFO Evaluation @epoch 18 - batch 50: 
+2024-07-28 15:42:30,482 P2000453 INFO [Metrics] AUC: 0.977455
+2024-07-28 15:42:30,482 P2000453 INFO Save best model: monitor(max)=0.977455
+2024-07-28 15:42:30,879 P2000453 INFO ************ Epoch=18 end ************
+2024-07-28 15:42:32,462 P2000453 INFO Train loss: 0.194807
+2024-07-28 15:42:32,463 P2000453 INFO Evaluation @epoch 19 - batch 50: 
+2024-07-28 15:42:33,045 P2000453 INFO [Metrics] AUC: 0.978999
+2024-07-28 15:42:33,046 P2000453 INFO Save best model: monitor(max)=0.978999
+2024-07-28 15:42:33,342 P2000453 INFO ************ Epoch=19 end ************
+2024-07-28 15:42:35,015 P2000453 INFO Train loss: 0.187927
+2024-07-28 15:42:35,015 P2000453 INFO Evaluation @epoch 20 - batch 50: 
+2024-07-28 15:42:35,574 P2000453 INFO [Metrics] AUC: 0.979072
+2024-07-28 15:42:35,574 P2000453 INFO Save best model: monitor(max)=0.979072
+2024-07-28 15:42:35,994 P2000453 INFO ************ Epoch=20 end ************
+2024-07-28 15:42:37,660 P2000453 INFO Train loss: 0.187376
+2024-07-28 15:42:37,660 P2000453 INFO Evaluation @epoch 21 - batch 50: 
+2024-07-28 15:42:38,297 P2000453 INFO [Metrics] AUC: 0.979163
+2024-07-28 15:42:38,298 P2000453 INFO Save best model: monitor(max)=0.979163
+2024-07-28 15:42:38,664 P2000453 INFO ************ Epoch=21 end ************
+2024-07-28 15:42:40,366 P2000453 INFO Train loss: 0.180920
+2024-07-28 15:42:40,367 P2000453 INFO Evaluation @epoch 22 - batch 50: 
+2024-07-28 15:42:40,967 P2000453 INFO [Metrics] AUC: 0.980745
+2024-07-28 15:42:40,968 P2000453 INFO Save best model: monitor(max)=0.980745
+2024-07-28 15:42:41,300 P2000453 INFO ************ Epoch=22 end ************
+2024-07-28 15:42:43,005 P2000453 INFO Train loss: 0.176990
+2024-07-28 15:42:43,005 P2000453 INFO Evaluation @epoch 23 - batch 50: 
+2024-07-28 15:42:43,578 P2000453 INFO [Metrics] AUC: 0.979562
+2024-07-28 15:42:43,579 P2000453 INFO Monitor(max)=0.979562 STOP!
+2024-07-28 15:42:43,579 P2000453 INFO Reduce learning rate on plateau: 0.000100
+2024-07-28 15:42:43,695 P2000453 INFO ************ Epoch=23 end ************
+2024-07-28 15:42:45,384 P2000453 INFO Train loss: 0.145976
+2024-07-28 15:42:45,384 P2000453 INFO Evaluation @epoch 24 - batch 50: 
+2024-07-28 15:42:45,953 P2000453 INFO [Metrics] AUC: 0.982344
+2024-07-28 15:42:45,954 P2000453 INFO Save best model: monitor(max)=0.982344
+2024-07-28 15:42:46,219 P2000453 INFO ************ Epoch=24 end ************
+2024-07-28 15:42:47,906 P2000453 INFO Train loss: 0.121003
+2024-07-28 15:42:47,907 P2000453 INFO Evaluation @epoch 25 - batch 50: 
+2024-07-28 15:42:48,494 P2000453 INFO [Metrics] AUC: 0.983723
+2024-07-28 15:42:48,494 P2000453 INFO Save best model: monitor(max)=0.983723
+2024-07-28 15:42:48,893 P2000453 INFO ************ Epoch=25 end ************
+2024-07-28 15:42:50,587 P2000453 INFO Train loss: 0.108097
+2024-07-28 15:42:50,588 P2000453 INFO Evaluation @epoch 26 - batch 50: 
+2024-07-28 15:42:51,187 P2000453 INFO [Metrics] AUC: 0.984497
+2024-07-28 15:42:51,188 P2000453 INFO Save best model: monitor(max)=0.984497
+2024-07-28 15:42:51,557 P2000453 INFO ************ Epoch=26 end ************
+2024-07-28 15:42:53,268 P2000453 INFO Train loss: 0.099747
+2024-07-28 15:42:53,269 P2000453 INFO Evaluation @epoch 27 - batch 50: 
+2024-07-28 15:42:53,910 P2000453 INFO [Metrics] AUC: 0.984961
+2024-07-28 15:42:53,911 P2000453 INFO Save best model: monitor(max)=0.984961
+2024-07-28 15:42:54,378 P2000453 INFO ************ Epoch=27 end ************
+2024-07-28 15:42:56,098 P2000453 INFO Train loss: 0.093982
+2024-07-28 15:42:56,098 P2000453 INFO Evaluation @epoch 28 - batch 50: 
+2024-07-28 15:42:56,678 P2000453 INFO [Metrics] AUC: 0.985218
+2024-07-28 15:42:56,679 P2000453 INFO Save best model: monitor(max)=0.985218
+2024-07-28 15:42:57,105 P2000453 INFO ************ Epoch=28 end ************
+2024-07-28 15:42:58,710 P2000453 INFO Train loss: 0.089405
+2024-07-28 15:42:58,711 P2000453 INFO Evaluation @epoch 29 - batch 50: 
+2024-07-28 15:42:59,314 P2000453 INFO [Metrics] AUC: 0.985385
+2024-07-28 15:42:59,314 P2000453 INFO Save best model: monitor(max)=0.985385
+2024-07-28 15:42:59,581 P2000453 INFO ************ Epoch=29 end ************
+2024-07-28 15:43:01,217 P2000453 INFO Train loss: 0.085946
+2024-07-28 15:43:01,218 P2000453 INFO Evaluation @epoch 30 - batch 50: 
+2024-07-28 15:43:01,826 P2000453 INFO [Metrics] AUC: 0.985541
+2024-07-28 15:43:01,826 P2000453 INFO Save best model: monitor(max)=0.985541
+2024-07-28 15:43:02,474 P2000453 INFO ************ Epoch=30 end ************
+2024-07-28 15:43:04,244 P2000453 INFO Train loss: 0.083043
+2024-07-28 15:43:04,244 P2000453 INFO Evaluation @epoch 31 - batch 50: 
+2024-07-28 15:43:04,832 P2000453 INFO [Metrics] AUC: 0.985586
+2024-07-28 15:43:04,833 P2000453 INFO Save best model: monitor(max)=0.985586
+2024-07-28 15:43:05,119 P2000453 INFO ************ Epoch=31 end ************
+2024-07-28 15:43:06,737 P2000453 INFO Train loss: 0.080716
+2024-07-28 15:43:06,737 P2000453 INFO Evaluation @epoch 32 - batch 50: 
+2024-07-28 15:43:07,312 P2000453 INFO [Metrics] AUC: 0.985642
+2024-07-28 15:43:07,312 P2000453 INFO Save best model: monitor(max)=0.985642
+2024-07-28 15:43:07,706 P2000453 INFO ************ Epoch=32 end ************
+2024-07-28 15:43:09,360 P2000453 INFO Train loss: 0.078846
+2024-07-28 15:43:09,360 P2000453 INFO Evaluation @epoch 33 - batch 50: 
+2024-07-28 15:43:09,925 P2000453 INFO [Metrics] AUC: 0.985587
+2024-07-28 15:43:09,926 P2000453 INFO Monitor(max)=0.985587 STOP!
+2024-07-28 15:43:09,926 P2000453 INFO Reduce learning rate on plateau: 0.000010
+2024-07-28 15:43:10,047 P2000453 INFO ************ Epoch=33 end ************
+2024-07-28 15:43:11,669 P2000453 INFO Train loss: 0.074223
+2024-07-28 15:43:11,669 P2000453 INFO Evaluation @epoch 34 - batch 50: 
+2024-07-28 15:43:12,271 P2000453 INFO [Metrics] AUC: 0.985582
+2024-07-28 15:43:12,272 P2000453 INFO Monitor(max)=0.985582 STOP!
+2024-07-28 15:43:12,272 P2000453 INFO Reduce learning rate on plateau: 0.000001
+2024-07-28 15:43:12,272 P2000453 INFO ********* Epoch=34 early stop *********
+2024-07-28 15:43:12,393 P2000453 INFO Training finished.
+2024-07-28 15:43:12,394 P2000453 INFO Load best model: /home/camp/wxk2/FuXiCTR/FuxiCTR/model_zoo/EulerNet/Frappe/EulerNet_frappe_x1/frappe/EulerNet_frappe.model
+2024-07-28 15:43:12,404 P2000453 INFO ****** Validation evaluation ******
+2024-07-28 15:43:13,056 P2000453 INFO [Metrics] AUC: 0.985642 - logloss: 0.127585
+2024-07-28 15:43:13,175 P2000453 INFO ******** Test evaluation ********
+2024-07-28 15:43:13,175 P2000453 INFO Loading datasets...
+2024-07-28 15:43:13,181 P2000453 INFO Test samples: total/28860, blocks/1
+2024-07-28 15:43:13,208 P2000453 INFO Loading test data done.
+2024-07-28 15:43:13,710 P2000453 INFO [Metrics] AUC: 0.984775 - logloss: 0.131309

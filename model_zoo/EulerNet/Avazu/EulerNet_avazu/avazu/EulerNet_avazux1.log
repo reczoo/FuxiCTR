@@ -1,0 +1,149 @@
+2024-07-29 23:59:49,366 P2644690 INFO Params: {
+    "batch_size": "4096",
+    "data_format": "csv",
+    "data_root": "../../data/",
+    "dataset_id": "avazu",
+    "debug": "False",
+    "debug_mode": "False",
+    "early_stop_patience": "2",
+    "embedding_dim": "10",
+    "embedding_regularizer": "0.05",
+    "epochs": "100",
+    "eval_steps": "None",
+    "every_x_epochs": "1",
+    "feature_cols": "[{'active': True, 'dtype': 'float', 'name': ['feat_1', 'feat_2', 'feat_3', 'feat_4', 'feat_5', 'feat_6', 'feat_7', 'feat_8', 'feat_9', 'feat_10', 'feat_11', 'feat_12', 'feat_13', 'feat_14', 'feat_15', 'feat_16', 'feat_17', 'feat_18', 'feat_19', 'feat_20', 'feat_21', 'feat_22'], 'type': 'categorical'}]",
+    "feature_config": "None",
+    "feature_specs": "None",
+    "gpu": "0",
+    "group_id": "None",
+    "label_col": "{'dtype': 'float', 'name': 'label'}",
+    "layer_norm": "False",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['AUC', 'logloss']",
+    "min_categr_count": "1",
+    "model": "EulerNet",
+    "model_id": "EulerNet_avazu_40x3_0_0.2kk_wo_norm",
+    "model_root": "./checkpoints/",
+    "monitor": "AUC",
+    "monitor_mode": "max",
+    "net_ex_dropout": "0.0",
+    "net_im_dropout": "0.2",
+    "net_regularizer": "0.0",
+    "num_workers": "3",
+    "optimizer": "adam",
+    "patience": "2",
+    "pickle_feature_encoder": "True",
+    "save_best_only": "True",
+    "seed": "2021",
+    "shape": "[40, 40, 40]",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../data/avazu/test.csv",
+    "train_data": "../../data/avazu/train.csv",
+    "use_features": "None",
+    "use_hdf5": "True",
+    "valid_data": "../../data/avazu/valid.csv",
+    "verbose": "1"
+}
+2024-07-29 23:59:49,369 P2644690 INFO Set up feature processor...
+2024-07-29 23:59:49,447 P2644690 WARNING Skip rebuilding ../../data/avazu/feature_map.json. Please delete it manually if rebuilding is required.
+2024-07-29 23:59:49,479 P2644690 INFO Load feature_map from json: ../../data/avazu/feature_map.json
+2024-07-29 23:59:49,534 P2644690 INFO Set column index...
+2024-07-29 23:59:49,593 P2644690 INFO Feature specs: {
+    "feat_1": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 8, 'vocab_size': 9}",
+    "feat_10": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 1048284, 'vocab_size': 1048285}",
+    "feat_11": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 6514, 'vocab_size': 6515}",
+    "feat_12": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 5, 'vocab_size': 6}",
+    "feat_13": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 5, 'vocab_size': 6}",
+    "feat_14": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 1939, 'vocab_size': 1940}",
+    "feat_15": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 9, 'vocab_size': 10}",
+    "feat_16": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 10, 'vocab_size': 11}",
+    "feat_17": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 348, 'vocab_size': 349}",
+    "feat_18": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 5, 'vocab_size': 6}",
+    "feat_19": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 60, 'vocab_size': 61}",
+    "feat_2": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 8, 'vocab_size': 9}",
+    "feat_20": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 170, 'vocab_size': 171}",
+    "feat_21": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 51, 'vocab_size': 52}",
+    "feat_22": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 25, 'vocab_size': 26}",
+    "feat_3": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 3479, 'vocab_size': 3480}",
+    "feat_4": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 4270, 'vocab_size': 4271}",
+    "feat_5": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 25, 'vocab_size': 26}",
+    "feat_6": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 4863, 'vocab_size': 4864}",
+    "feat_7": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 304, 'vocab_size': 305}",
+    "feat_8": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 32, 'vocab_size': 33}",
+    "feat_9": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'oov_idx': 228185, 'vocab_size': 228186}"
+}
+2024-07-29 23:59:54,090 P2644690 INFO Total number of parameters: 13403321.
+2024-07-29 23:59:54,090 P2644690 INFO Loading data...
+2024-07-29 23:59:54,090 P2644690 INFO Loading data from h5: ../../data/avazu/train.h5
+2024-07-30 00:00:05,216 P2644690 INFO Train samples: total/28300276, blocks/1
+2024-07-30 00:00:05,216 P2644690 INFO Loading data from h5: ../../data/avazu/valid.h5
+2024-07-30 00:00:06,726 P2644690 INFO Validation samples: total/4042897, blocks/1
+2024-07-30 00:00:06,727 P2644690 INFO Loading train and validation data done.
+2024-07-30 00:00:06,727 P2644690 INFO Start training: 6910 batches/epoch
+2024-07-30 00:00:06,727 P2644690 INFO ************ Epoch=1 start ************
+2024-07-30 00:06:51,062 P2644690 INFO Train loss: 0.440392
+2024-07-30 00:06:51,065 P2644690 INFO Evaluation @epoch 1 - batch 6910: 
+2024-07-30 00:07:09,072 P2644690 INFO [Metrics] AUC: 0.735142
+2024-07-30 00:07:09,073 P2644690 INFO Save best model: monitor(max)=0.735142
+2024-07-30 00:07:10,139 P2644690 INFO ************ Epoch=1 end ************
+2024-07-30 00:13:42,814 P2644690 INFO Train loss: 0.437638
+2024-07-30 00:13:42,861 P2644690 INFO Evaluation @epoch 2 - batch 6910: 
+2024-07-30 00:14:02,757 P2644690 INFO [Metrics] AUC: 0.738687
+2024-07-30 00:14:02,763 P2644690 INFO Save best model: monitor(max)=0.738687
+2024-07-30 00:14:04,877 P2644690 INFO ************ Epoch=2 end ************
+2024-07-30 00:20:45,048 P2644690 INFO Train loss: 0.437599
+2024-07-30 00:20:45,091 P2644690 INFO Evaluation @epoch 3 - batch 6910: 
+2024-07-30 00:21:03,248 P2644690 INFO [Metrics] AUC: 0.740164
+2024-07-30 00:21:03,253 P2644690 INFO Save best model: monitor(max)=0.740164
+2024-07-30 00:21:11,825 P2644690 INFO ************ Epoch=3 end ************
+2024-07-30 00:27:47,578 P2644690 INFO Train loss: 0.438236
+2024-07-30 00:27:47,579 P2644690 INFO Evaluation @epoch 4 - batch 6910: 
+2024-07-30 00:28:06,361 P2644690 INFO [Metrics] AUC: 0.737854
+2024-07-30 00:28:06,369 P2644690 INFO Monitor(max)=0.737854 STOP!
+2024-07-30 00:28:06,405 P2644690 INFO Reduce learning rate on plateau: 0.000100
+2024-07-30 00:28:06,582 P2644690 INFO ************ Epoch=4 end ************
+2024-07-30 00:34:35,042 P2644690 INFO Train loss: 0.408921
+2024-07-30 00:34:35,104 P2644690 INFO Evaluation @epoch 5 - batch 6910: 
+2024-07-30 00:34:53,708 P2644690 INFO [Metrics] AUC: 0.745184
+2024-07-30 00:34:53,717 P2644690 INFO Save best model: monitor(max)=0.745184
+2024-07-30 00:35:04,484 P2644690 INFO ************ Epoch=5 end ************
+2024-07-30 00:41:36,231 P2644690 INFO Train loss: 0.411121
+2024-07-30 00:41:36,232 P2644690 INFO Evaluation @epoch 6 - batch 6910: 
+2024-07-30 00:41:53,897 P2644690 INFO [Metrics] AUC: 0.746628
+2024-07-30 00:41:53,905 P2644690 INFO Save best model: monitor(max)=0.746628
+2024-07-30 00:41:55,739 P2644690 INFO ************ Epoch=6 end ************
+2024-07-30 00:48:24,225 P2644690 INFO Train loss: 0.412647
+2024-07-30 00:48:24,242 P2644690 INFO Evaluation @epoch 7 - batch 6910: 
+2024-07-30 00:48:42,125 P2644690 INFO [Metrics] AUC: 0.745889
+2024-07-30 00:48:42,130 P2644690 INFO Monitor(max)=0.745889 STOP!
+2024-07-30 00:48:42,166 P2644690 INFO Reduce learning rate on plateau: 0.000010
+2024-07-30 00:48:42,348 P2644690 INFO ************ Epoch=7 end ************
+2024-07-30 00:55:14,327 P2644690 INFO Train loss: 0.399676
+2024-07-30 00:55:14,327 P2644690 INFO Evaluation @epoch 8 - batch 6910: 
+2024-07-30 00:55:34,325 P2644690 INFO [Metrics] AUC: 0.748603
+2024-07-30 00:55:34,330 P2644690 INFO Save best model: monitor(max)=0.748603
+2024-07-30 00:55:45,926 P2644690 INFO ************ Epoch=8 end ************
+2024-07-30 01:02:17,604 P2644690 INFO Train loss: 0.398392
+2024-07-30 01:02:17,659 P2644690 INFO Evaluation @epoch 9 - batch 6910: 
+2024-07-30 01:02:35,478 P2644690 INFO [Metrics] AUC: 0.747843
+2024-07-30 01:02:35,517 P2644690 INFO Monitor(max)=0.747843 STOP!
+2024-07-30 01:02:35,559 P2644690 INFO Reduce learning rate on plateau: 0.000001
+2024-07-30 01:02:35,800 P2644690 INFO ************ Epoch=9 end ************
+2024-07-30 01:08:40,777 P2644690 INFO Train loss: 0.394516
+2024-07-30 01:08:40,777 P2644690 INFO Evaluation @epoch 10 - batch 6910: 
+2024-07-30 01:08:56,959 P2644690 INFO [Metrics] AUC: 0.747201
+2024-07-30 01:08:56,967 P2644690 INFO Monitor(max)=0.747201 STOP!
+2024-07-30 01:08:57,042 P2644690 INFO Reduce learning rate on plateau: 0.000001
+2024-07-30 01:08:57,042 P2644690 INFO ********* Epoch==10 early stop *********
+2024-07-30 01:08:57,210 P2644690 INFO Training finished.
+2024-07-30 01:08:57,246 P2644690 INFO Load best model: /home/camp/wxk2/FuXiCTR/FuxiCTR/model_zoo/EulerNet/checkpoints/avazu/EulerNet_avazu_40x3_0_0.2kk_wo_norm.model
+2024-07-30 01:08:57,342 P2644690 INFO ****** Validation evaluation ******
+2024-07-30 01:09:14,600 P2644690 INFO [Metrics] AUC: 0.748603 - logloss: 0.395145
+2024-07-30 01:09:14,728 P2644690 INFO ******** Test evaluation ********
+2024-07-30 01:09:14,728 P2644690 INFO Loading data...
+2024-07-30 01:09:14,729 P2644690 INFO Loading data from h5: ../../data/avazu/test.h5
+2024-07-30 01:09:17,613 P2644690 INFO Test samples: total/8085794, blocks/1
+2024-07-30 01:09:17,613 P2644690 INFO Loading test data done.
+2024-07-30 01:09:51,077 P2644690 INFO [Metrics] AUC: 0.764515 - logloss: 0.367162

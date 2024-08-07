@@ -1,0 +1,73 @@
+### Tiny data for tests only
+tiny_h5:
+    data_root: ../../data/
+    data_format: h5
+    train_data: ../../data/tiny_h5/train.h5
+    valid_data: ../../data/tiny_h5/valid.h5
+    test_data: ../../data/tiny_h5/test.h5
+
+ml:
+    data_format: csv
+    data_root: ../../data/ml/
+    feature_cols:
+    -   active: true
+        dtype: float
+        name: [user_id, item_id, tag_id]
+        type: categorical
+    label_col: {dtype: float, name: label}
+    min_categr_count: 1
+    test_data: ../../data/ml/test.csv
+    train_data: ../../data/ml/train.csv
+    valid_data: ../../data/ml/valid.csv
+
+frappe:
+    data_root: ../../data/frappe/
+    data_format: csv
+    feature_cols:
+    -   active: true
+        dtype: float
+        name: [user, item, daytime, weekday, isweekend, homework, cost, weather, country,
+            city]
+        type: categorical
+    label_col: {dtype: float, name: label}
+    min_categr_count: 1
+    train_data: ../../data/frappe/train.csv
+    valid_data: ../../data/frappe/valid.csv
+    test_data: ../../data/frappe/test.csv
+
+avazu:
+    data_root: ../../data/avazux1/
+    data_format: csv
+    feature_cols:
+    -   active: true
+        dtype: float
+        name: [feat_1, feat_2, feat_3, feat_4, feat_5, feat_6, feat_7, feat_8, feat_9,
+            feat_10, feat_11, feat_12, feat_13, feat_14, feat_15, feat_16, feat_17,
+            feat_18, feat_19, feat_20, feat_21, feat_22]
+        type: categorical
+    label_col: {dtype: float, name: label}
+    min_categr_count: 1
+    train_data: ../../data/avazu/train.csv
+    valid_data: ../../data/avazu/valid.csv
+    test_data: ../../data/avazu/test.csv
+
+criteo:
+    data_format: csv
+    data_root: ../../data/criteox4/
+    feature_cols:
+    -   active: true
+        dtype: float
+        fill_na: 0
+        name: [I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13]
+        type: categorical
+    -   active: true
+        dtype: str
+        fill_na: ''
+        name: [C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, C15, C16,
+            C17, C18, C19, C20, C21, C22, C23, C24, C25, C26]
+        type: categorical
+    label_col: {dtype: float, name: Label}
+    min_categr_count: 10
+    test_data: ../../data/criteo/test.csv
+    train_data: ../../data/criteo/train.csv
+    valid_data: ../../data/criteo/valid.csv
