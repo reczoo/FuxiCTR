@@ -6,14 +6,15 @@
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/dcnv3-towards-next-generation-deep-cross/click-through-rate-prediction-on-ipinyou)](https://paperswithcode.com/sota/click-through-rate-prediction-on-ipinyou?p=dcnv3-towards-next-generation-deep-cross)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/dcnv3-towards-next-generation-deep-cross/click-through-rate-prediction-on-avazu)](https://paperswithcode.com/sota/click-through-rate-prediction-on-avazu?p=dcnv3-towards-next-generation-deep-cross)
 
-We introduces the next generation deep cross networks, DCNv3 and SDCNv3. The former explicitly captures feature interaction through an exponentially growing modeling method, and further filters noise signals via the Self-Mask operation, reducing the parameter count by half. The latter builds on DCNv3 by incorporating the shallow cross network, SCNv3, to capture both high-order and low-order feature interactions without relying on the less interpretable DNN. Tri-BCE helps the two sub-networks in SDCNv3 obtain more suitable supervision signals for themselves.
-> Li, Honghao and Zhang, Yiwen and Zhang, Yi and Li, Hanwei and Sang, Lei. [DCNv3: Towards Next Generation Deep Cross Network for Click-Through Rate Prediction](https://arxiv.org/abs/2407.13349).
+We introduces the next generation deep cross networks, called DCNv3, which uses sub-networks LCN and ECN to capture both low-order and high-order feature interactions without relying on the less interpretable DNN. LCN uses a linearly growing interaction method for low-order interactions, while ECN employs an exponentially increasing method for high-order interactions. The Self-Mask filters interaction noise and further improves DCNv3’s computational efficiency. Tri-BCE helped the two sub-networks in DCNv3 obtain more suitable supervision signals for themselves. Comprehensive experiments on six datasets demonstrated the effectiveness, efficiency, and interpretability of DCNv3.
+> Li, Honghao and Zhang, Yiwen and Zhang, Yi and Li, Hanwei and Sang, Lei and Zhu, Jieming. [DCNv3: Towards Next Generation Deep Cross Network for Click-Through Rate Prediction](https://arxiv.org/abs/2407.13349).
 
 ## Model Overview
 
 <div align="center">
-    <img src="https://github.com/user-attachments/assets/6b0df396-d4ee-4475-ac02-21538ae0ef27" alt="SDCNv3" />
+    <img src="https://github.com/user-attachments/assets/6f0479ce-edb2-4ad1-92a0-7ec9aeeb5f2d" alt="DCNv3" />
 </div>
+
 
 ## Requirements
 
@@ -25,7 +26,7 @@ pytorch: 1.10
 fuxictr: 2.0.1
 ```
 
-## SDCNv3 Configuration Guide
+## DCNv3 Configuration Guide
 
   
 The `dataset_config.yaml` file contains all the dataset settings as follows.
@@ -81,7 +82,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 | save_best_only          | bool            | True                    | whether to save the best model checkpoint only                                                                                                                                                                    |
 | eval_steps              | int\|None        | None                    | evaluate the model on validation data every ```eval_steps```. By default, ```None``` means evaluation every epoch.                                                                                                |
 
-## DCNv3 Configuration Guide
+## ECN Configuration Guide
 
   
 The `dataset_config.yaml` file contains all the dataset settings as follows.
@@ -139,7 +140,5 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 
 
 ## Results
-
-AUC's evaluation results can be found [here](https://github.com/salmon1802/DCNv3).
 
 For reproducing the results, please refer to https://github.com/salmon1802/DCNv3/tree/master/checkpoints

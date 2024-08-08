@@ -12,8 +12,8 @@ Base:
     feature_specs: null
     feature_config: null
 
-DCNv3_test:
-    model: DCNv3
+ECN_test:
+    model: ECN
     dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
@@ -35,8 +35,8 @@ DCNv3_test:
     monitor: {'AUC': 1, 'logloss': 0}
     monitor_mode: 'max'
 
-SDCNv3_test:
-    model: SDCNv3
+DCNv3_test:
+    model: DCNv3
     dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
