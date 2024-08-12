@@ -1,4 +1,8 @@
+## Tuning
+The detailed tuning config files are provided in this repo: https://github.com/Ethan-TZ/EulerNet/tree/main/%23Code4FuxiCTR%23.
+
 ## Cite
+
 If you find EulerNet useful for your research or development, please cite the following papers: [EulerNet](https://dl.acm.org/doi/10.1145/3539618.3591681).
 
 ```bibtex
