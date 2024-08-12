@@ -72,7 +72,7 @@ class FeatureProcessor(object):
 
     def read_data(self, data_path, data_format="csv", sep=",", n_rows=None, **kwargs):
         if not data_path.endswith(data_format):
-            data_path = os.path.join(data_path, "*.{data_format}")
+            data_path = os.path.join(data_path, f"*.{data_format}")
         logging.info("Reading files: " + data_path)
         file_names = sorted(glob.glob(data_path))
         assert len(file_names) > 0, f"Invalid data path: {data_path}"
