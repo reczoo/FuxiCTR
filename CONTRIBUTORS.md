@@ -17,10 +17,7 @@ Once your contribution is accepted and merged, you become a contributor to FuxiC
 + Jieming Zhu from Huawei Noah's Ark Lab
 + Jinyang Liu from The Chinese University of Hong Kong
 
-## Contributors
+## Contributors 🤗
 
-+ Shuai Yang from Peking University
-+ Kelong Mao from Tsinghua University
-+ Guohao Cai from Huawei Noah's Ark Lab
-
-
+<!-- readme: zhujiem,doubleQ2018,Da-Guo,kyriemao,contributors -start -->
+<!-- readme: zhujiem,doubleQ2018,Da-Guo,kyriemao,contributors -end -->
