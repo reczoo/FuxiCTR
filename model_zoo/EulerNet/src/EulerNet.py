@@ -1,7 +1,5 @@
-
 # =========================================================================
-# Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
-# 
+# Copyright (C) 2024 salmon@github
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,7 +16,7 @@
 import torch
 from torch import nn
 from fuxictr.pytorch.models import BaseModel
-from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, CrossNetV2, CrossNetMix
+from fuxictr.pytorch.layers import FeatureEmbedding
 
 class EulerNet(BaseModel):
     def __init__(self, 
@@ -56,7 +54,6 @@ class EulerNet(BaseModel):
         self.mu = nn.Parameter(torch.ones(1, field_num, 1))
 
         self.reg = nn.Linear(shape_list[-1], 1)
-        #nn.init.normal_(self.reg.weight, mean=0, std=0.01)
         nn.init.xavier_normal_(self.reg.weight)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.model_to_device()
@@ -65,12 +62,12 @@ class EulerNet(BaseModel):
     def forward(self, inputs):
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
-        r, p =  self.mu * torch.cos(feature_emb), self.mu *  torch.sin(feature_emb)#self.mu * torch.sin(feature_emb)
+        r, p =  self.mu * torch.cos(feature_emb), self.mu *  torch.sin(feature_emb)
+        # r, p = r / 4, p / 4     🫱 for large embedding size, you should add a scaling factor.
         o_r, o_p = self.Euler_interaction_layers((r, p))
         o_r, o_p = o_r.reshape(o_r.shape[0], -1), o_p.reshape(o_p.shape[0], -1)
         re, im = self.reg(o_r), self.reg(o_p)
         y_pred = im + re
-        # y_pred = self.dnn(feature_emb.flatten(start_dim=1))
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}
         return return_dict
@@ -89,13 +86,11 @@ class EulerInteractionLayer(nn.Module):
         if inshape == outshape:
             init_orders = torch.eye(inshape // self.feature_dim, outshape // self.feature_dim)
         else:
-            th = torch.eye(inshape // self.feature_dim, inshape // self.feature_dim)
             init_orders = torch.softmax(torch.randn(inshape // self.feature_dim, (outshape) // self.feature_dim) / 0.01, dim = 0)
-            # init_orders = torch.cat([th, init_orders], dim = -1)
         
         self.inter_orders = nn.Parameter(init_orders)
         self.im = nn.Linear(inshape, outshape)
-        #nn.init.normal_(self.im.weight , mean = 0 , std = 0.1)
+        #nn.init.normal_(self.im.weight , mean = 0 , std = 0.1) 🫱 Use for large embedding size, e.g. 128 in KKBox
         nn.init.xavier_uniform_(self.im.weight)
 
         self.bias_lam = nn.Parameter(torch.randn(1, self.feature_dim, outshape // self.feature_dim) * 0.01)
@@ -106,19 +101,8 @@ class EulerInteractionLayer(nn.Module):
         self.norm_r = nn.LayerNorm([self.feature_dim])
         self.norm_p = nn.LayerNorm([self.feature_dim])
 
-        self.bn1r = nn.BatchNorm1d([self.inshape // self.feature_dim])
-        self.bn1p = nn.BatchNorm1d([self.inshape // self.feature_dim])
-
-        self.bn2r = nn.BatchNorm1d([self.outshape // self.feature_dim])
-        self.bn2p = nn.BatchNorm1d([self.outshape // self.feature_dim])
-
-
     def forward(self, complex_features):
         r, p = complex_features
-
-        # if self.apply_norm:
-        #     r, p = self.bn1r(r), self.bn1p(p)
-
         lam = r ** 2 + p ** 2 + 1e-8
         theta = torch.atan2(p, r)
         lam, theta = lam.reshape(lam.shape[0], -1, self.feature_dim), theta.reshape(theta.shape[0], -1, self.feature_dim)
