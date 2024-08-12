@@ -21,12 +21,12 @@ import polars as pl
 
 
 class CustomizedFeatureProcessor(FeatureProcessor):
-    def extract_country_code(self, col_name=None):
+    def extract_country_code(self, col_name):
         return pl.col(col_name).apply(lambda isrc: isrc[0:2] if not pl.is_null(isrc) else "")
 
-    def bucketize_age(self, col_name=None):
+    def bucketize_age(self, col_name):
         def _bucketize(age):
-            if pd.isnull(age):
+            if pl.is_null(age):
                 return ""
             else:
                 age = float(age)

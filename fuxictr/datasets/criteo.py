@@ -22,7 +22,7 @@ import polars as pl
 
 
 class CustomizedFeatureProcessor(FeatureProcessor):
-    def convert_to_bucket(self, col_name=None):
+    def convert_to_bucket(self, col_name):
         def _convert_to_bucket(value):
             if value > 2:
                 value = int(np.floor(np.log(value) ** 2))

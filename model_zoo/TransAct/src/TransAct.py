@@ -220,7 +220,7 @@ class TransActTransformer(nn.Module):
         concat_seq_emb = torch.cat([sequence_emb,
                                     target_emb.unsqueeze(1).expand(-1, seq_len, -1)], dim=-1)
         # get sequence mask (1's are masked)
-        key_padding_mask = mask
+        key_padding_mask = self.adjust_mask(mask) # keep the last dim
         if self.use_time_window_mask and self.training:
             rand_time_window_ms = random.randint(0, self.time_window_ms)
             time_window_mask = (time_interval_seq < rand_time_window_ms)
@@ -235,7 +235,6 @@ class TransActTransformer(nn.Module):
         output_concat.append(tfmr_out[:, -self.first_k_cols:].flatten(start_dim=1))
         if self.concat_max_pool:
             # Apply max pooling to the transformer output
-            key_padding_mask = self.adjust_mask(key_padding_mask) # keep the last dim
             tfmr_out = tfmr_out.masked_fill(
                 key_padding_mask.unsqueeze(-1).repeat(1, 1, tfmr_out.shape[-1]), -1e9
             )

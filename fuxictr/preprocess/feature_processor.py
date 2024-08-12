@@ -96,8 +96,12 @@ class FeatureProcessor(object):
             if col.get("preprocess"):
                 preprocess_args = re.split(r"\(|\)", col["preprocess"])
                 preprocess_fn = getattr(self, preprocess_args[0])
+                if len(preprocess_args) == 1:
+                    preprocess_args = [name] # use col_name as args when not being explicitly set
+                else:
+                    preprocess_args = preprocess_args[1:-1]
                 ddf = ddf.with_columns(
-                    preprocess_fn(*preprocess_args[1:-1])
+                    preprocess_fn(*preprocess_args)
                     .alias(name)
                     .cast(self.dtype_dict[name])
                 )
@@ -364,5 +368,5 @@ class FeatureProcessor(object):
         with open(vocab_file, "w") as fd:
             fd.write(json.dumps(vocab, indent=4))
 
-    def copy_from(self, col_name):
-        return pl.col(col_name)
+    def copy_from(self, src_col):
+        return pl.col(src_col)
