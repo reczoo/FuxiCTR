@@ -1,0 +1,65 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 12
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    use_features: null
+    feature_specs: null
+    feature_config: null
+
+WuKong_default: # This is a config template
+    model: WuKong
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 64
+    num_layers: 8
+    compression_dim: 40
+    fmb_units: [200,200]
+    fmb_dim: 40
+    project_dim: 8
+    dropout_rate: 0.2
+    hidden_activations: relu
+    mlp_hidden_units: [32,32]
+    epochs: 100
+    shuffle: True
+    seed: 2024
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+WuKong_test:
+    model: WuKong
+    dataset_id: tiny_npz
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 2048
+    embedding_dim: 64
+    num_layers: 4
+    compression_dim: 32
+    fmb_units: [128,128,128]
+    fmb_dim: 32
+    project_dim: 24
+    dropout_rate: 0.2
+    hidden_activations: relu
+    mlp_hidden_units: [64]
+    epochs: 5
+    shuffle: True
+    seed: 2024
+    monitor: 'AUC'
+    monitor_mode: 'max'
