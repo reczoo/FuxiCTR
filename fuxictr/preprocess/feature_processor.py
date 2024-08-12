@@ -76,12 +76,25 @@ class FeatureProcessor(object):
         logging.info("Reading files: " + data_path)
         file_names = sorted(glob.glob(data_path))
         assert len(file_names) > 0, f"Invalid data path: {data_path}"
-        dfs = [
-            pl.scan_csv(source=file_name, separator=sep, dtypes=self.dtype_dict,
-                        low_memory=False, n_rows=n_rows)
-            for file_name in file_names
-        ]
-        ddf = pl.concat(dfs)
+        if data_format == "csv":
+            dfs = [
+                pl.scan_csv(source=file_name, separator=sep, dtypes=self.dtype_dict,
+                            low_memory=False, n_rows=n_rows)
+                for file_name in file_names
+            ]
+            ddf = pl.concat(dfs)
+        elif data_format == "parquet":
+            dfs = [
+                pl.scan_parquet(source=file_name, low_memory=False, n_rows=n_rows)
+                for file_name in file_names
+            ]
+            ddf = pl.concat(dfs)
+            seq_cols = [x for x in ddf.columns if isinstance(ddf.select(x).dtypes[0], pl.List)]
+            for col in seq_cols:
+                # Convert list to "^" seperated string for the same preprocessing as csv format
+                ddf = ddf.with_columns(pl.col(col).apply(lambda x: "^".join(map(str, x))))
+        else:
+            NotImplementedError(f"data_format={data_format} not supported.")
         return ddf
 
     def preprocess(self, ddf):
@@ -283,7 +296,7 @@ class FeatureProcessor(object):
             self.feature_map.features[name]["embedding_dim"] = col["embedding_dim"]
         if "emb_output_dim" in col:
             self.feature_map.features[name]["emb_output_dim"] = col["emb_output_dim"]
-        splitter = col.get("splitter")
+        splitter = col.get("splitter", "^")
         na_value = col.get("fill_na", "")
         max_len = col.get("max_len", 0)
         padding = col.get("padding", "post") # "post" or "pre"

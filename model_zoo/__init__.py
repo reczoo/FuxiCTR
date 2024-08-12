@@ -18,7 +18,6 @@ from .DMR.src import DMR
 from .DNN.DNN_torch.src import DNN
 from .DSSM.src import DSSM
 from .EDCN.src import EDCN
-from .ETA.src import ETA
 from .FFM.src import FFM, FFMv2
 from .FGCNN.src import FGCNN
 from .FiBiNET.src import FiBiNET
@@ -39,7 +38,6 @@ from .NFM.src import NFM
 from .ONN.ONN_torch.src import ONN, ONNv2
 from .PNN.src import PNN
 from .SAM.src import SAM
-from .SDIM.src import SDIM
 from .WideDeep.WideDeep_torch.src import WideDeep
 from .xDeepFM.src import xDeepFM
 from .PEPNet.src import PPNet
