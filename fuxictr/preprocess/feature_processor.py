@@ -102,9 +102,10 @@ class FeatureProcessor(object):
         all_cols = self.label_cols + self.feature_cols[::-1]
         for col in all_cols:
             name = col["name"]
-            if name in ddf.columns:
-                fill_na = "" if col["dtype"] in ["str", str] else 0
-                fill_na = col.get("fill_na", fill_na)
+            fill_na = col.get("fill_na", 
+                              "" if col["dtype"] in ["str", str] else 0)
+            col_exist = name in ddf.columns
+            if col_exist:
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
             if col.get("preprocess"):
                 preprocess_args = re.split(r"\(|\)", col["preprocess"])
@@ -118,6 +119,8 @@ class FeatureProcessor(object):
                     .alias(name)
                     .cast(self.dtype_dict[name])
                 )
+            if not col_exist:
+                ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
         active_cols = [col["name"] for col in all_cols if col.get("active") != False]
         ddf = ddf.select(active_cols)
         return ddf

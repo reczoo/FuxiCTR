@@ -4,6 +4,12 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.3, 2024-10-14**
++ [Feature] Add EulerNet and DCNv3 models
++ [Feature] Add support to parquet as input, like csv format
++ [Fix] Add col_name as default args in feature_preprocess ([#105](https://github.com/reczoo/FuxiCTR/issues/105))
++ [Fix] Fix fill_na when copy from a column ([#117](https://github.com/reczoo/FuxiCTR/issues/117))
+
 **FuxiCTR v2.3.2, 2024-07-11**
 + [Feature] Add TransAct model
 + [Feature] Add new feature type `embedding`, supporting [`meta`, `numeric`, `embedding`, `categorical`, `sequence`]
