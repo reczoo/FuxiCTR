@@ -86,7 +86,8 @@ class Tokenizer(object):
         else:
             shared_tokenizer.vocab.update(self.vocab)
         vocab_size = shared_tokenizer.vocab_size()
-        if shared_tokenizer.vocab["__OOV__"] != vocab_size - 1:
+        if (shared_tokenizer.vocab["__OOV__"] != vocab_size - 1 or
+            shared_tokenizer.vocab["__OOV__"] != len(shared_tokenizer.vocab) - 1):
             shared_tokenizer.vocab["__OOV__"] = vocab_size
         self.vocab = shared_tokenizer.vocab
         return shared_tokenizer

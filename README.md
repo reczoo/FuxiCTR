@@ -151,7 +151,7 @@ Please install other required packages via `pip install -r requirements.txt`.
     
    ```
    cd experiment
-   python run_param_tuner.py --config config/DCN_tiny_h5_tuner_config.yaml --gpu 0 1 2 3 0 1 2 3
+   python run_param_tuner.py --config config/DCN_tiny_parquet_tuner_config.yaml --gpu 0 1 2 3 0 1 2 3
    ```
 
 ## 🔥 Citation

@@ -1,6 +1,13 @@
 base_config: ../model_zoo/DCN/DCN_torch/config/
 base_expid: DCN_default
-dataset_id: tiny_npz
+dataset_id: tiny_parquet
+
+tiny_parquet:
+    data_root: ../data/
+    data_format: npz
+    train_data: ../data/tiny_parquet/train.parquet
+    valid_data: ../data/tiny_parquet/valid.parquet
+    test_data: ../data/tiny_parquet/test.parquet
 
 tuner_space:
     model_root: './checkpoints/'
