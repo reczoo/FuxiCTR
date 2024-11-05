@@ -1,6 +1,10 @@
 Base:
     model_root: './checkpoints/'
+<<<<<<< HEAD
     num_workers: 3
+=======
+    num_workers: 12
+>>>>>>> 25c03a2e178971a94fc718bcd5f086ad8c0737e8
     verbose: 1
     early_stop_patience: 2
     pickle_feature_encoder: True
@@ -58,8 +62,16 @@ WuKong_test:
     dropout_rate: 0.2
     hidden_activations: relu
     mlp_hidden_units: [64]
+<<<<<<< HEAD
     epochs: 1
     shuffle: True
     seed: 2024
     monitor: 'AUC'
     monitor_mode: 'max'
+=======
+    epochs: 5
+    shuffle: True
+    seed: 2024
+    monitor: 'AUC'
+    monitor_mode: 'max'
+>>>>>>> 25c03a2e178971a94fc718bcd5f086ad8c0737e8

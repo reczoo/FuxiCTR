@@ -133,7 +133,7 @@ class FMB(nn.Module):
 
 
 class LinearCompressionBlock(nn.Module):
-    # Linear Compression Block (LCB)
+    """ Linear Compression Block (LCB) """
     def __init__(self, num_features=14, embedding_dim=16, compressed_dim=8,dropout_rate=0.2):
         super(LinearCompressionBlock, self).__init__()
         self.linear = nn.Linear(num_features * embedding_dim, compressed_dim)
@@ -143,7 +143,6 @@ class LinearCompressionBlock(nn.Module):
 
 
 class WuKongLayer(nn.Module):
-    # WuKong Layer
     def __init__(self, num_features=14, embedding_dim=16, project_dim=4, fmb_units=[40,40,40], fmb_dim=40, compressed_dim=40, dropout_rate=0.2):
         super(WuKongLayer, self).__init__()
         self.fmb = FMB(num_features, embedding_dim, fmb_units, fmb_dim, project_dim)
