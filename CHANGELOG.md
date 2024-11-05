@@ -5,6 +5,7 @@
 [Doing] Add support of multi-gpu training
 
 **FuxiCTR v2.3.4, 2024-11-05**
++ [Feature] Add WuKong model
 + [Fix] Fix OOV token update ([#119](https://github.com/reczoo/FuxiCTR/issues/119))
 + [Fix] Speed up parquet dataset reading ([#121](https://github.com/reczoo/FuxiCTR/issues/121))
 + [Fix] Fix add_loss() isue that does not work after renaming to compute_loss() ([#122](https://github.com/reczoo/FuxiCTR/issues/122))

@@ -12,32 +12,6 @@ Base:
     feature_specs: null
     feature_config: null
 
-DualMLP_test:
-    model: DualMLP
-    dataset_id: tiny_npz
-    loss: binary_crossentropy
-    metrics: ['logloss', 'AUC']
-    task: binary_classification
-    optimizer: adam
-    learning_rate: 1.e-3
-    embedding_regularizer: 1.e-8
-    net_regularizer: 0
-    mlp1_hidden_units: [64, 32]
-    mlp1_hidden_activations: relu
-    mlp1_dropout: 0
-    mlp1_batch_norm: False
-    mlp2_hidden_units: [64, 64, 64]
-    mlp2_hidden_activations: relu
-    mlp2_dropout: 0
-    mlp2_batch_norm: False
-    batch_size: 128
-    embedding_dim: 4
-    epochs: 1
-    shuffle: True
-    seed: 2019
-    monitor: 'AUC'
-    monitor_mode: 'max'
-
 DualMLP_default: # This is a config template
     model: DualMLP
     dataset_id: TBD
@@ -62,37 +36,6 @@ DualMLP_default: # This is a config template
     shuffle: True
     seed: 20222023
     monitor: {'AUC': 1, 'logloss': -1}
-    monitor_mode: 'max'
-
-FinalMLP_test:
-    model: FinalMLP
-    dataset_id: tiny_npz
-    loss: binary_crossentropy
-    metrics: ['logloss', 'AUC']
-    task: binary_classification
-    optimizer: adam
-    learning_rate: 1.e-3
-    embedding_regularizer: 0
-    net_regularizer: 0
-    mlp1_hidden_units: [64, 32]
-    mlp1_hidden_activations: relu
-    mlp1_dropout: 0
-    mlp1_batch_norm: False
-    mlp2_hidden_units: [64, 64, 64]
-    mlp2_hidden_activations: relu
-    mlp2_dropout: 0
-    mlp2_batch_norm: False
-    use_fs: True
-    fs_hidden_units: [64, 64]
-    fs1_context: ["userid"]
-    fs2_context: ["adgroup_id", "cate_id"]
-    num_heads: 2
-    batch_size: 128
-    embedding_dim: 4
-    epochs: 1
-    shuffle: True
-    seed: 2019
-    monitor: 'AUC'
     monitor_mode: 'max'
 
 FinalMLP_default: # This is a config template
@@ -124,4 +67,61 @@ FinalMLP_default: # This is a config template
     shuffle: True
     seed: 20222023
     monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+
+DualMLP_test:
+    model: DualMLP
+    dataset_id: tiny_npz
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 1.e-8
+    net_regularizer: 0
+    mlp1_hidden_units: [64, 32]
+    mlp1_hidden_activations: relu
+    mlp1_dropout: 0
+    mlp1_batch_norm: False
+    mlp2_hidden_units: [64, 64, 64]
+    mlp2_hidden_activations: relu
+    mlp2_dropout: 0
+    mlp2_batch_norm: False
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+FinalMLP_test:
+    model: FinalMLP
+    dataset_id: tiny_npz
+    loss: binary_crossentropy
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    mlp1_hidden_units: [64, 32]
+    mlp1_hidden_activations: relu
+    mlp1_dropout: 0
+    mlp1_batch_norm: False
+    mlp2_hidden_units: [64, 64, 64]
+    mlp2_hidden_activations: relu
+    mlp2_dropout: 0
+    mlp2_batch_norm: False
+    use_fs: True
+    fs_hidden_units: [64, 64]
+    fs1_context: ["userid"]
+    fs2_context: ["adgroup_id", "cate_id"]
+    num_heads: 2
+    batch_size: 128
+    embedding_dim: 4
+    epochs: 1
+    shuffle: True
+    seed: 2019
+    monitor: 'AUC'
     monitor_mode: 'max'

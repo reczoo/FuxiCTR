@@ -12,46 +12,54 @@ Base:
     feature_specs: null
     feature_config: null
 
-EulerNet_default: # This is a config template
-    model: EulerNet
+WuKong_default: # This is a config template
+    model: WuKong
     dataset_id: TBD
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
     optimizer: adam
-    shape: [20]
-    net_ex_dropout: 0.0
-    net_im_dropout: 0.0
-    layer_norm: true
     learning_rate: 1.0e-3
     embedding_regularizer: 0
     net_regularizer: 0
     batch_size: 10000
-    embedding_dim: 10
+    embedding_dim: 64
+    num_layers: 8
+    compression_dim: 40
+    fmb_units: [200,200]
+    fmb_dim: 40
+    project_dim: 8
+    dropout_rate: 0.2
+    hidden_activations: relu
+    mlp_hidden_units: [32,32]
     epochs: 100
     shuffle: True
-    seed: 2021
+    seed: 2024
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
 
-EulerNet_test:
-    model: EulerNet
+WuKong_test:
+    model: WuKong
     dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
     optimizer: adam
-    shape: [52]
-    net_ex_dropout: 0.1
-    net_im_dropout: 0.1
-    layer_norm: true
     learning_rate: 1.0e-3
     embedding_regularizer: 0
     net_regularizer: 0
-    batch_size: 10000
-    embedding_dim: 10
+    batch_size: 2048
+    embedding_dim: 64
+    num_layers: 4
+    compression_dim: 32
+    fmb_units: [128,128,128]
+    fmb_dim: 32
+    project_dim: 24
+    dropout_rate: 0.2
+    hidden_activations: relu
+    mlp_hidden_units: [64]
     epochs: 1
     shuffle: True
-    seed: 2021
-    monitor: {'AUC': 1, 'logloss': -1}
+    seed: 2024
+    monitor: 'AUC'
     monitor_mode: 'max'

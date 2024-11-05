@@ -50,6 +50,7 @@ echo "=== Testing PNN ===" && cd $home/PNN && python run_expid.py --expid PNN_te
 echo "=== Testing SAM ===" && cd $home/SAM && python run_expid.py --expid SAM_test && \
 echo "=== Testing TransAct ===" && cd $home/TransAct && python run_expid.py --expid TransAct_test && \
 echo "=== Testing WideDeep ===" && cd $home/WideDeep/WideDeep_torch && python run_expid.py --expid WideDeep_test && \
+echo "=== Testing WuKong ===" && cd $home/WuKong && python run_expid.py --expid WuKong_test && \
 echo "=== Testing xDeepFM ===" && cd $home/xDeepFM && python run_expid.py --expid xDeepFM_test && \
 
 echo "All tests done."
