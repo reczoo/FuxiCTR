@@ -56,6 +56,13 @@
                 </a>
             </td>
             <td align="center">
+                <a href="https://github.com/XiaoLongtaoo">
+                    <img src="https://avatars.githubusercontent.com/u/90383205?v=4" width="80;" alt="XiaoLongtaoo"/>
+                    <br />
+                    <sub><b>XiaoLongtaoo</b></sub>
+                </a>
+            </td>
+            <td align="center">
                 <a href="https://github.com/sdilbaz">
                     <img src="https://avatars.githubusercontent.com/u/24456288?v=4" width="80;" alt="sdilbaz"/>
                     <br />
@@ -83,6 +90,8 @@
                     <sub><b>leesoojin</b></sub>
                 </a>
             </td>
+		</tr>
+		<tr>
             <td align="center">
                 <a href="https://github.com/lu-minous">
                     <img src="https://avatars.githubusercontent.com/u/48793299?v=4" width="80;" alt="lu-minous"/>
@@ -90,8 +99,6 @@
                     <sub><b>lu-minous</b></sub>
                 </a>
             </td>
-		</tr>
-		<tr>
             <td align="center">
                 <a href="https://github.com/rsj123">
                     <img src="https://avatars.githubusercontent.com/u/16500070?v=4" width="80;" alt="rsj123"/>
