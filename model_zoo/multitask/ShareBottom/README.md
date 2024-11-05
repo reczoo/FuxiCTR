@@ -1,18 +1,18 @@
-## Shared-Bottom
+## ShareBottom
 
 | [Overview](#Overview) | [Configuration](#Configuration) | [Implementation](#Implementation) | 
 
 
 ### Overview
 
-Shared-Bottom is the classic multitasking model based on a shared bottom. The model is published in the following paper:
+Share-Bottom is the classic multitasking model based on a Share bottom. The model is published in the following paper:
 
 + Rich Caruana. [Multitask Learning](https://link.springer.com/article/10.1023/A:1007379606734), in Machine learning 1997.
 
 **Model structure:**
 
 <div align="center">
-    <img width="50%" src="https://cdn.jsdelivr.net/gh/xue-pai/FuxiCTR@main/docs/img/SharedBottom.jpg">
+    <img width="50%" src="https://cdn.jsdelivr.net/gh/reczoo/FuxiCTR@main/docs/img/ShareBottom.jpg">
 </div>
 
 This figure comes from the paper of [MMoE (KDD 2018)](https://www.kdd.org/kdd2018/accepted-papers/view/modeling-task-relationships-in-multi-task-learning-with-multi-gate-mixture-).
@@ -33,7 +33,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 
 | Params                 | Type            | Default                   | Description                                                                                                                                                                                                       |
 | ---------------------- | --------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| model                  | str             | "SharedBottom"                     | model name,  which should be same with model class name                                                                                                                                                           |
+| model                  | str             | "ShareBottom"                     | model name,  which should be same with model class name                                                                                                                                                           |
 | dataset_id             | str             | "TBD"                     | dataset_id to be determined                                                                                                                                                                                       |
 | loss                   | list             | ["binary_crossentropy","binary_crossentropy"]     | loss function for each task                                                                                                                                                                                                     |
 | metrics                | list            | ['logloss', 'AUC']        | a list of metrics for evaluation                                                                                                                                                                                  |
@@ -76,7 +76,7 @@ The `model_config.yaml` file contains all the model hyper-parameters as follows.
 │   ├── dataset_config.yaml       # 数据集配置文件
 │   └── model_config.yaml         # 模型配置文件
 ├── src                           # 模型代码文件夹
-│   └── SharedBottom.py           # 模型代码
+│   └── ShareBottom.py           # 模型代码
 ├── fuxictr_version.py            # fuxictr加载及版本检查文件
 ├── README.md                     # 使用说明
 └── run_expid.py                  # 执行脚本文件
@@ -95,6 +95,6 @@ The model is tested with the following dependencies.
 Running the model on the tiny data:
 
 ```
-python run_expid.py --expid SharedBottom_test --gpu 0 
+python run_expid.py --expid ShareBottom_test --gpu 0 
 ```
 

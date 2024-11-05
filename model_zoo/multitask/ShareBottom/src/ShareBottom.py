@@ -22,7 +22,7 @@ from fuxictr.pytorch.models import MultiTaskModel
 from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
-class SharedBottom(MultiTaskModel):
+class ShareBottom(MultiTaskModel):
     def __init__(self,
                  feature_map,
                  model_id="SharedBottom",
@@ -40,7 +40,7 @@ class SharedBottom(MultiTaskModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(SharedBottom, self).__init__(feature_map,
+        super(ShareBottom, self).__init__(feature_map,
                                            task=task,
                                            loss_weight=loss_weight,
                                            num_tasks=num_tasks,
