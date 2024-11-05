@@ -62,7 +62,7 @@ class PretrainedEmbedding(nn.Module):
         if pretrain_usage == "concat":
             self.proj = nn.Linear(pretrain_dim + embedding_dim, embedding_dim, bias=False)
 
-    def reset_parameters(self, embedding_initializer):
+    def init_weights(self, embedding_initializer):
         if self.pretrain_usage in ["sum", "concat"]:
             nn.init.zeros_(self.id_embedding.weight) # set oov token embeddings to zeros
             embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])

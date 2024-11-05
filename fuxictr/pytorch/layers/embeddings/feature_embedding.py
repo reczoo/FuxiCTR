@@ -112,7 +112,7 @@ class FeatureEmbeddingDict(nn.Module):
                                                                       padding_idx=padding_idx)
                 elif feature_spec["type"] == "embedding":
                     self.embedding_layers[feature] = nn.Identity()
-        self.reset_parameters()
+        self.init_weights()
 
     def get_feature_encoder(self, encoder):
         try:
@@ -127,13 +127,13 @@ class FeatureEmbeddingDict(nn.Module):
         except:
             raise ValueError("feature_encoder={} is not supported.".format(encoder))
         
-    def reset_parameters(self):
+    def init_weights(self):
         embedding_initializer = get_initializer(self.embedding_initializer)
         for k, v in self.embedding_layers.items():
             if "share_embedding" in self._feature_map.features[k]:
                 continue
             if type(v) == PretrainedEmbedding: # skip pretrained
-                v.reset_parameters(embedding_initializer)
+                v.init_weights(embedding_initializer)
             elif type(v) == nn.Embedding:
                 if v.padding_idx is not None:
                     embedding_initializer(v.weight[1:, :]) # set padding_idx to zero

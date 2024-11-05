@@ -121,7 +121,7 @@ class FeatureGating(nn.Module):
         assert gate_residual in ["concat", "sum"]
         self.gate_residual = gate_residual
 
-    def reset_custom_params(self):
+    def init_weights(self):
         nn.init.zeros_(self.linear.weight)
         nn.init.ones_(self.linear.bias)
 

@@ -4,7 +4,7 @@ home="$(pwd)/../model_zoo"
 echo "=== Testing AFM ==="  && cd $home/AFM && python run_expid.py --expid AFM_test && \
 echo "=== Testing AFN ===" && cd $home/AFN && python run_expid.py --expid AFN_test && \
 echo "=== Testing AOANet ===" && cd $home/AOANet && python run_expid.py --expid AOANet_test && \
-echo "=== Testing APG ===" && cd $home/APG && python run_expid.py --expid APG_test && \
+echo "=== Testing APG ===" && cd $home/APG && python run_expid.py --expid APG_DeepFM_test && \
 echo "=== Testing AutoInt ===" && cd $home/AutoInt && python run_expid.py --expid AutoInt_test && \
 echo "=== Testing BST ===" && cd $home/BST && python run_expid.py --expid BST_test && \
 echo "=== Testing CCPM ===" && cd $home/CCPM && python run_expid.py --expid CCPM_test && \

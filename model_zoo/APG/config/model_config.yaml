@@ -151,5 +151,3 @@ APG_DCNv2: # This is a config template
     seed: 2019
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
-    
-    

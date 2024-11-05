@@ -33,9 +33,9 @@ class BilinearInteraction(nn.Module):
             self.bilinear_W = nn.Parameter(torch.Tensor(self.interact_dim, embedding_dim, embedding_dim))
         else:
             raise NotImplementedError
-        self.reset_parameters()
+        self.init_weights()
 
-    def reset_parameters(self):
+    def init_weights(self):
         nn.init.xavier_normal_(self.bilinear_W)
 
     def forward(self, feature_emb):
@@ -70,9 +70,9 @@ class BilinearInteractionV2(nn.Module):
         else:
             raise NotImplementedError
         self.triu_index = nn.Parameter(torch.triu_indices(num_fields, num_fields, offset=1), requires_grad=False)
-        self.reset_parameters()
+        self.init_weights()
 
-    def reset_parameters(self):
+    def init_weights(self):
         nn.init.xavier_normal_(self.bilinear_W)
 
     def forward(self, feature_emb):

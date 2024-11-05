@@ -92,18 +92,18 @@ class BaseModel(nn.Module):
         return loss
 
     def reset_parameters(self):
-        def reset_default_params(m):
+        def default_reset_params(m):
             # initialize nn.Linear/nn.Conv1d layers by default
             if type(m) in [nn.Linear, nn.Conv1d]:
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
                     m.bias.data.fill_(0)
-        def reset_custom_params(m):
-            # initialize layers with customized reset_parameters
-            if hasattr(m, 'reset_custom_params'):
-                m.reset_custom_params()
-        self.apply(reset_default_params)
-        self.apply(reset_custom_params)
+        def custom_reset_params(m):
+            # initialize layers with customized init_weights()
+            if hasattr(m, 'init_weights'):
+                m.init_weights()
+        self.apply(default_reset_params)
+        self.apply(custom_reset_params)
 
     def get_inputs(self, inputs, feature_source=None):
         X_dict = dict()

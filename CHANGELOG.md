@@ -4,6 +4,12 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.4, 2024-11-05**
++ [Fix] Fix OOV token update ([#119](https://github.com/reczoo/FuxiCTR/issues/119))
++ [Fix] Speed up parquet dataset reading ([#121](https://github.com/reczoo/FuxiCTR/issues/121))
++ [Fix] Fix add_loss() isue that does not work after renaming to compute_loss() ([#122](https://github.com/reczoo/FuxiCTR/issues/122))
++ [Fix] Rename customized reset_parameters to init_weights ([#123](https://github.com/reczoo/FuxiCTR/issues/123))
+
 **FuxiCTR v2.3.3, 2024-10-14**
 + [Feature] Add EulerNet and DCNv3 models
 + [Feature] Add support to parquet as input, like csv format
