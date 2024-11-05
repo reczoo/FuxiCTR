@@ -41,7 +41,7 @@ class ParquetDataset(Dataset):
             if df[col].dtype != pl.List:
                 array = np.array(df[col])
             else:
-                array = np.array(df[col].to_list())
+                array = df[col].explode().to_numpy().reshape(df.shape[0], -1)
             data_arrays.append(array)
         return np.column_stack(data_arrays)
 

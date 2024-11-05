@@ -35,7 +35,10 @@ class ParquetIterDataPipe(IterDataPipe):
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
         data_arrays = []
         for col in all_cols:
-            array = np.array(df[col].to_list())
+            if df[col].dtype != pl.List:
+                array = np.array(df[col])
+            else:
+                array = df[col].explode().to_numpy().reshape(df.shape[0], -1)
             data_arrays.append(array)
         return np.column_stack(data_arrays)
 
