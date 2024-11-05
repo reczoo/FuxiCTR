@@ -188,9 +188,7 @@ class DMIN(BaseModel):
         attn_mask = attn_mask & causal_mask
         return padding_mask, attn_mask
 
-    def add_loss(self, inputs):
-        y_true = self.get_labels(inputs)
-        return_dict = self.forward(inputs)
+    def add_loss(self, return_dict, y_true):
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.aux_loss_lambda > 0:
             for i in range(len(self.target_field)):

@@ -162,9 +162,7 @@ class DIEN(BaseModel):
         out[non_zero_mask] = h
         return out
 
-    def add_loss(self, inputs):
-        y_true = self.get_labels(inputs)
-        return_dict = self.forward(inputs)
+    def add_loss(self, return_dict, y_true):
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.aux_loss_alpha > 0:
             # padding post required

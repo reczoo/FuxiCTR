@@ -69,10 +69,11 @@ class GDCNP(BaseModel):
         return_dict = {"y_pred": y_pred}
         return return_dict
 
-class GDCNS(BaseModel):
+
+class GDCN(BaseModel):
     def __init__(self, 
                  feature_map,
-                 model_id="GDCNS",
+                 model_id="GDCN",
                  gpu=-1,
                  learning_rate=1e-3,
                  embedding_dim=10,
@@ -84,7 +85,7 @@ class GDCNS(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(GDCNS, self).__init__(feature_map, 
+        super(GDCN, self).__init__(feature_map, 
                                   model_id=model_id, 
                                   gpu=gpu, 
                                   embedding_regularizer=embedding_regularizer, 
@@ -114,6 +115,7 @@ class GDCNS(BaseModel):
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}
         return return_dict
+
 
 class GateCorssLayer(nn.Module):
     #  The core structure： gated corss layer.

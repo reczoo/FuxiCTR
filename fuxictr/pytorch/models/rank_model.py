@@ -65,7 +65,7 @@ class BaseModel(nn.Module):
         self.loss_fn = get_loss(loss)
 
     def regularization_loss(self):
-        reg_term = 0
+        reg_loss = 0
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = get_regularizer(self._embedding_regularizer)
             net_reg = get_regularizer(self._net_regularizer)
@@ -76,16 +76,19 @@ class BaseModel(nn.Module):
                             if type(module) == nn.Embedding:
                                 if self._embedding_regularizer:
                                     for emb_p, emb_lambda in emb_reg:
-                                        reg_term += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
+                                        reg_loss += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
                             else:
                                 if self._net_regularizer:
                                     for net_p, net_lambda in net_reg:
-                                        reg_term += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
-        return reg_term
+                                        reg_loss += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
+        return reg_loss
+
+    def add_loss(self, return_dict, y_true):
+        loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
+        return loss
 
     def compute_loss(self, return_dict, y_true):
-        loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
-        loss += self.regularization_loss()
+        loss = self.add_loss(return_dict, y_true) + self.regularization_loss()
         return loss
 
     def reset_parameters(self):

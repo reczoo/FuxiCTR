@@ -103,9 +103,7 @@ class FinalNet(BaseModel):
         y_pred = self.fc2(block2_out)
         return y_pred
 
-    def add_loss(self, inputs):
-        return_dict = self.forward(inputs)
-        y_true = self.get_labels(inputs)
+    def add_loss(self, return_dict, y_true):
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.block_type == "2B":
             y1 = self.output_activation(return_dict["y1"])

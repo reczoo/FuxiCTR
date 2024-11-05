@@ -65,7 +65,7 @@ class BaseModel(Model):
         loss = self.loss_fn(return_dict["y_pred"], y_true)
         return loss
     
-    def get_total_loss(self, inputs):
+    def compute_loss(self, inputs):
         total_loss = self.add_loss(inputs) + sum(self.losses) # with regularization
         return total_loss
 
@@ -144,7 +144,7 @@ class BaseModel(Model):
     @tf.function
     def train_step(self, batch_data):
         with tf.GradientTape() as tape:
-            loss = self.get_total_loss(batch_data)
+            loss = self.compute_loss(batch_data)
             grads = tape.gradient(loss, self.trainable_variables)
             grads, _ = tf.clip_by_global_norm(grads, self._max_gradient_norm)
             self.optimizer.apply_gradients(zip(grads, self.trainable_variables))

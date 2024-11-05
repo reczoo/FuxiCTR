@@ -35,8 +35,8 @@ GDCNP_test:
     monitor: 'AUC'
     monitor_mode: 'max'
 
-GDCNS_test:
-    model: GDCNS
+GDCN_test:
+    model: GDCN
     dataset_id: tiny_npz
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
@@ -59,7 +59,7 @@ GDCNS_test:
     monitor_mode: 'max'
 
 GDCN_default: # This is a config template
-    model: GDCNP
+    model: GDCN
     dataset_id: TBD
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
@@ -80,4 +80,3 @@ GDCN_default: # This is a config template
     seed: 20222023
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
-

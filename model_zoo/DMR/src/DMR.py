@@ -183,9 +183,7 @@ class DMR(BaseModel):
         return_dict = {"y_pred": y_pred, "aux_loss": aux_loss_sum}
         return return_dict
 
-    def add_loss(self, inputs):
-        y_true = self.get_labels(inputs)
-        return_dict = self.forward(inputs)
+    def add_loss(self, return_dict, y_true):
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.aux_loss_beta > 0:
             # padding post required

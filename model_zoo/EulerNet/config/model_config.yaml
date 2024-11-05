@@ -12,7 +12,7 @@ Base:
     feature_specs: null
     feature_config: null
 
-EulerNet_test: # This is a config template
+EulerNet_test:
     model: EulerNet
     dataset_id: tiny_npz
     loss: 'binary_crossentropy'
@@ -34,7 +34,7 @@ EulerNet_test: # This is a config template
     monitor: {'AUC': 1, 'logloss': -1}
     monitor_mode: 'max'
 
-EulerNet_test: # This is a config template
+EulerNet_default: # This is a config template
     model: EulerNet
     dataset_id: TBD
     loss: 'binary_crossentropy'

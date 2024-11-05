@@ -21,7 +21,7 @@ import torch
 import os, sys
 import logging
 from fuxictr.pytorch.models import BaseModel
-from fuxictr.pytorch.torch_utils import get_device, get_optimizer, get_loss
+from fuxictr.pytorch.torch_utils import get_device, get_optimizer, get_loss, get_regularizer
 from tqdm import tqdm
 from collections import defaultdict
 
@@ -79,14 +79,36 @@ class MultiTaskModel(BaseModel):
              for i in range(len(labels))]
         return y
 
-    def compute_loss(self, return_dict, y_true):
+    def regularization_loss(self):
+        reg_loss = 0
+        if self._embedding_regularizer or self._net_regularizer:
+            emb_reg = get_regularizer(self._embedding_regularizer)
+            net_reg = get_regularizer(self._net_regularizer)
+            for _, module in self.named_modules():
+                for p_name, param in module.named_parameters():
+                    if param.requires_grad:
+                        if p_name in ["weight", "bias"]:
+                            if type(module) == nn.Embedding:
+                                if self._embedding_regularizer:
+                                    for emb_p, emb_lambda in emb_reg:
+                                        reg_loss += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
+                            else:
+                                if self._net_regularizer:
+                                    for net_p, net_lambda in net_reg:
+                                        reg_loss += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
+        return reg_loss
+
+    def add_loss(self, return_dict, y_true):
         labels = self.feature_map.labels
         loss = [self.loss_fn[i](return_dict["{}_pred".format(labels[i])], y_true[i], reduction='mean')
                 for i in range(len(labels))]
         if self.loss_weight == 'EQ':
             # Default: All losses are weighted equally
             loss = torch.sum(torch.stack(loss))
-        loss += self.regularization_loss()
+        return loss
+
+    def compute_loss(self, return_dict, y_true):
+        loss = self.add_loss(return_dict, y_true) + self.regularization_loss()
         return loss
     
     def evaluate(self, data_generator, metrics=None):

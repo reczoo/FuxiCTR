@@ -105,4 +105,4 @@ venv.bak/
 .mypy_cache/
 _build
 checkpoints
-.csv
+*.csv
