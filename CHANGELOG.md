@@ -4,6 +4,9 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.5, 2024-11-06**
++ [Fix] Fix get_inputs() bug ([#115](https://github.com/reczoo/FuxiCTR/issues/115))
+
 **FuxiCTR v2.3.4, 2024-11-05**
 + [Feature] Add WuKong model
 + [Fix] Fix OOV token update ([#119](https://github.com/reczoo/FuxiCTR/issues/119))

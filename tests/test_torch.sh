@@ -53,4 +53,9 @@ echo "=== Testing WideDeep ===" && cd $home/WideDeep/WideDeep_torch && python ru
 echo "=== Testing WuKong ===" && cd $home/WuKong && python run_expid.py --expid WuKong_test && \
 echo "=== Testing xDeepFM ===" && cd $home/xDeepFM && python run_expid.py --expid xDeepFM_test && \
 
+# Multi-task recommendation
+echo "=== Testing ShareBottom ===" && cd $home/multitask/ShareBottom && python run_expid.py --expid ShareBottom_test && \
+echo "=== Testing MMoE ===" && cd $home/multitask/MMoE && python run_expid.py --expid MMoE_test && \
+echo "=== Testing PLE ===" && cd $home/multitask/PLE && python run_expid.py --expid PLE_test && \
+
 echo "All tests done."

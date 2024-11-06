@@ -22,31 +22,38 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class CGC_Layer(nn.Module):
-    def __init__(self, num_shared_experts, num_specific_experts, num_tasks, input_dim, expert_hidden_units, gate_hidden_units, hidden_activations,
+    def __init__(self, num_shared_experts, num_specific_experts, num_tasks, input_dim,
+                 expert_hidden_units, gate_hidden_units, hidden_activations,
                  net_dropout, batch_norm):
         super(CGC_Layer, self).__init__()
         self.num_shared_experts = num_shared_experts 
         self.num_specific_experts = num_specific_experts 
         self.num_tasks = num_tasks 
-        self.shared_experts = nn.ModuleList([MLP_Block(input_dim=input_dim,
-                                                hidden_units=expert_hidden_units,
-                                                hidden_activations=hidden_activations,
-                                                output_activation=None,
-                                                dropout_rates=net_dropout,
-                                                batch_norm=batch_norm) for _ in range(self.num_shared_experts)])
-        self.specific_experts = nn.ModuleList([nn.ModuleList([MLP_Block(input_dim=input_dim,
-                                                hidden_units=expert_hidden_units,
-                                                hidden_activations=hidden_activations,
-                                                output_activation=None,
-                                                dropout_rates=net_dropout,
-                                                batch_norm=batch_norm) for _ in range(self.num_specific_experts)]) for _ in range(num_tasks)])
-        self.gate = nn.ModuleList([MLP_Block(input_dim=input_dim,
-                                             output_dim=num_specific_experts+num_shared_experts if i < num_tasks else num_shared_experts,
-                                             hidden_units=gate_hidden_units,
-                                             hidden_activations=hidden_activations,
-                                             output_activation=None,
-                                             dropout_rates=net_dropout,
-                                             batch_norm=batch_norm) for i in range(self.num_tasks+1)])
+        self.shared_experts = nn.ModuleList(
+            [MLP_Block(input_dim=input_dim,
+             hidden_units=expert_hidden_units,
+             hidden_activations=hidden_activations,
+             output_activation=None,
+             dropout_rates=net_dropout,
+             batch_norm=batch_norm) for _ in range(self.num_shared_experts)]
+        )
+        self.specific_experts = nn.ModuleList(
+            [nn.ModuleList([MLP_Block(input_dim=input_dim,
+             hidden_units=expert_hidden_units,
+             hidden_activations=hidden_activations,
+             output_activation=None,
+             dropout_rates=net_dropout,
+             batch_norm=batch_norm) for _ in range(self.num_specific_experts)]) for _ in range(num_tasks)]
+        )
+        self.gate = nn.ModuleList(
+            [MLP_Block(input_dim=input_dim,
+             output_dim=num_specific_experts+num_shared_experts if i < num_tasks else num_shared_experts,
+             hidden_units=gate_hidden_units,
+             hidden_activations=hidden_activations,
+             output_activation=None,
+             dropout_rates=net_dropout,
+             batch_norm=batch_norm) for i in range(self.num_tasks+1)]
+        )
         self.gate_activation = get_activation('softmax')
     def forward(self, x, require_gate=False):
         """
@@ -69,7 +76,8 @@ class CGC_Layer(nn.Module):
         for i in range(self.num_tasks+1):
             if i < self.num_tasks:
                 # for specific experts
-                gate_input = torch.stack(specific_expert_outputs[i] + shared_expert_outputs, dim=1) # (?, num_specific_experts+num_shared_experts, dim)
+                # gate_input: (?, num_specific_experts+num_shared_experts, dim)
+                gate_input = torch.stack(specific_expert_outputs[i] + shared_expert_outputs, dim=1) 
                 gate = self.gate_activation(self.gate[i](x[i])) # (?, num_specific_experts+num_shared_experts)
                 gates.append(gate.mean(0))
                 cgc_output = torch.sum(gate.unsqueeze(-1) * gate_input, dim=1) # (?, dim)
@@ -85,6 +93,7 @@ class CGC_Layer(nn.Module):
             return cgc_outputs, gates 
         else: 
             return cgc_outputs
+
 
 class PLE(MultiTaskModel):
     def __init__(self,
@@ -117,15 +126,17 @@ class PLE(MultiTaskModel):
                                    **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
         self.num_layers = num_layers
-        self.cgc_layers = nn.ModuleList([CGC_Layer(num_shared_experts,
-                                                   num_specific_experts,
-                                                   num_tasks,
-                                                   input_dim= embedding_dim * feature_map.num_fields if i==0 else expert_hidden_units[-1],
-                                                   expert_hidden_units= expert_hidden_units,
-                                                   gate_hidden_units=gate_hidden_units,
-                                                   hidden_activations=hidden_activations,
-                                                   net_dropout=net_dropout,
-                                                   batch_norm=batch_norm) for i in range(self.num_layers)])
+        self.cgc_layers = nn.ModuleList(
+            [CGC_Layer(num_shared_experts,
+             num_specific_experts,
+             num_tasks,
+             input_dim= embedding_dim * feature_map.num_fields if i==0 else expert_hidden_units[-1],
+             expert_hidden_units= expert_hidden_units,
+             gate_hidden_units=gate_hidden_units,
+             hidden_activations=hidden_activations,
+             net_dropout=net_dropout,
+             batch_norm=batch_norm) for i in range(self.num_layers)]
+        )
         self.tower = nn.ModuleList([MLP_Block(input_dim=expert_hidden_units[-1],
                                               output_dim=1,
                                               hidden_units=tower_hidden_units,

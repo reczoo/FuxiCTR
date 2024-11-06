@@ -44,19 +44,19 @@ class MultiTaskModel(BaseModel):
                  reduce_lr_on_plateau=True,
                  **kwargs):
         super(MultiTaskModel, self).__init__(feature_map=feature_map,
-                                           model_id=model_id,
-                                           task="binary_classification",
-                                           gpu=gpu,
-                                           loss_weight=loss_weight,
-                                           monitor=monitor,
-                                           save_best_only=save_best_only,
-                                           monitor_mode=monitor_mode,
-                                           early_stop_patience=early_stop_patience,
-                                           eval_steps=eval_steps,
-                                           embedding_regularizer=embedding_regularizer,
-                                           net_regularizer=net_regularizer,
-                                           reduce_lr_on_plateau=reduce_lr_on_plateau,
-                                           **kwargs)
+                                             model_id=model_id,
+                                             task="binary_classification",
+                                             gpu=gpu,
+                                             loss_weight=loss_weight,
+                                             monitor=monitor,
+                                             save_best_only=save_best_only,
+                                             monitor_mode=monitor_mode,
+                                             early_stop_patience=early_stop_patience,
+                                             eval_steps=eval_steps,
+                                             embedding_regularizer=embedding_regularizer,
+                                             net_regularizer=net_regularizer,
+                                             reduce_lr_on_plateau=reduce_lr_on_plateau,
+                                             **kwargs)
         self.device = get_device(gpu)
         self.num_tasks = num_tasks
         self.loss_weight = loss_weight
@@ -64,7 +64,9 @@ class MultiTaskModel(BaseModel):
             assert len(task) == num_tasks, "the number of tasks must equal the length of \"task\""
             self.output_activation = nn.ModuleList([self.get_output_activation(str(t)) for t in task])
         else:
-            self.output_activation = nn.ModuleList([self.get_output_activation(task) for _ in range(num_tasks)])
+            self.output_activation = nn.ModuleList(
+                [self.get_output_activation(task) for _ in range(num_tasks)]
+            )
 
     def compile(self, optimizer, loss, lr):
         self.optimizer = get_optimizer(optimizer, self.parameters(), lr)
@@ -74,8 +76,9 @@ class MultiTaskModel(BaseModel):
             self.loss_fn = [get_loss(loss) for _ in range(self.num_tasks)]
 
     def get_labels(self, inputs):
+        """ Override get_labels() to use multiple labels """
         labels = self.feature_map.labels
-        y = [inputs[:, self.feature_map.get_column_index(labels[i])].to(self.device).float().view(-1, 1)
+        y = [inputs[labels[i]].to(self.device).float().view(-1, 1)
              for i in range(len(labels))]
         return y
 
@@ -140,7 +143,7 @@ class MultiTaskModel(BaseModel):
                     val_logs = self.evaluate_metrics(y_true, y_pred, metrics, group_id)
                 else:
                     val_logs = self.evaluate_metrics(y_true, y_pred, self.validation_metrics, group_id)
-                logging.info('[Metrics] [Task: {}] '.format(labels[i]) + ' - '.join(
+                logging.info('[Task: {}][Metrics] '.format(labels[i]) + ' - '.join(
                     '{}: {:.6f}'.format(k, v) for k, v in val_logs.items()))
                 for k, v in val_logs.items():
                     all_val_logs['{}_{}'.format(labels[i], k)] = v

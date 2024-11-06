@@ -20,7 +20,6 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 import sys
 import logging
 import fuxictr_version
-from fuxictr import datasets
 from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
 from fuxictr.features import FeatureMap

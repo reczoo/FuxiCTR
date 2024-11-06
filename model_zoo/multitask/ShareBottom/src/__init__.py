@@ -1,1 +1,1 @@
-from .ShareBottom import *
+from .ShareBottom import ShareBottom

@@ -1,3 +1,4 @@
+### Base: This base setting will be inherited by all the expid configs.
 Base:
     model_root: './checkpoints/'
     num_workers: 3
@@ -12,8 +13,34 @@ Base:
     feature_specs: null
     feature_config: null
 
+### ModelName_default: This is a config template for hyper-tuning use
+ShareBottom_default:
+    model: ShareBottom
+    dataset_id: TBD
+    loss: ['binary_crossentropy', 'binary_crossentropy']
+    metrics: ['logloss', 'AUC']
+    task: ['binary_classification', 'binary_classification']
+    num_tasks: 2
+    optimizer: adam
+    learning_rate: 1.e-3
+    bottom_hidden_units: [512, 256, 128]
+    tower_hidden_units: [128, 64]
+    hidden_activations: relu
+    net_regularizer: 0
+    embedding_regularizer: 1.e-6
+    batch_norm: False
+    net_dropout: 0
+    batch_size: 128
+    embedding_dim: 64
+    epochs: 100
+    shuffle: True
+    seed: 2023
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
+### ModelName_test: This is a config for test only
 ShareBottom_test:
-    model: SharedBottom
+    model: ShareBottom
     dataset_id: tiny_mtl
     loss: ['binary_crossentropy', 'binary_crossentropy']
     metrics: ['logloss', 'AUC']
@@ -29,7 +56,7 @@ ShareBottom_test:
     batch_norm: False
     net_dropout: 0
     batch_size: 128
-    embedding_dim: 128
+    embedding_dim: 64
     epochs: 1
     shuffle: True
     seed: 2023

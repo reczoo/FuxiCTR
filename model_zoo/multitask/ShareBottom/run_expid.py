@@ -27,7 +27,7 @@ from fuxictr.features import FeatureMap
 from fuxictr.pytorch.torch_utils import seed_everything
 from fuxictr.pytorch.dataloaders import RankDataLoader
 from fuxictr.preprocess import FeatureProcessor, build_dataset
-import src as model_zoo
+import src
 import gc
 import argparse
 import os
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     feature_map.load(feature_map_json, params)
     logging.info("Feature specs: " + print_to_json(feature_map.features))
     
-    model_class = getattr(model_zoo, params['model'])
+    model_class = getattr(src, params['model'])
     model = model_class(feature_map, **params)
     model.count_parameters() # print number of parameters used in model
 
@@ -85,4 +85,3 @@ if __name__ == '__main__':
             .format(datetime.now().strftime('%Y%m%d-%H%M%S'), 
                     ' '.join(sys.argv), experiment_id, params['dataset_id'],
                     "N.A.", print_to_list(valid_result), print_to_list(test_result)))
-
