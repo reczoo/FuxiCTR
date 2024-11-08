@@ -7,7 +7,7 @@
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/pytorch-1.10+-blue" style="max-width: 100%;" alt="Pytorch version"></a>
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/badge/tensorflow-2.1+-blue" style="max-width: 100%;" alt="Pytorch version"></a>
 <a href="https://pypi.org/project/fuxictr"><img src="https://img.shields.io/pypi/v/fuxictr.svg" style="max-width: 100%;" alt="Pypi version"></a>
-<a href="https://pepy.tech/project/fuxictr"><img src="https://pepy.tech/badge/fuxictr" style="max-width: 100%;" alt="Downloads"></a>
+<a href="https://pepy.tech/project/fuxictr"><img src="https://static.pepy.tech/badge/fuxictr" style="max-width: 100%;" alt="Downloads"></a>
 <a href="https://github.com/reczoo/FuxiCTR/blob/main/LICENSE"><img src="https://img.shields.io/github/license/reczoo/fuxictr.svg" style="max-width: 100%;" alt="License"></a>
 </div>
 <hr/>
@@ -133,7 +133,7 @@ Please install other required packages via `pip install -r requirements.txt`.
    python run_expid.py --expid DCN_test --gpu 0
 
    # Change `MODEL` according to the target model name
-   cd model_zoo/MODEL_PATH
+   cd model_zoo/MODEL
    python run_expid.py --expid MODEL_test --gpu 0
    ```
 
@@ -161,3 +161,9 @@ If you find our code or benchmarks helpful in your research, please cite the fol
 
 + Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
 + Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
+
+## Discussion
+
+Welcome to join our WeChat group for any question and discussion. If you are interested in research and practice in recommender systems, please reach out via our WeChat group.
+
+![Scan QR code](https://openbenchmark.github.io/BARS/_images/wechat.jpg)

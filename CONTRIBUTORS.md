@@ -1,6 +1,6 @@
 ## Contributors 🤗
 
-<!-- readme: zhujiem,doubleQ2018,Da-Guo,kyriemao,contributors -start -->
+<!-- readme: zhujiem,Da-Guo,LiangcaiSu,doubleQ2018,kyriemao,xpai,contributors -start -->
 <table>
 	<tbody>
 		<tr>
