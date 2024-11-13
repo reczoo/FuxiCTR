@@ -23,7 +23,6 @@ import polars as pl
 from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
-from ..utils import load_pretrain_emb
 
 
 class Tokenizer(object):
@@ -150,3 +149,20 @@ def count_tokens(series, splitter=None):
     else:
         word_counts = series.value_counts()
     return dict(word_counts), max_len
+
+
+def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
+    if type(keys) != list:
+        keys = [keys]
+    if pretrain_path.endswith("h5"):
+        with h5py.File(pretrain_path, 'r') as hf:
+            values = [hf[k][:] for k in keys]
+    elif pretrain_path.endswith("npz"):
+        npz = np.load(pretrain_path)
+        values = [npz[k] for k in keys]
+    elif pretrain_path.endswith("parquet"):
+        df = pd.read_parquet(pretrain_path)
+        values = [df[k].values for k in keys]
+    else:
+        raise ValueError(f"Embedding format not supported: {pretrain_path}")
+    return values[0] if len(values) == 1 else values

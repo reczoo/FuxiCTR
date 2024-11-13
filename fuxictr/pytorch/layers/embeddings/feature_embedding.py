@@ -65,7 +65,7 @@ class FeatureEmbeddingDict(nn.Module):
         self.required_feature_columns = required_feature_columns
         self.not_required_feature_columns = not_required_feature_columns
         self.use_pretrain = use_pretrain
-        self.embedding_initializer = embedding_initializer
+        self.embedding_initializer = get_initializer(embedding_initializer)
         self.embedding_layers = nn.ModuleDict()
         self.feature_encoders = nn.ModuleDict()
         for feature, feature_spec in self._feature_map.features.items():
@@ -104,7 +104,8 @@ class FeatureEmbeddingDict(nn.Module):
                                                                              vocab_path,
                                                                              feat_dim,
                                                                              pretrain_dim,
-                                                                             pretrain_usage)
+                                                                             pretrain_usage,
+                                                                             embedding_initializer)
                     else:
                         padding_idx = feature_spec.get("padding_idx", None)
                         self.embedding_layers[feature] = nn.Embedding(feature_spec["vocab_size"],
@@ -128,17 +129,16 @@ class FeatureEmbeddingDict(nn.Module):
             raise ValueError("feature_encoder={} is not supported.".format(encoder))
         
     def init_weights(self):
-        embedding_initializer = get_initializer(self.embedding_initializer)
         for k, v in self.embedding_layers.items():
             if "share_embedding" in self._feature_map.features[k]:
                 continue
             if type(v) == PretrainedEmbedding: # skip pretrained
-                v.init_weights(embedding_initializer)
+                v.init_weights()
             elif type(v) == nn.Embedding:
                 if v.padding_idx is not None:
-                    embedding_initializer(v.weight[1:, :]) # set padding_idx to zero
+                    self.embedding_initializer(v.weight[1:, :]) # set padding_idx to zero
                 else:
-                    embedding_initializer(v.weight)
+                    self.embedding_initializer(v.weight)
                        
     def is_required(self, feature):
         """ Check whether feature is required for embedding """

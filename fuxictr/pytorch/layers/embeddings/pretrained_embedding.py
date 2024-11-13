@@ -23,7 +23,8 @@ import io
 import json
 import numpy as np
 import logging
-from ....utils import load_pretrain_emb
+from fuxictr.pytorch.torch_utils import get_initializer
+from fuxictr.preprocess.tokenizer import load_pretrain_emb
 
 
 class PretrainedEmbedding(nn.Module):
@@ -34,7 +35,8 @@ class PretrainedEmbedding(nn.Module):
                  vocab_path,
                  embedding_dim,
                  pretrain_dim,
-                 pretrain_usage="init"):
+                 pretrain_usage="init",
+                 embedding_initializer="partial(nn.init.normal_, std=1e-4)"):
         """
         Fusion pretrained embedding with ID embedding
         :param: fusion_type: init/sum/concat
@@ -42,6 +44,7 @@ class PretrainedEmbedding(nn.Module):
         super().__init__()
         assert pretrain_usage in ["init", "sum", "concat"]
         self.pretrain_usage = pretrain_usage
+        self.embedding_initializer = get_initializer(embedding_initializer)
         padding_idx = feature_spec.get("padding_idx", None)
         self.oov_idx = feature_spec["oov_idx"]
         self.freeze_emb = feature_spec["freeze_emb"]
@@ -62,10 +65,10 @@ class PretrainedEmbedding(nn.Module):
         if pretrain_usage == "concat":
             self.proj = nn.Linear(pretrain_dim + embedding_dim, embedding_dim, bias=False)
 
-    def init_weights(self, embedding_initializer):
+    def init_weights(self):
         if self.pretrain_usage in ["sum", "concat"]:
             nn.init.zeros_(self.id_embedding.weight) # set oov token embeddings to zeros
-            embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])
+            self.embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])
 
     def load_feature_vocab(self, vocab_path, feature_name):
         with io.open(vocab_path, "r", encoding="utf-8") as fd:

@@ -113,23 +113,6 @@ class Monitor(object):
         return list(self.kv_pairs.keys())
 
 
-def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
-    if type(keys) != list:
-        keys = [keys]
-    if pretrain_path.endswith("h5"):
-        with h5py.File(pretrain_path, 'r') as hf:
-            values = [hf[k][:] for k in keys]
-    elif pretrain_path.endswith("npz"):
-        npz = np.load(pretrain_path)
-        values = [npz[k] for k in keys]
-    elif pretrain_path.endswith("parquet"):
-        df = pd.read_parquet(pretrain_path)
-        values = [df[k].values for k in keys]
-    else:
-        raise ValueError(f"Embedding format not supported: {pretrain_path}")
-    return values[0] if len(values) == 1 else values
-
-
 def not_in_whitelist(element, whitelist=[]):
     if not whitelist:
         return False
