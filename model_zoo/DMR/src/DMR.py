@@ -249,7 +249,7 @@ class User2ItemNet(nn.Module):
         attn_score = attn_score.view(-1, seq_len) # b x len
         attn_mask = self.get_mask(mask) # 0 for masked positions
         expand_score = attn_score.unsqueeze(1).repeat(1, seq_len, 1) # b x len x len
-        # expand_score = expand_score.masked_fill_(attn_mask.float() == 0, -1.e9) # fill -inf if mask=0
+        expand_score = expand_score.masked_fill_(attn_mask == False, -1.e9) # fill -inf if mask=False
         expand_score = expand_score.softmax(dim=-1)
         user_embs = torch.bmm(expand_score, sequence_emb) # b x len x d
         user_embs = self.W_o(user_embs.reshape(-1, self.model_dim)).reshape(-1, seq_len, self.model_dim)
@@ -264,13 +264,15 @@ class User2ItemNet(nn.Module):
         return rel_u2i, aux_loss
 
     def get_mask(self, mask):
-        """ attn_mask: 0 for masked positions
+        """ attn_mask: B x L, 0 for masked positions
         """
         seq_len = mask.size(1)
-        attn_mask = mask.unsqueeze(1).repeat(1, seq_len, 1).view(-1, seq_len, seq_len)
-        causal_mask = torch.tril(torch.ones(seq_len, seq_len, device=mask.device)).bool() \
-                           .unsqueeze(0).expand_as(attn_mask)
+        attn_mask = mask.unsqueeze(1).repeat(1, seq_len, 1) # B x L x L
+        causal_mask = (torch.tril(torch.ones(seq_len, seq_len, device=mask.device)).bool()
+                       .unsqueeze(0).expand_as(attn_mask))
         attn_mask = attn_mask & causal_mask
+        diag_ones = torch.eye(seq_len, device=mask.device).bool().unsqueeze(0).expand_as(attn_mask)
+        attn_mask = attn_mask | diag_ones
         return attn_mask
 
 

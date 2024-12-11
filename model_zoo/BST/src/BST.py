@@ -136,19 +136,23 @@ class BST(BaseModel):
         return return_dict
 
     def get_mask(self, x):
-        """ padding_mask: 1 for masked positions
-            attn_mask: 1 for masked positions in nn.MultiheadAttention
+        """ padding_mask: B x L, 1 for masked positions
+            attn_mask: (B*H) x L x L, 1 for masked positions in nn.MultiheadAttention
         """
         padding_mask = (x == 0)
-        padding_mask = torch.cat([padding_mask, torch.zeros(x.size(0), 1, dtype=torch.bool, device=x.device)], dim=-1)
+        padding_mask = torch.cat([padding_mask, torch.zeros(x.size(0), 1).bool().to(x.device)],
+                                 dim=-1)
         seq_len = padding_mask.size(1)
-        attn_mask = padding_mask.unsqueeze(1).repeat(1, seq_len * self.num_heads, 1).view(-1, seq_len, seq_len)
-        diag_zeros = (1 - torch.eye(seq_len, device=x.device)).bool().unsqueeze(0).expand_as(attn_mask)
+        attn_mask = padding_mask.unsqueeze(1).repeat(1, seq_len, 1)
+        diag_zeros = ~torch.eye(seq_len, device=x.device).bool().unsqueeze(0).expand_as(attn_mask)
         attn_mask = attn_mask & diag_zeros
         if self.use_causal_mask:
-            causal_mask = torch.triu(torch.ones(seq_len, seq_len, device=x.device), 1).bool() \
-                               .unsqueeze(0).expand_as(attn_mask)
+            causal_mask = (
+                torch.triu(torch.ones(seq_len, seq_len, device=x.device), 1)
+                .bool().unsqueeze(0).expand_as(attn_mask)
+            )
             attn_mask = attn_mask | causal_mask
+        attn_mask = attn_mask.unsqueeze(1).repeat(1, self.num_heads, 1, 1).flatten(end_dim=1)
         return padding_mask, attn_mask
 
     def sequence_pooling(self, transformer_out, mask):

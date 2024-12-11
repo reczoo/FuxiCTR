@@ -122,20 +122,23 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
 
     def forward(self, query, key, value, mask=None):
+        # mask: B x L x L, 0 for masked positions
+        if mask:
+            # Repeat to (B * heads) x L x L
+            mask = mask.unsqueeze(1).repeat(1, self.num_heads, 1, 1).flatten(end_dim=1)
         residual = query
         
         # linear projection
         query = self.W_q(query)
         key = self.W_k(key)
         value = self.W_v(value)
-        
+
         # split by heads
         batch_size = query.size(0)
         query = query.view(batch_size * self.num_heads, -1, self.attention_dim)
         key = key.view(batch_size * self.num_heads, -1, self.attention_dim)
         value = value.view(batch_size * self.num_heads, -1, self.attention_dim)
-        if mask:
-            mask = mask.repeat(self.num_heads, 1, 1)
+
         # scaled dot product attention
         output, attention = self.dot_product_attention(query, key, value, self.scale, mask)
         # concat heads
