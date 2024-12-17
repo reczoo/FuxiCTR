@@ -6,4 +6,4 @@ numpy
 h5py
 tqdm
 pyarrow
-polars
+polars<=1.0.0

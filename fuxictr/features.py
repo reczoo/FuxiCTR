@@ -45,7 +45,7 @@ class FeatureMap(object):
         self.labels = feature_map.get("labels", [])
         self.total_features = feature_map.get("total_features", 0)
         self.input_length = feature_map.get("input_length", 0)
-        self.group_id = feature_map.get("group_id", None)
+        self.group_id = params.get("group_id", None)
         self.default_emb_dim = params.get("embedding_dim", None)
         self.features = OrderedDict((k, v) for x in feature_map["features"] for k, v in x.items())
         self.num_fields = self.get_num_fields()
@@ -74,8 +74,6 @@ class FeatureMap(object):
         feature_map["total_features"] = self.total_features
         feature_map["input_length"] = self.input_length
         feature_map["labels"] = self.labels
-        if self.group_id is not None:
-            feature_map["group_id"] = self.group_id
         feature_map["features"] = [{k: v} for k, v in self.features.items()]
         with open(json_file, "w") as fd:
             json.dump(feature_map, fd, indent=4)

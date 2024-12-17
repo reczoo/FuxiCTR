@@ -122,7 +122,6 @@ class TransAct(BaseModel):
                 else embedding_dim
             )
             transformer_in_dim = seq_emb_dim + target_emb_dim
-            seq_out_dim += (first_k_cols + int(concat_max_pool)) * transformer_in_dim
             self.transformer_encoders.append(
                 TransActTransformer(transformer_in_dim,
                                     dim_feedforward=dim_feedforward,
@@ -134,7 +133,8 @@ class TransAct(BaseModel):
                                     first_k_cols=first_k_cols,
                                     concat_max_pool=concat_max_pool)
             )
-        dcn_in_dim = feature_map.sum_emb_out_dim() + seq_out_dim - seq_emb_dim
+            seq_out_dim += (first_k_cols + int(concat_max_pool)) * transformer_in_dim - seq_emb_dim
+        dcn_in_dim = feature_map.sum_emb_out_dim() + seq_out_dim
         self.crossnet = CrossNetV2(dcn_in_dim, dcn_cross_layers)
         self.parallel_dnn = MLP_Block(input_dim=dcn_in_dim,
                                       output_dim=None, # output hidden layer

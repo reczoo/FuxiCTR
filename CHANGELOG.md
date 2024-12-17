@@ -4,6 +4,11 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.6, 2024-12-28**
++ [Fix] Fix init_weights() for PretrainedEmbedding by modifying embedding_initializer ([#126](https://github.com/reczoo/FuxiCTR/issues/126))
++ [Fix] Fix get_mask issue when num_heads > 1 ([#130](https://github.com/reczoo/FuxiCTR/issues/130))
++ [Fix]  Fix TransAct error when number of sequence features > 2 ([#132](https://github.com/reczoo/FuxiCTR/issues/132))
+
 **FuxiCTR v2.3.5, 2024-11-06**
 + [Fix] Fix get_inputs() bug ([#115](https://github.com/reczoo/FuxiCTR/issues/115))
 
@@ -112,8 +117,8 @@
 ### FuxiCTR v1.2
 
 **FuxiCTR v1.2.2, 2022-07-03**
-+ [Fix] Fix bug in EDCN #29
-+ [Fix] Fix MultiHeadAttention bug #30
++ [Fix] Fix bug in EDCN ([#29](https://github.com/reczoo/FuxiCTR/issues/29))
++ [Fix] Fix MultiHeadAttention bug ([#30](https://github.com/reczoo/FuxiCTR/issues/30))
 
 **FuxiCTR v1.2.1, 2022-06-12**
 + [Fix] Fix layernorm bug in MaskNet
