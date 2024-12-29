@@ -4,6 +4,9 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.7, 2024-12-29**
++ [Fix] Fix regularization_loss() when feature_encoders exist ([#135](https://github.com/reczoo/FuxiCTR/issues/135))
+
 **FuxiCTR v2.3.6, 2024-12-28**
 + [Fix] Fix init_weights() for PretrainedEmbedding by modifying embedding_initializer ([#126](https://github.com/reczoo/FuxiCTR/issues/126))
 + [Fix] Fix get_mask issue when num_heads > 1 ([#130](https://github.com/reczoo/FuxiCTR/issues/130))

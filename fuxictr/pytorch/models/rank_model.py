@@ -21,6 +21,7 @@ import numpy as np
 import torch
 import os, sys
 import logging
+from fuxictr.pytorch.layers import FeatureEmbeddingDict
 from fuxictr.metrics import evaluate_metrics
 from fuxictr.pytorch.torch_utils import get_device, get_optimizer, get_loss, get_regularizer
 from fuxictr.utils import Monitor, not_in_whitelist
@@ -65,23 +66,24 @@ class BaseModel(nn.Module):
         self.loss_fn = get_loss(loss)
 
     def regularization_loss(self):
-        reg_loss = 0
+        reg_term = 0
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = get_regularizer(self._embedding_regularizer)
             net_reg = get_regularizer(self._net_regularizer)
-            for _, module in self.named_modules():
-                for p_name, param in module.named_parameters():
-                    if param.requires_grad:
-                        if p_name in ["weight", "bias"]:
-                            if type(module) == nn.Embedding:
-                                if self._embedding_regularizer:
-                                    for emb_p, emb_lambda in emb_reg:
-                                        reg_loss += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
-                            else:
-                                if self._net_regularizer:
-                                    for net_p, net_lambda in net_reg:
-                                        reg_loss += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
-        return reg_loss
+            emb_params = set()
+            for m_name, module in self.named_modules():
+                if type(module) == FeatureEmbeddingDict:
+                    for p_name, param in module.named_parameters():
+                        if param.requires_grad:
+                            emb_params.add(".".join([m_name, p_name]))
+                            for emb_p, emb_lambda in emb_reg:
+                                reg_term += (emb_lambda / emb_p) * torch.norm(param, emb_p) ** emb_p
+            for name, param in self.named_parameters():
+                if param.requires_grad:
+                    if name not in emb_params:
+                        for net_p, net_lambda in net_reg:
+                            reg_term += (net_lambda / net_p) * torch.norm(param, net_p) ** net_p
+        return reg_term
 
     def add_loss(self, return_dict, y_true):
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
