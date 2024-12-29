@@ -74,7 +74,6 @@ Click-through rate (CTR) prediction is a critical task for various industrial ap
 | 38  | SIGIR'23          | [EulerNet](./model_zoo/EulerNet)               | [EulerNet: Adaptive Feature Interaction Learning via Euler's Formula for CTR Prediction](https://dl.acm.org/doi/10.1145/3539618.3591681) :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/Ethan-TZ/EulerNet/tree/main/%23Code4FuxiCTR%23)         | `torch`       |
 | 39  | CIKM'23           | [GDCN](./model_zoo/GDCN)         | [Towards Deeper, Lighter and Interpretable Cross Network for CTR Prediction](https://dl.acm.org/doi/pdf/10.1145/3583780.3615089) :triangular_flag_on_post:**Microsoft**                                                                                                               |           | `torch`       |
 | 40  | ICML'24          | [WuKong](./model_zoo/WuKong)               | [Wukong: Towards a Scaling Law for Large-Scale Recommendation](https://arxiv.org/abs/2403.02545) :triangular_flag_on_post:**Meta**                                                        |       | `torch`       |
-| 41  | Arxiv'24          | [DCNv3](./model_zoo/DCNv3)               | [DCNv3: Towards Next Generation Deep Cross Network for Click-Through Rate Prediction](https://arxiv.org/abs/2407.13349)                                               | [:arrow_upper_right:](https://github.com/salmon1802/DCNv3/tree/master/checkpoints)       | `torch`       |
 |<tr><th colspan=6 align="center">:open_file_folder: **Behavior Sequence Modeling**</th></tr>|
 | 42  | KDD'18            | [DIN](./model_zoo/DIN)                   | [Deep Interest Network for Click-Through Rate Prediction](https://www.kdd.org/kdd2018/accepted-papers/view/deep-interest-network-for-click-through-rate-prediction) :triangular_flag_on_post:**Alibaba**        |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ranking/ctr/DIN)       | `torch`       |
 | 43  | AAAI'19           | [DIEN](./model_zoo/DIEN)                 | [Deep Interest Evolution Network for Click-Through Rate Prediction](https://arxiv.org/abs/1809.03672) :triangular_flag_on_post:**Alibaba**                                                                      |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ranking/ctr/DIEN)        | `torch`       |
@@ -106,8 +105,8 @@ We have benchmarked FuxiCTR models on a set of open datasets as follows:
 FuxiCTR has the following dependencies:
 
 + python 3.9+
-+ pytorch 1.10+ (required only for torch models)
-+ tensorflow 2.1+ (required only for tensorflow models)
++ pytorch 1.10.0--2.1.2 (if using for torch models)
++ tensorflow 2.1 (if using for tensorflow models)
 
 Please install other required packages via `pip install -r requirements.txt`.
 

@@ -2,4 +2,4 @@
 import sys
 sys.path.append("../")
 import fuxictr
-assert fuxictr.__version__ >= "2.2.0"
+assert fuxictr.__version__ >= "2.3.7"

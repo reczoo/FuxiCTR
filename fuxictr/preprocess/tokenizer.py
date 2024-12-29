@@ -56,9 +56,8 @@ class Tokenizer(object):
         self.build_vocab(word_counts)
 
     def build_vocab(self, word_counts):
-        word_counts = word_counts.items()
         # sort to guarantee the determinism of index order
-        word_counts = sorted(word_counts, key=lambda x: (-x[1], x[0]))
+        word_counts = word_counts.most_common()
         if self._max_features: # keep the most frequent features
             word_counts = word_counts[0:self._max_features]
         words = []
