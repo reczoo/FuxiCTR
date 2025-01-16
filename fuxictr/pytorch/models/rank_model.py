@@ -143,7 +143,7 @@ class BaseModel(nn.Module):
             max_gradient_norm=10., **kwargs):
         self.valid_gen = validation_data
         self._max_gradient_norm = max_gradient_norm
-        self._best_metric = np.Inf if self._monitor_mode == "min" else -np.Inf
+        self._best_metric = np.inf if self._monitor_mode == "min" else -np.inf
         self._stopping_steps = 0
         self._steps_per_epoch = len(data_generator)
         self._stop_training = False
