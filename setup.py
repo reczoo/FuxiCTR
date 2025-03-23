@@ -14,8 +14,8 @@ setuptools.setup(
     url="https://github.com/reczoo/FuxiCTR",
     download_url='https://github.com/reczoo/FuxiCTR/tags',
     packages=setuptools.find_packages(
-        include=["model_zoo*", "model_zoo.*"],  # Explicitly include model_zoo submodule
-        exclude=["__pycache__"]
+        include=["model_zoo", "model_zoo.*"],  # Explicitly include model_zoo submodule
+        exclude=["**/__pycache__"]
     ),
     include_package_data=True,
     python_requires=">=3.6",
