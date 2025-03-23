@@ -14,7 +14,7 @@ setuptools.setup(
     url="https://github.com/reczoo/FuxiCTR",
     download_url='https://github.com/reczoo/FuxiCTR/tags',
     packages=setuptools.find_packages(
-        exclude=["model_zoo", "tests", "data", "docs", "demo"]),
+        exclude=[]),
     include_package_data=True,
     python_requires=">=3.6",
     install_requires=["keras_preprocessing", "pandas", "PyYAML>=5.1", "scikit-learn",
