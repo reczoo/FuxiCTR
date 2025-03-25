@@ -1,0 +1,48 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 3
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    use_features: null
+    feature_specs: null
+    feature_config: null
+
+DIEN_default: # This is a config template
+    model: DIEN
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 16
+    dnn_hidden_units: [1024, 512, 256]
+    dnn_activations: Dice
+    net_dropout: 0
+    gru_type: AUGRU
+    enable_sum_pooling: False
+    attention_type: bilinear_attention
+    attention_hidden_units: [80, 40]
+    attention_activation: "ReLU"
+    attention_dropout: 0
+    use_attention_softmax: True
+    aux_hidden_units: [100, 50]
+    aux_activation: "ReLU"
+    aux_loss_alpha: 0
+    batch_norm: True
+    epochs: 100
+    shuffle: True
+    seed: 20222023
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+    max_len: 50
+    accumulation_steps: 1
+    

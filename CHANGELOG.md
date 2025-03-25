@@ -4,6 +4,10 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
+**FuxiCTR v2.3.8, 2025-3-25**
++ [Fix] speedup data loading for large parquet files ([#140](https://github.com/reczoo/FuxiCTR/issues/140))
++ [Feature] Add ETA/SDIM/SIM/TWIN/MIRRN to LongCTR models
+
 **FuxiCTR v2.3.7, 2024-12-29**
 + [Fix] Fix regularization_loss() when feature_encoders exist ([#135](https://github.com/reczoo/FuxiCTR/issues/135))
 

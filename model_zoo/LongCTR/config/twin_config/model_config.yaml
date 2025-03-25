@@ -1,0 +1,43 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 3
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    use_features: null
+    feature_specs: null
+    feature_config: null
+
+TWIN_default: # This is a config template
+    model: TWIN
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 8192
+    embedding_dim: 4
+    dnn_hidden_units: [64, 32]
+    dnn_activations: relu
+    attention_dim: 64
+    num_heads: 2
+    attention_dropout: 0
+    topk: 50
+    Kc_cross_features: 0
+    short_seq_len: 50
+    net_dropout: 0
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 20222023
+    monitor: 'AUC'
+    monitor_mode: 'max'
+    max_len: 50
+    accumulation_steps: 1

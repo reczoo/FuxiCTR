@@ -1,0 +1,48 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 3
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    use_features: null
+    feature_specs: null
+    feature_config: null
+
+TransAct_default: # This is a config template
+    model: TransAct
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 10000
+    embedding_dim: 64
+    hidden_activations: relu
+    dcn_cross_layers: 3
+    dcn_hidden_units: [1024, 512, 256]
+    mlp_hidden_units: []
+    num_heads: 1
+    transformer_layers: 1
+    transformer_dropout: 0
+    dim_feedforward: 512
+    net_dropout: 0
+    first_k_cols: 1
+    use_time_window_mask: False
+    time_window_ms: 86400000
+    concat_max_pool: True
+    batch_norm: False
+    epochs: 100
+    shuffle: True
+    seed: 20242025
+    monitor: {'AUC': 1, 'logloss': -1}
+    monitor_mode: 'max'
+    max_len: 50
+    accumulation_steps: 1
+    

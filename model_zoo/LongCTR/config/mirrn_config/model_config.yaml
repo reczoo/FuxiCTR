@@ -1,0 +1,50 @@
+Base:
+    model_root: './checkpoints/'
+    num_workers: 4
+    verbose: 1
+    early_stop_patience: 2
+    pickle_feature_encoder: True
+    save_best_only: True
+    eval_steps: null
+    debug_mode: False
+    group_id: null
+    use_features: null
+    feature_specs: null
+    feature_config: null
+
+MIRRN_default: # This is a config template
+    model: MIRRN
+    dataset_id: TBD
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 256
+    embedding_dim: 16
+    # dnn
+    batch_norm: False
+    dnn_hidden_units: [200, 80]
+    dnn_activations: relu
+    net_dropout: 0
+    # target attention
+    attention_dim: 32
+    num_heads: 4
+    use_scale: True
+    attention_dropout: 0.1
+    short_seq_len: 50
+    # eta
+    reuse_hash: True
+    hash_bits: 32
+    topk: 4
+    # training
+    epochs: 1
+    shuffle: True
+    seed: 2024
+    monitor: 'AUC'
+    monitor_mode: 'max'
+    max_len: 50
+    accumulation_steps: 1
+    

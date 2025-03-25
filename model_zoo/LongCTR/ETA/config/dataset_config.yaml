@@ -1,8 +1,0 @@
-### Tiny data for tests only
-tiny_seq:
-    data_root: ../../../data/
-    data_format: npz
-    train_data: ../../../data/tiny_seq/train.npz
-    valid_data: ../../../data/tiny_seq/valid.npz
-    test_data: ../../../data/tiny_seq/test.npz
-

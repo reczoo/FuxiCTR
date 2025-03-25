@@ -1,5 +1,5 @@
 # =========================================================================
-# Copyright (C) 2024. The FuxiCTR Library. All rights reserved.
+# Copyright (C) 2025. FuxiCTR Authors. All rights reserved.
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,26 @@
 # limitations under the License.
 # =========================================================================
 
-from datetime import datetime
-import gc
+
 import argparse
+import os
 import fuxictr_version
 from fuxictr import autotuner 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='../config/tuner_config.yaml', 
-                        help='The config file for para tuning.')
-    parser.add_argument('--tag', type=str, default=None, help='Use the tag to determine which expid to run (e.g. 001 for the first expid).')
-    parser.add_argument('--gpu', nargs='+', default=[-1], help='The list of gpu indexes, -1 for cpu.')
+    parser.add_argument('--config', type=str, default='../config/tuner_config.yaml',
+                        help='The config directory or file path for para tuning.')
+    parser.add_argument('--tag', type=str, default=None, 
+                        help='Use the tag to determine which expid to run, e.g. 001 for the first expid.')
+    parser.add_argument('--gpu', nargs='+', default=[-1], help='The list of gpu devices, -1 for cpu.')
     args = vars(parser.parse_args())
     gpu_list = args['gpu']
     expid_tag = args['tag']
 
     # generate parameter space combinations
-    config_dir = autotuner.enumerate_params(args['config'])
+    if os.path.isdir(args['config']):
+        config_dir = args["config"]
+    else:
+        config_dir = autotuner.enumerate_params(args['config'])
     autotuner.grid_search(config_dir, gpu_list, expid_tag)
-
