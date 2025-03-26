@@ -30,7 +30,7 @@ The `dataset_config` contains the following keys:
   - **splitter**: optional, how to split the sequence feature during preprocessing; the space " " is used by default. 
   - **max_len**: optional, the max length set to pad or truncate the sequence features. If not specified, the max length of all the training samples will be used. 
   - **padding**: optional, "pre" | "post", either pre padding or post padding the sequence. If "pre" is applied, the sequence will be chunked or padded from the left of the sequence.
-  - **na_value**: optional, what value used to fill the missing entries of a field; "" is used by default.
+  - **fill_na**: optional, what value used to fill the missing entries of a field; "" is used by default.
   - **preprocess**': optional, which defines the function to preprocess the feature column. The function needs to be defined as a class method of features.FeatureEncoder. See the example: https://github.com/xue-pai/FuxiCTR/blob/main/fuxictr/datasets/criteo.py#L25
   - **normalizer**: optional, "StandardScaler" | "MinMaxScaler", which is applied for numeric features. 
 + **label_col**: label name, i.e., the column header of the label
