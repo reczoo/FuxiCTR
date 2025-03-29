@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "fuxictr"
+version = "0.1.0"
+description = ""
+authors = ["FuatOgme <fuat.ogme@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+torch = "2.1.2"
+tensorflow = "^2.18"
+numpy = "1.26.4"
+scikit-learn = "0.24.0"
+keras-preprocessing = "^1.1.2"
+pandas = "^2.2.3"
+pyyaml = "^6.0.2"
+h5py = "^3.13.0"
+tqdm = "^4.67.1"
+pyarrow = "^19.0.1"
+polars = "<=1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+
