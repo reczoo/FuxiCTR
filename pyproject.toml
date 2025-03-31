@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "fuxictr"
+name = "fuxictr-fuat"
 version = "0.1.0"
 description = ""
 authors = ["FuatOgme <fuat.ogme@gmail.com>"]
-readme = "README.md"
+#readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -26,3 +26,8 @@ build-backend = "poetry.core.masonry.api"
 
 
 
+[[tool.poetry.packages]]
+include = "fuxictr"
+
+[[tool.poetry.packages]]
+include = "model_zoo"
