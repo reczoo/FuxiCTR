@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fuxictr-fuat"
+name = "fuxictr"
 version = "0.1.0"
 description = ""
 authors = ["FuatOgme <fuat.ogme@gmail.com>"]
