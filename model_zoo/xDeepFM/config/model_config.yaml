@@ -1,59 +1,80 @@
-Base:
-    model_root: './checkpoints/'
-    num_workers: 3
-    verbose: 1
-    early_stop_patience: 2
-    pickle_feature_encoder: True
-    save_best_only: True
-    eval_steps: null
-    debug_mode: False
-    group_id: null
-    use_features: null
-    feature_specs: null
-    feature_config: null
+ xDeepFM_avazu:
+  model: xDeepFM
+  dataset_id: avazu_custom
+  loss: 'binary_crossentropy'
+  metrics: ['logloss', 'AUC']
+  task: binary_classification
+  optimizer: adam
+  learning_rate: 1.0e-3
+  embedding_regularizer: 0
+  net_regularizer: 0
+  batch_size: 10000
+  embedding_dim: 40
+  dnn_hidden_units: [500, 500, 500]
+  cin_hidden_units: [32, 32, 32]
+  hidden_activations: relu
+  net_dropout: 0
+  batch_norm: False
+  epochs: 100
+  shuffle: True
+  seed: 2019
+  monitor: {'AUC': 1, 'logloss': -1}
+  monitor_mode: 'max'
 
-xDeepFM_test:
-    model: xDeepFM
-    dataset_id: tiny_npz
-    loss: 'binary_crossentropy'
-    metrics: ['logloss', 'AUC']
-    task: binary_classification
-    optimizer: adam
-    learning_rate: 1.e-3
-    embedding_regularizer: 1.e-8
-    net_regularizer: 0
-    batch_size: 128
-    embedding_dim: 4
-    dnn_hidden_units: [64, 32]
-    cin_layer_units: [10, 10]
-    hidden_activations: relu
-    net_dropout: 0
-    batch_norm: False
-    epochs: 1
-    shuffle: True
-    seed: 2019
-    monitor: 'AUC'
-    monitor_mode: 'max'
+  label_col:
+    - name: click
+      dtype: int
 
-xDeepFM_default: # This is a config template
-    model: xDeepFM
-    dataset_id: TBD
-    loss: 'binary_crossentropy'
-    metrics: ['logloss', 'AUC']
-    task: binary_classification
-    optimizer: adam
-    learning_rate: 1.0e-3
-    embedding_regularizer: 0
-    net_regularizer: 0
-    batch_size: 10000
-    embedding_dim: 40
-    dnn_hidden_units: [500, 500, 500]
-    cin_hidden_units: [32, 32, 32]
-    hidden_activations: relu
-    net_dropout: 0
-    batch_norm: False
-    epochs: 100
-    shuffle: True
-    seed: 2019
-    monitor: {'AUC': 1, 'logloss': -1}
-    monitor_mode: 'max'
+  use_features:
+    - C1
+    - banner_pos
+    - site_id
+    - site_domain
+    - site_category
+    - app_id
+    - app_domain
+    - app_category
+    - device_id
+    - device_ip
+    - device_model
+    - device_type
+    - device_conn_type
+    - C14
+    - C15
+    - C16
+    - C17
+    - C18
+    - C19
+    - C20
+    - C21
+    - mday
+    - hour
+    - wday
+
+  feature_specs:
+    C1: {type: categorical, dtype: str, active: True}
+    banner_pos: {type: categorical, dtype: str, active: True}
+    site_id: {type: categorical, dtype: str, active: True}
+    site_domain: {type: categorical, dtype: str, active: True}
+    site_category: {type: categorical, dtype: str, active: True}
+    app_id: {type: categorical, dtype: str, active: True}
+    app_domain: {type: categorical, dtype: str, active: True}
+    app_category: {type: categorical, dtype: str, active: True}
+    device_id: {type: categorical, dtype: str, active: True}
+    device_ip: {type: categorical, dtype: str, active: True}
+    device_model: {type: categorical, dtype: str, active: True}
+    device_type: {type: categorical, dtype: str, active: True}
+    device_conn_type: {type: categorical, dtype: str, active: True}
+    C14: {type: categorical, dtype: str, active: True}
+    C15: {type: categorical, dtype: str, active: True}
+    C16: {type: categorical, dtype: str, active: True}
+    C17: {type: categorical, dtype: str, active: True}
+    C18: {type: categorical, dtype: str, active: True}
+    C19: {type: categorical, dtype: str, active: True}
+    C20: {type: categorical, dtype: str, active: True}
+    C21: {type: categorical, dtype: str, active: True}
+    mday: {type: categorical, dtype: str, active: True}
+    hour: {type: categorical, dtype: str, active: True}
+    wday: {type: categorical, dtype: str, active: True}
+
+   

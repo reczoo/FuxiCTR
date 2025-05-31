@@ -1,0 +1,203 @@
+{
+    "dataset_id": "avazu_custom",
+    "num_fields": 24,
+    "total_features": 2325,
+    "input_length": 24,
+    "labels": [
+        "click"
+    ],
+    "features": [
+        {
+            "C1": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 7
+            }
+        },
+        {
+            "banner_pos": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 6
+            }
+        },
+        {
+            "site_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 167
+            }
+        },
+        {
+            "site_domain": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 139
+            }
+        },
+        {
+            "site_category": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 12
+            }
+        },
+        {
+            "app_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 126
+            }
+        },
+        {
+            "app_domain": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 22
+            }
+        },
+        {
+            "app_category": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 12
+            }
+        },
+        {
+            "device_id": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 61
+            }
+        },
+        {
+            "device_ip": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 615
+            }
+        },
+        {
+            "device_model": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 371
+            }
+        },
+        {
+            "device_type": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 6
+            }
+        },
+        {
+            "device_conn_type": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 6
+            }
+        },
+        {
+            "C14": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 348
+            }
+        },
+        {
+            "C15": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 6
+            }
+        },
+        {
+            "C16": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 7
+            }
+        },
+        {
+            "C17": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 187
+            }
+        },
+        {
+            "C18": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 6
+            }
+        },
+        {
+            "C19": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 50
+            }
+        },
+        {
+            "C20": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 76
+            }
+        },
+        {
+            "C21": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 48
+            }
+        },
+        {
+            "mday": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 12
+            }
+        },
+        {
+            "hour": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 26
+            }
+        },
+        {
+            "wday": {
+                "source": "",
+                "type": "categorical",
+                "padding_idx": 0,
+                "vocab_size": 9
+            }
+        }
+    ]
+}

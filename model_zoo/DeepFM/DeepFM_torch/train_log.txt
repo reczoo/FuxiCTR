@@ -1,0 +1,340 @@
+Script started on 2025-05-31 15:28:00+00:00 [TERM="xterm-color" TTY="/dev/pts/0" COLUMNS="-1" LINES="-1"]
+2025-05-31 15:28:05,484 P20766 INFO FuxiCTR version: 2.3.7
+2025-05-31 15:28:05,484 P20766 INFO Params: {
+    "batch_norm": "False",
+    "batch_size": "10000",
+    "data_format": "csv",
+    "data_root": "../../../data/",
+    "dataset_id": "avazu_custom",
+    "embedding_dim": "40",
+    "embedding_regularizer": "0",
+    "epochs": "100",
+    "feature_specs": "{'C1': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'banner_pos': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_domain': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_category': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_domain': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_category': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_ip': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_model': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_type': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_conn_type': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C14': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C15': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C16': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C17': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C18': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C19': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C20': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C21': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'mday': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'hour': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'wday': {'type': 'categorical', 'dtype': 'str', 'active': True}}",
+    "gpu": "-1",
+    "hidden_activations": "relu",
+    "hidden_units": "[300, 300, 300]",
+    "label_col": "[{'name': 'click', 'dtype': 'int'}]",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['logloss', 'AUC']",
+    "model": "DeepFM",
+    "model_id": "DeepFM_avazu",
+    "model_root": "./model_ckpt/",
+    "monitor": "{'AUC': 1, 'logloss': -1}",
+    "monitor_mode": "max",
+    "net_dropout": "0",
+    "net_regularizer": "0",
+    "optimizer": "adam",
+    "seed": "2019",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../../data/avazu_custom/test.csv",
+    "train_data": "../../../data/avazu_custom/train.csv",
+    "use_features": "['C1', 'banner_pos', 'site_id', 'site_domain', 'site_category', 'app_id', 'app_domain', 'app_category', 'device_id', 'device_ip', 'device_model', 'device_type', 'device_conn_type', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'mday', 'hour', 'wday']",
+    "valid_data": "../../../data/avazu_custom/valid.csv",
+    "verbose": "1"
+}
+2025-05-31 15:28:05,487 P20766 INFO Set up feature processor...
+2025-05-31 15:28:05,488 P20766 WARNING Skip rebuilding ../../../data/avazu_custom/feature_map.json. Please delete it manually if rebuilding is required.
+2025-05-31 15:28:05,488 P20766 INFO Load feature_map from json: ../../../data/avazu_custom/feature_map.json
+2025-05-31 15:28:05,491 P20766 INFO Set column index...
+2025-05-31 15:28:05,492 P20766 INFO Feature specs: {
+    "C1": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 7, 'dtype': 'str', 'active': True}",
+    "C14": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 348, 'dtype': 'str', 'active': True}",
+    "C15": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "C16": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 7, 'dtype': 'str', 'active': True}",
+    "C17": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 187, 'dtype': 'str', 'active': True}",
+    "C18": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "C19": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 50, 'dtype': 'str', 'active': True}",
+    "C20": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 76, 'dtype': 'str', 'active': True}",
+    "C21": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 48, 'dtype': 'str', 'active': True}",
+    "app_category": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "app_domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 22, 'dtype': 'str', 'active': True}",
+    "app_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 126, 'dtype': 'str', 'active': True}",
+    "banner_pos": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "device_conn_type": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "device_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 61, 'dtype': 'str', 'active': True}",
+    "device_ip": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 615, 'dtype': 'str', 'active': True}",
+    "device_model": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 371, 'dtype': 'str', 'active': True}",
+    "device_type": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "hour": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 26, 'dtype': 'str', 'active': True}",
+    "mday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "site_category": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "site_domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 139, 'dtype': 'str', 'active': True}",
+    "site_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 167, 'dtype': 'str', 'active': True}",
+    "wday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 9, 'dtype': 'str', 'active': True}"
+}
+2025-05-31 15:28:07,019 P20766 INFO Total number of parameters: 564527.
+2025-05-31 15:28:07,020 P20766 INFO Loading datasets...
+2025-05-31 15:28:07,033 P20766 INFO Train samples: total/1000, blocks/1
+2025-05-31 15:28:07,040 P20766 INFO Validation samples: total/1000, blocks/1
+2025-05-31 15:28:07,041 P20766 INFO Loading train and validation data done.
+2025-05-31 15:28:07,041 P20766 INFO Start training: 1 batches/epoch
+2025-05-31 15:28:07,041 P20766 INFO ************ Epoch=1 start ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:07,210 P20766 INFO Train loss: 0.693346
+2025-05-31 15:28:07,211 P20766 INFO Evaluation @epoch 1 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.47it/s]
+2025-05-31 15:28:07,310 P20766 INFO [Metrics] AUC: 0.473468 - logloss: 0.680294
+2025-05-31 15:28:07,311 P20766 INFO Save best model: monitor(max)=-0.206826
+
+100% 1/1 [00:00<00:00,  3.42it/s]
+100% 1/1 [00:00<00:00,  3.22it/s]
+2025-05-31 15:28:07,354 P20766 INFO ************ Epoch=1 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:07,506 P20766 INFO Train loss: 0.679209
+2025-05-31 15:28:07,506 P20766 INFO Evaluation @epoch 2 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00,  9.49it/s]
+2025-05-31 15:28:07,621 P20766 INFO [Metrics] AUC: 0.485893 - logloss: 0.662932
+2025-05-31 15:28:07,622 P20766 INFO Save best model: monitor(max)=-0.177039
+
+100% 1/1 [00:00<00:00,  3.46it/s]
+100% 1/1 [00:00<00:00,  3.25it/s]
+2025-05-31 15:28:07,664 P20766 INFO ************ Epoch=2 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:07,819 P20766 INFO Train loss: 0.660279
+2025-05-31 15:28:07,819 P20766 INFO Evaluation @epoch 3 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.06it/s]
+2025-05-31 15:28:07,920 P20766 INFO [Metrics] AUC: 0.490966 - logloss: 0.641956
+2025-05-31 15:28:07,920 P20766 INFO Save best model: monitor(max)=-0.150990
+
+100% 1/1 [00:00<00:00,  3.59it/s]
+100% 1/1 [00:00<00:00,  3.35it/s]
+2025-05-31 15:28:07,965 P20766 INFO ************ Epoch=3 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:08,125 P20766 INFO Train loss: 0.637297
+2025-05-31 15:28:08,126 P20766 INFO Evaluation @epoch 4 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.88it/s]
+2025-05-31 15:28:08,228 P20766 INFO [Metrics] AUC: 0.493417 - logloss: 0.616207
+2025-05-31 15:28:08,229 P20766 INFO Save best model: monitor(max)=-0.122791
+
+100% 1/1 [00:00<00:00,  3.44it/s]
+100% 1/1 [00:00<00:00,  3.13it/s]
+2025-05-31 15:28:08,286 P20766 INFO ************ Epoch=4 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:08,443 P20766 INFO Train loss: 0.608855
+2025-05-31 15:28:08,444 P20766 INFO Evaluation @epoch 5 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.91it/s]
+2025-05-31 15:28:08,545 P20766 INFO [Metrics] AUC: 0.496993 - logloss: 0.584939
+2025-05-31 15:28:08,545 P20766 INFO Save best model: monitor(max)=-0.087946
+
+100% 1/1 [00:00<00:00,  3.46it/s]
+100% 1/1 [00:00<00:00,  3.17it/s]
+2025-05-31 15:28:08,604 P20766 INFO ************ Epoch=5 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:08,768 P20766 INFO Train loss: 0.573971
+2025-05-31 15:28:08,768 P20766 INFO Evaluation @epoch 6 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.35it/s]
+2025-05-31 15:28:08,865 P20766 INFO [Metrics] AUC: 0.503450 - logloss: 0.548697
+2025-05-31 15:28:08,866 P20766 INFO Save best model: monitor(max)=-0.045247
+
+100% 1/1 [00:00<00:00,  3.48it/s]
+100% 1/1 [00:00<00:00,  3.27it/s]
+2025-05-31 15:28:08,911 P20766 INFO ************ Epoch=6 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:09,072 P20766 INFO Train loss: 0.532955
+2025-05-31 15:28:09,073 P20766 INFO Evaluation @epoch 7 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.40it/s]
+2025-05-31 15:28:09,171 P20766 INFO [Metrics] AUC: 0.511248 - logloss: 0.510495
+2025-05-31 15:28:09,172 P20766 INFO Save best model: monitor(max)=0.000753
+
+100% 1/1 [00:00<00:00,  3.52it/s]
+100% 1/1 [00:00<00:00,  3.29it/s]
+2025-05-31 15:28:09,217 P20766 INFO ************ Epoch=7 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:09,376 P20766 INFO Train loss: 0.488614
+2025-05-31 15:28:09,376 P20766 INFO Evaluation @epoch 8 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.40it/s]
+2025-05-31 15:28:09,474 P20766 INFO [Metrics] AUC: 0.523684 - logloss: 0.478166
+2025-05-31 15:28:09,475 P20766 INFO Save best model: monitor(max)=0.045517
+
+100% 1/1 [00:00<00:00,  3.52it/s]
+100% 1/1 [00:00<00:00,  3.30it/s]
+2025-05-31 15:28:09,521 P20766 INFO ************ Epoch=8 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:09,694 P20766 INFO Train loss: 0.448459
+2025-05-31 15:28:09,694 P20766 INFO Evaluation @epoch 9 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.81it/s]
+2025-05-31 15:28:09,796 P20766 INFO [Metrics] AUC: 0.538841 - logloss: 0.465034
+2025-05-31 15:28:09,797 P20766 INFO Save best model: monitor(max)=0.073807
+
+100% 1/1 [00:00<00:00,  3.33it/s]
+100% 1/1 [00:00<00:00,  3.13it/s]
+2025-05-31 15:28:09,842 P20766 INFO ************ Epoch=9 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:10,002 P20766 INFO Train loss: 0.425646
+2025-05-31 15:28:10,003 P20766 INFO Evaluation @epoch 10 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.88it/s]
+2025-05-31 15:28:10,104 P20766 INFO [Metrics] AUC: 0.569369 - logloss: 0.480800
+2025-05-31 15:28:10,105 P20766 INFO Save best model: monitor(max)=0.088569
+
+100% 1/1 [00:00<00:00,  3.49it/s]
+100% 1/1 [00:00<00:00,  3.27it/s]
+2025-05-31 15:28:10,151 P20766 INFO ************ Epoch=10 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:10,312 P20766 INFO Train loss: 0.429402
+2025-05-31 15:28:10,313 P20766 INFO Evaluation @epoch 11 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+
+100% 1/1 [00:00<00:00,  9.60it/s][A
+100% 1/1 [00:00<00:00,  7.74it/s]
+2025-05-31 15:28:10,454 P20766 INFO [Metrics] AUC: 0.595290 - logloss: 0.502110
+2025-05-31 15:28:10,455 P20766 INFO Save best model: monitor(max)=0.093180
+
+100% 1/1 [00:00<00:00,  3.01it/s]
+100% 1/1 [00:00<00:00,  2.80it/s]
+2025-05-31 15:28:10,509 P20766 INFO ************ Epoch=11 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:10,681 P20766 INFO Train loss: 0.437274
+2025-05-31 15:28:10,682 P20766 INFO Evaluation @epoch 12 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.03it/s]
+2025-05-31 15:28:10,781 P20766 INFO [Metrics] AUC: 0.612020 - logloss: 0.503860
+2025-05-31 15:28:10,782 P20766 INFO Save best model: monitor(max)=0.108159
+
+100% 1/1 [00:00<00:00,  3.37it/s]
+100% 1/1 [00:00<00:00,  3.17it/s]
+2025-05-31 15:28:10,826 P20766 INFO ************ Epoch=12 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:10,986 P20766 INFO Train loss: 0.426047
+2025-05-31 15:28:10,987 P20766 INFO Evaluation @epoch 13 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.20it/s]
+2025-05-31 15:28:11,085 P20766 INFO [Metrics] AUC: 0.622015 - logloss: 0.489977
+2025-05-31 15:28:11,086 P20766 INFO Save best model: monitor(max)=0.132038
+
+100% 1/1 [00:00<00:00,  3.51it/s]
+100% 1/1 [00:00<00:00,  3.27it/s]
+2025-05-31 15:28:11,133 P20766 INFO ************ Epoch=13 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:11,295 P20766 INFO Train loss: 0.399976
+2025-05-31 15:28:11,296 P20766 INFO Evaluation @epoch 14 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.57it/s]
+2025-05-31 15:28:11,400 P20766 INFO [Metrics] AUC: 0.628804 - logloss: 0.471905
+2025-05-31 15:28:11,401 P20766 INFO Save best model: monitor(max)=0.156899
+
+100% 1/1 [00:00<00:00,  3.42it/s]
+100% 1/1 [00:00<00:00,  3.20it/s]
+2025-05-31 15:28:11,448 P20766 INFO ************ Epoch=14 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:11,609 P20766 INFO Train loss: 0.370128
+2025-05-31 15:28:11,610 P20766 INFO Evaluation @epoch 15 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00,  9.54it/s]
+2025-05-31 15:28:11,726 P20766 INFO [Metrics] AUC: 0.632538 - logloss: 0.458104
+2025-05-31 15:28:11,727 P20766 INFO Save best model: monitor(max)=0.174434
+
+100% 1/1 [00:00<00:00,  3.30it/s]
+100% 1/1 [00:00<00:00,  3.09it/s]
+2025-05-31 15:28:11,773 P20766 INFO ************ Epoch=15 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:11,932 P20766 INFO Train loss: 0.344282
+2025-05-31 15:28:11,932 P20766 INFO Evaluation @epoch 16 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 11.01it/s]
+2025-05-31 15:28:12,032 P20766 INFO [Metrics] AUC: 0.634337 - logloss: 0.451421
+2025-05-31 15:28:12,033 P20766 INFO Save best model: monitor(max)=0.182916
+
+100% 1/1 [00:00<00:00,  3.04it/s]
+100% 1/1 [00:00<00:00,  2.86it/s]
+2025-05-31 15:28:12,125 P20766 INFO ************ Epoch=16 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:12,291 P20766 INFO Train loss: 0.324989
+2025-05-31 15:28:12,292 P20766 INFO Evaluation @epoch 17 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.71it/s]
+2025-05-31 15:28:12,399 P20766 INFO [Metrics] AUC: 0.635463 - logloss: 0.450293
+2025-05-31 15:28:12,399 P20766 INFO Save best model: monitor(max)=0.185170
+
+100% 1/1 [00:00<00:00,  3.35it/s]
+100% 1/1 [00:00<00:00,  3.14it/s]
+2025-05-31 15:28:12,445 P20766 INFO ************ Epoch=17 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:12,602 P20766 INFO Train loss: 0.310479
+2025-05-31 15:28:12,602 P20766 INFO Evaluation @epoch 18 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00,  9.78it/s]
+2025-05-31 15:28:12,714 P20766 INFO [Metrics] AUC: 0.635909 - logloss: 0.451492
+2025-05-31 15:28:12,715 P20766 INFO Monitor(max)=0.184417 STOP!
+2025-05-31 15:28:12,715 P20766 INFO Reduce learning rate on plateau: 0.000100
+
+100% 1/1 [00:00<00:00,  3.70it/s]
+100% 1/1 [00:00<00:00,  3.26it/s]
+2025-05-31 15:28:12,753 P20766 INFO ************ Epoch=18 end ************
+
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:28:12,916 P20766 INFO Train loss: 0.296935
+2025-05-31 15:28:12,917 P20766 INFO Evaluation @epoch 19 - batch 1: 
+
+
+  0% 0/1 [00:00<?, ?it/s][A
+100% 1/1 [00:00<00:00, 10.77it/s]
+2025-05-31 15:28:13,019 P20766 INFO [Metrics] AUC: 0.635998 - logloss: 0.451574
+2025-05-31 15:28:13,020 P20766 INFO Monitor(max)=0.184424 STOP!
+2025-05-31 15:28:13,020 P20766 INFO Reduce learning rate on plateau: 0.000010
+2025-05-31 15:28:13,021 P20766 INFO ********* Epoch=19 early stop *********
+
+  0% 0/1 [00:00<?, ?it/s]
+2025-05-31 15:28:13,042 P20766 INFO Training finished.
+2025-05-31 15:28:13,043 P20766 INFO Load best model: /content/drive/MyDrive/FuxiCTR/model_zoo/DeepFM/DeepFM_torch/model_ckpt/avazu_custom/DeepFM_avazu.model
+2025-05-31 15:28:13,067 P20766 INFO ****** Validation evaluation ******
+
+  0% 0/1 [00:00<?, ?it/s]
+100% 1/1 [00:00<00:00, 10.94it/s]
+2025-05-31 15:28:13,165 P20766 INFO [Metrics] logloss: 0.450293 - AUC: 0.635463
+2025-05-31 15:28:13,338 P20766 INFO ******** Test evaluation ********
+2025-05-31 15:28:13,339 P20766 INFO Loading datasets...
+2025-05-31 15:28:13,349 P20766 INFO Test samples: total/1000, blocks/1
+2025-05-31 15:28:13,349 P20766 INFO Loading test data done.
+
+  0% 0/1 [00:00<?, ?it/s]
+100% 1/1 [00:00<00:00, 10.41it/s]
+2025-05-31 15:28:13,452 P20766 INFO [Metrics] logloss: 0.464558 - AUC: 0.637765
+
+Script done on 2025-05-31 15:28:14+00:00 [COMMAND_EXIT_CODE="0"]

@@ -1,7 +1,14 @@
 ### Tiny data for tests only
-tiny_npz:
+# tiny_npz:
+#     data_root: ../../data/
+#     data_format: npz
+#     train_data: ../../data/tiny_npz/train.npz
+#     valid_data: ../../data/tiny_npz/valid.npz
+#     test_data: ../../data/tiny_npz/test.npz
+avazu_custom:
     data_root: ../../data/
-    data_format: npz
-    train_data: ../../data/tiny_npz/train.npz
-    valid_data: ../../data/tiny_npz/valid.npz
-    test_data: ../../data/tiny_npz/test.npz
+    data_format: csv
+    train_data: ../../data/avazu_custom/train.csv
+    valid_data: ../../data/avazu_custom/valid.csv
+    test_data: ../../data/avazu_custom/test.csv
+    

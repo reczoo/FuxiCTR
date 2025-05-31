@@ -1,0 +1,101 @@
+Script started on 2025-06-01 15:49:17+00:00 [TERM="xterm-color" TTY="/dev/pts/0" COLUMNS="-1" LINES="-1"]
+2025-06-01 15:49:21,865 P37736 INFO FuxiCTR version: 2.3.7
+2025-06-01 15:49:21,866 P37736 INFO Params: {
+    "attention_dropout": "0",
+    "attention_hidden_activations": "Dice",
+    "attention_hidden_units": "[64]",
+    "attention_output_activation": "None",
+    "batch_norm": "False",
+    "batch_size": "10000",
+    "data_format": "csv",
+    "data_root": "../../data/",
+    "dataset_id": "avazu_custom",
+    "din_sequence_field": "click_history",
+    "din_target_field": "item_id",
+    "din_use_softmax": "False",
+    "dnn_activations": "relu",
+    "dnn_hidden_units": "[500, 500, 500]",
+    "embedding_dim": "40",
+    "embedding_regularizer": "0",
+    "epochs": "100",
+    "feature_specs": "{'C1': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'banner_pos': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_domain': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_category': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_domain': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_category': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_ip': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_model': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_type': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_conn_type': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C14': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C15': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C16': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C17': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C18': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C19': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C20': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C21': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'mday': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'hour': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'wday': {'type': 'categorical', 'dtype': 'str', 'active': True}}",
+    "gpu": "-1",
+    "label_col": "[{'name': 'click', 'dtype': 'int'}]",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['logloss', 'AUC']",
+    "model": "DIN",
+    "model_id": "DIN_avazu",
+    "model_root": "./model_ckpt/",
+    "monitor": "{'AUC': 1, 'logloss': -1}",
+    "monitor_mode": "max",
+    "net_dropout": "0",
+    "net_regularizer": "0",
+    "optimizer": "adam",
+    "seed": "2019",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../data/avazu_custom/test.csv",
+    "train_data": "../../data/avazu_custom/train.csv",
+    "use_features": "['C1', 'banner_pos', 'site_id', 'site_domain', 'site_category', 'app_id', 'app_domain', 'app_category', 'device_id', 'device_ip', 'device_model', 'device_type', 'device_conn_type', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'mday', 'hour', 'wday']",
+    "valid_data": "../../data/avazu_custom/valid.csv",
+    "verbose": "1"
+}
+2025-06-01 15:49:21,868 P37736 INFO Set up feature processor...
+2025-06-01 15:49:21,869 P37736 WARNING Skip rebuilding ../../data/avazu_custom/feature_map.json. Please delete it manually if rebuilding is required.
+2025-06-01 15:49:21,870 P37736 INFO Load feature_map from json: ../../data/avazu_custom/feature_map.json
+2025-06-01 15:49:21,876 P37736 INFO Set column index...
+2025-06-01 15:49:21,876 P37736 INFO Feature specs: {
+    "C1": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 7, 'dtype': 'str', 'active': True}",
+    "C14": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 348, 'dtype': 'str', 'active': True}",
+    "C15": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "C16": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 7, 'dtype': 'str', 'active': True}",
+    "C17": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 187, 'dtype': 'str', 'active': True}",
+    "C18": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "C19": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 50, 'dtype': 'str', 'active': True}",
+    "C20": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 76, 'dtype': 'str', 'active': True}",
+    "C21": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 48, 'dtype': 'str', 'active': True}",
+    "app_category": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "app_domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 22, 'dtype': 'str', 'active': True}",
+    "app_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 126, 'dtype': 'str', 'active': True}",
+    "banner_pos": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "device_conn_type": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "device_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 61, 'dtype': 'str', 'active': True}",
+    "device_ip": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 615, 'dtype': 'str', 'active': True}",
+    "device_model": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 371, 'dtype': 'str', 'active': True}",
+    "device_type": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "hour": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 26, 'dtype': 'str', 'active': True}",
+    "mday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "site_category": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "site_domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 139, 'dtype': 'str', 'active': True}",
+    "site_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 167, 'dtype': 'str', 'active': True}",
+    "wday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 9, 'dtype': 'str', 'active': True}"
+}
+2025-06-01 15:49:24,036 P37736 INFO Total number of parameters: 1085434.
+2025-06-01 15:49:24,037 P37736 INFO Loading datasets...
+2025-06-01 15:49:24,052 P37736 INFO Train samples: total/1000, blocks/1
+2025-06-01 15:49:24,060 P37736 INFO Validation samples: total/1000, blocks/1
+2025-06-01 15:49:24,061 P37736 INFO Loading train and validation data done.
+2025-06-01 15:49:24,061 P37736 INFO Start training: 1 batches/epoch
+2025-06-01 15:49:24,061 P37736 INFO ************ Epoch=1 start ************
+  0% 0/1 [00:00<?, ?it/s]  0% 0/1 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "/content/drive/My Drive/FuxiCTR/model_zoo/DIN/run_expid.py", line 109, in <module>
+    model.fit(train_gen, validation_data=valid_gen, **params)
+  File "/usr/local/lib/python3.11/dist-packages/fuxictr/pytorch/models/rank_model.py", line 160, in fit
+    self.train_epoch(data_generator)
+  File "/usr/local/lib/python3.11/dist-packages/fuxictr/pytorch/models/rank_model.py", line 218, in train_epoch
+    loss = self.train_step(batch_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/fuxictr/pytorch/models/rank_model.py", line 199, in train_step
+    return_dict = self.forward(batch_data)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/My Drive/FuxiCTR/model_zoo/DIN/src/DIN.py", line 91, in forward
+    target_emb = self.get_embedding(target_field, feature_emb_dict)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/drive/My Drive/FuxiCTR/model_zoo/DIN/src/DIN.py", line 109, in get_embedding
+    return feature_emb_dict[field]
+           ~~~~~~~~~~~~~~~~^^^^^^^
+KeyError: 'item_id'
+
+Script done on 2025-06-01 15:49:25+00:00 [COMMAND_EXIT_CODE="1"]

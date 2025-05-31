@@ -1,0 +1,107 @@
+Script started on 2025-05-31 15:11:38+00:00 [TERM="xterm-color" TTY="/dev/pts/0" COLUMNS="-1" LINES="-1"]
+2025-05-31 15:11:45,000 P16402 INFO FuxiCTR version: 2.3.7
+2025-05-31 15:11:45,002 P16402 INFO Params: {
+    "batch_size": "10000",
+    "data_format": "csv",
+    "data_root": "../../data/",
+    "dataset_id": "avazu_custom",
+    "embedding_dim": "10",
+    "epochs": "100",
+    "feature_specs": "{'C1': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'banner_pos': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_domain': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'site_category': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_domain': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'app_category': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_id': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_ip': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_model': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_type': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'device_conn_type': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C14': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C15': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C16': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C17': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C18': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C19': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C20': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'C21': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'mday': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'hour': {'type': 'categorical', 'dtype': 'str', 'active': True}, 'wday': {'type': 'categorical', 'dtype': 'str', 'active': True}}",
+    "gpu": "-1",
+    "label_col": "[{'name': 'click', 'dtype': 'int'}]",
+    "learning_rate": "0.001",
+    "loss": "binary_crossentropy",
+    "metrics": "['logloss', 'AUC']",
+    "model": "FM",
+    "model_id": "FM_avazu",
+    "model_root": "./model_ckpt/",
+    "monitor": "{'AUC': 1, 'logloss': -1}",
+    "monitor_mode": "max",
+    "optimizer": "adam",
+    "regularizer": "0",
+    "seed": "2019",
+    "shuffle": "True",
+    "task": "binary_classification",
+    "test_data": "../../data/avazu_custom/test.csv",
+    "train_data": "../../data/avazu_custom/train.csv",
+    "use_features": "['C1', 'banner_pos', 'site_id', 'site_domain', 'site_category', 'app_id', 'app_domain', 'app_category', 'device_id', 'device_ip', 'device_model', 'device_type', 'device_conn_type', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'mday', 'hour', 'wday']",
+    "valid_data": "../../data/avazu_custom/valid.csv",
+    "verbose": "1"
+}
+2025-05-31 15:11:45,006 P16402 INFO Set up feature processor...
+2025-05-31 15:11:45,007 P16402 WARNING Skip rebuilding ../../data/avazu_custom/feature_map.json. Please delete it manually if rebuilding is required.
+2025-05-31 15:11:45,007 P16402 INFO Load feature_map from json: ../../data/avazu_custom/feature_map.json
+2025-05-31 15:11:45,009 P16402 INFO Set column index...
+2025-05-31 15:11:45,010 P16402 INFO Feature specs: {
+    "C1": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 7, 'dtype': 'str', 'active': True}",
+    "C14": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 348, 'dtype': 'str', 'active': True}",
+    "C15": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "C16": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 7, 'dtype': 'str', 'active': True}",
+    "C17": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 187, 'dtype': 'str', 'active': True}",
+    "C18": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "C19": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 50, 'dtype': 'str', 'active': True}",
+    "C20": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 76, 'dtype': 'str', 'active': True}",
+    "C21": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 48, 'dtype': 'str', 'active': True}",
+    "app_category": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "app_domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 22, 'dtype': 'str', 'active': True}",
+    "app_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 126, 'dtype': 'str', 'active': True}",
+    "banner_pos": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "device_conn_type": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "device_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 61, 'dtype': 'str', 'active': True}",
+    "device_ip": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 615, 'dtype': 'str', 'active': True}",
+    "device_model": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 371, 'dtype': 'str', 'active': True}",
+    "device_type": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 6, 'dtype': 'str', 'active': True}",
+    "hour": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 26, 'dtype': 'str', 'active': True}",
+    "mday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "site_category": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 12, 'dtype': 'str', 'active': True}",
+    "site_domain": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 139, 'dtype': 'str', 'active': True}",
+    "site_id": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 167, 'dtype': 'str', 'active': True}",
+    "wday": "{'source': '', 'type': 'categorical', 'padding_idx': 0, 'vocab_size': 9, 'dtype': 'str', 'active': True}"
+}
+2025-05-31 15:11:47,378 P16402 INFO Total number of parameters: 25576.
+2025-05-31 15:11:47,378 P16402 INFO Loading datasets...
+2025-05-31 15:11:47,393 P16402 INFO Train samples: total/1000, blocks/1
+2025-05-31 15:11:47,400 P16402 INFO Validation samples: total/1000, blocks/1
+2025-05-31 15:11:47,401 P16402 INFO Loading train and validation data done.
+2025-05-31 15:11:47,401 P16402 INFO Start training: 1 batches/epoch
+2025-05-31 15:11:47,401 P16402 INFO ************ Epoch=1 start ************
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:11:47,522 P16402 INFO Train loss: 0.693080
+2025-05-31 15:11:47,523 P16402 INFO Evaluation @epoch 1 - batch 1: 
+
+  0% 0/1 [00:00<?, ?it/s][A100% 1/1 [00:00<00:00, 10.94it/s]
+2025-05-31 15:11:47,632 P16402 INFO [Metrics] AUC: 0.507901 - logloss: 0.686170
+2025-05-31 15:11:47,633 P16402 INFO Save best model: monitor(max)=-0.178268
+100% 1/1 [00:00<00:00,  4.09it/s]100% 1/1 [00:00<00:00,  3.82it/s]
+2025-05-31 15:11:47,666 P16402 INFO ************ Epoch=1 end ************
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:11:47,731 P16402 INFO Train loss: 0.685215
+2025-05-31 15:11:47,731 P16402 INFO Evaluation @epoch 2 - batch 1: 
+
+  0% 0/1 [00:00<?, ?it/s][A100% 1/1 [00:00<00:00, 17.48it/s]
+2025-05-31 15:11:47,798 P16402 INFO [Metrics] AUC: 0.499018 - logloss: 0.678598
+2025-05-31 15:11:47,799 P16402 INFO Monitor(max)=-0.179580 STOP!
+2025-05-31 15:11:47,799 P16402 INFO Reduce learning rate on plateau: 0.000100
+100% 1/1 [00:00<00:00,  7.54it/s]100% 1/1 [00:00<00:00,  6.65it/s]
+2025-05-31 15:11:47,818 P16402 INFO ************ Epoch=2 end ************
+  0% 0/1 [00:00<?, ?it/s]2025-05-31 15:11:47,889 P16402 INFO Train loss: 0.676546
+2025-05-31 15:11:47,889 P16402 INFO Evaluation @epoch 3 - batch 1: 
+
+  0% 0/1 [00:00<?, ?it/s][A100% 1/1 [00:00<00:00, 16.54it/s]
+2025-05-31 15:11:47,959 P16402 INFO [Metrics] AUC: 0.498836 - logloss: 0.677878
+2025-05-31 15:11:47,960 P16402 INFO Monitor(max)=-0.179042 STOP!
+2025-05-31 15:11:47,960 P16402 INFO Reduce learning rate on plateau: 0.000010
+2025-05-31 15:11:47,961 P16402 INFO ********* Epoch=3 early stop *********
+  0% 0/1 [00:00<?, ?it/s]
+2025-05-31 15:11:47,977 P16402 INFO Training finished.
+2025-05-31 15:11:47,977 P16402 INFO Load best model: /content/drive/MyDrive/FuxiCTR/model_zoo/FM/model_ckpt/avazu_custom/FM_avazu.model
+2025-05-31 15:11:47,991 P16402 INFO ****** Validation evaluation ******
+  0% 0/1 [00:00<?, ?it/s]100% 1/1 [00:00<00:00, 16.86it/s]
+2025-05-31 15:11:48,058 P16402 INFO [Metrics] logloss: 0.686170 - AUC: 0.507901
+2025-05-31 15:11:48,233 P16402 INFO ******** Test evaluation ********
+2025-05-31 15:11:48,233 P16402 INFO Loading datasets...
+2025-05-31 15:11:48,243 P16402 INFO Test samples: total/1000, blocks/1
+2025-05-31 15:11:48,244 P16402 INFO Loading test data done.
+  0% 0/1 [00:00<?, ?it/s]100% 1/1 [00:00<00:00, 16.95it/s]
+2025-05-31 15:11:48,310 P16402 INFO [Metrics] logloss: 0.686385 - AUC: 0.496188
+
+Script done on 2025-05-31 15:11:49+00:00 [COMMAND_EXIT_CODE="0"]
