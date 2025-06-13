@@ -24,7 +24,7 @@ from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
 from fuxictr.features import FeatureMap
 from fuxictr.pytorch.dataloaders import RankDataLoader
-from __init__ import DCNv2, DIEN, DIN, ETA, FinalMLP, MIRRN, SDIM, SIM, TransAct, TWIN
+from __init__ import *
 from longctr_dataloader import LongCTRDataLoader
 from fuxictr.pytorch.torch_utils import seed_everything
 from fuxictr.preprocess import FeatureProcessor, build_dataset
