@@ -1,0 +1,11 @@
+tiny_emb_example8:
+    data_format: parquet
+    data_root: ../data/
+    feature_cols:
+    - {active: true, dtype: float, name: feat1, type: numeric}
+    - {active: true, dtype: float, name: feat2, type: numeric}
+    - {active: true, dtype: list, name: feat3, pretrain_dim: 96, type: embedding}
+    label_col: {dtype: float, name: label}
+    test_data: ../data/tiny_emb/test.parquet
+    train_data: ../data/tiny_emb/train.parquet
+    valid_data: ../data/tiny_emb/valid.parquet

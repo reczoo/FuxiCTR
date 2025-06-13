@@ -1,4 +1,4 @@
-Base: 
+DIN_test:
     model_root: './checkpoints/'
     num_workers: 3
     verbose: 1
@@ -11,8 +11,6 @@ Base:
     use_features: null
     feature_specs: null
     feature_config: null
-
-DIN_test:
     model: DIN
     dataset_id: tiny_seq
     loss: 'binary_crossentropy'

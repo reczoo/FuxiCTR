@@ -106,10 +106,15 @@ class FeatureMap(object):
         logging.info("Set column index...")
         idx = 0
         for feature, feature_spec in self.features.items():
-            if "max_len" in feature_spec:
+            if feature_spec["type"] == "sequence":
                 col_indexes = [i + idx for i in range(feature_spec["max_len"])]
                 self.column_index[feature] = col_indexes
                 idx += feature_spec["max_len"]
+            elif feature_spec["type"] == "embedding":
+                emb_dim = feature_spec["pretrain_dim"]
+                col_indexes = [i + idx for i in range(emb_dim)]
+                self.column_index[feature] = col_indexes
+                idx += emb_dim
             else:
                 self.column_index[feature] = idx
                 idx += 1
