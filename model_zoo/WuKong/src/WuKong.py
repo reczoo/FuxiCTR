@@ -21,15 +21,13 @@
 
 import torch
 from torch import nn
-import torch.nn.functional as F
-import numpy as np
 from fuxictr.pytorch.models import BaseModel
 from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class WuKong(BaseModel):
     """
-    The WuKong model class that implements factorization machines-based model.
+    The WuKong model class that implements Meta's ICML'24 paper.
 
     Args:
         feature_map: A FeatureMap instance used to store feature specs (e.g., vocab_size).
@@ -38,15 +36,17 @@ class WuKong(BaseModel):
         gpu: gpu device used to load model. -1 means cpu (default=-1).
         learning_rate: learning rate for training (default=1e-3).
         embedding_dim: embedding dimension of features (default=64).
-        num_layers: number of WuKong layers (default=3).
-        compression_dim: dimension of compressed features in LCB (default=40).
+        num_wukong_layers: number of WuKong layers (default=3).
+        lcb_features: dimension of compressed features in LCB (default=40).
+        fmb_features: dimension of FMB output (default=40).
+        fmb_mlp_units: hidden MLP units of FMB (default=[32,32]).
+        fmb_mlp_activations: hidden MLP activations of FMB (default=relu).
+        fmp_rank_k: dimension of projection matrix in FMB (default=8).
         mlp_hidden_units: hidden units of MLP on top of WuKong (default=[32,32]).
-        fmb_units: hidden units of FMB (default=[32,32]).
-        fmb_dim: dimension of FMB output (default=40).
-        project_dim: dimension of projection matrix in FMB (default=8).
-        dropout_rate: dropout rate used in LCB (default=0.2).
-        embedding_regularizer: regularization term used for embedding parameters (default=0).
-        net_regularizer: regularization term used for network parameters (default=0).
+        mlp_hidden_activations: hidden activations of MLP on top of WuKong (default=[32,32]).
+        net_dropout: dropout rate used in Wukong (default=0).
+        embedding_regularizer: regularization term used for embedding parameters (default=None).
+        net_regularizer: regularization term used for network parameters (default=None).
     """
     def __init__(self,
                  feature_map,
@@ -54,13 +54,17 @@ class WuKong(BaseModel):
                  gpu=-1,
                  learning_rate=1e-3,
                  embedding_dim=64,
-                 num_layers=3,
-                 compression_dim=40,
+                 num_wukong_layers=3,
+                 lcb_features=40,
+                 fmb_features=40,
+                 fmb_mlp_units=[32,32],
+                 fmb_mlp_activations="relu",
+                 fmp_rank_k=8,
                  mlp_hidden_units=[32,32],
-                 fmb_units=[32,32],
-                 fmb_dim=40,
-                 project_dim=8,
-                 dropout_rate=0.2,
+                 mlp_hidden_activations='relu',
+                 mlp_batch_norm=True,
+                 layer_norm=True,
+                 net_dropout=0,
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
@@ -73,14 +77,25 @@ class WuKong(BaseModel):
         self.feature_map = feature_map
         self.embedding_dim = embedding_dim
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
-        self.interaction_layers = nn.ModuleList([
-            WuKongLayer(feature_map.num_fields, embedding_dim, project_dim, fmb_units, fmb_dim, compression_dim,dropout_rate) for _ in range(num_layers)
+        output_features = lcb_features + fmb_features
+        self.wukong_stack = nn.Sequential(*[
+            WuKongLayer(input_features=feature_map.num_fields if i == 0 else output_features,
+                        lcb_features=lcb_features,
+                        fmb_features=fmb_features,
+                        embedding_dim=embedding_dim,
+                        fmp_rank_k=fmp_rank_k,
+                        fmb_mlp_units=fmb_mlp_units,
+                        fmb_mlp_activations=fmb_mlp_activations,
+                        fmb_dropout=net_dropout,
+                        layer_norm=layer_norm) \
+            for i in range(num_wukong_layers)
             ])
-        self.final_mlp = MLP_Block(input_dim=feature_map.num_fields*embedding_dim,
-                                   output_dim=1,
-                                   hidden_units=mlp_hidden_units,
-                                   hidden_activations='relu',
-                                   output_activation=None)
+        self.fc = MLP_Block(input_dim=output_features * embedding_dim,
+                            output_dim=1,
+                            hidden_units=mlp_hidden_units,
+                            hidden_activations=mlp_hidden_activations,
+                            output_activation=self.output_activation,
+                            batch_norm=mlp_batch_norm)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
@@ -88,72 +103,92 @@ class WuKong(BaseModel):
     def forward(self, inputs):
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
-        for layer in self.interaction_layers:
-            feature_emb = layer(feature_emb)
-        y_pred = self.final_mlp(feature_emb)
-        y_pred = self.output_activation(y_pred)
+        wukong_out = self.wukong_stack(feature_emb)
+        y_pred = self.fc(wukong_out.flatten(start_dim=1))
         return_dict = {"y_pred": y_pred}
         return return_dict
 
 
 class FactorizationMachineBlock(nn.Module):
-    def __init__(self, num_features=14, embedding_dim=16, project_dim=8):
+    """ Factorization Machine Block (FMB) """
+    def __init__(self, input_features=16, output_features=16, embedding_dim=16, rank_k=8,
+                 mlp_hidden_units=[16, 16], mlp_hidden_activations="relu", mlp_dropout=0):
         super(FactorizationMachineBlock, self).__init__()
         self.embedding_dim = embedding_dim
-        self.project_dim = project_dim
-        self.num_features = num_features
-        self.projection_matrix = nn.Parameter(torch.randn(self.num_features, self.project_dim))
-    
-    def forward(self, x):
-        batch_size = x.size(0)
-        x_fm = x.view(batch_size, self.num_features, self.embedding_dim)
-        projected = torch.matmul(x_fm.transpose(1, 2), self.projection_matrix)
-        fm_matrix = torch.matmul(x_fm, projected)
-        return fm_matrix.view(batch_size, -1)
+        self.output_features = output_features
+        self.rank_k = rank_k
+        self.input_features = input_features
+        if self.rank_k is not None:
+            # optimized FM
+            self.proj_Y = nn.Parameter(torch.randn(self.input_features, self.rank_k))
+            fm_out_dim = input_features * rank_k
+        else:
+            # vanilla FM
+            fm_out_dim = input_features * input_features
+        self.layer_norm = nn.LayerNorm(fm_out_dim)
+        self.mlp = MLP_Block(input_dim=fm_out_dim,
+                             output_dim=output_features * embedding_dim,
+                             hidden_units=mlp_hidden_units,
+                             hidden_activations=mlp_hidden_activations,
+                             output_activation="relu",
+                             dropout_rates=mlp_dropout)
 
-
-class FMB(nn.Module):
-    def __init__(self, num_features=14, embedding_dim=16, fmb_units=[32,32], fmb_dim=40, project_dim=8):
-        super(FMB, self).__init__()
-        self.fm_block = FactorizationMachineBlock(num_features, embedding_dim, project_dim)
-        self.layer_norm = nn.LayerNorm(num_features * project_dim)
-        model_layers = [nn.Linear(num_features * project_dim, fmb_units[0]), nn.ReLU()]
-        for i in range(1, len(fmb_units)):
-            model_layers.append(nn.Linear(fmb_units[i-1], fmb_units[i]))
-            model_layers.append(nn.ReLU())
-        model_layers.append(nn.Linear(fmb_units[-1], fmb_dim))
-        self.mlp = nn.Sequential(*model_layers)
-    
     def forward(self, x):
-        y = self.fm_block(x)
-        y = self.layer_norm(y)
-        y = self.mlp(y)
-        y = F.relu(y)
-        return y
+        flatten_fm = self.optimized_fm(x)
+        mlp_in = self.layer_norm(flatten_fm)
+        mlp_out = self.mlp(mlp_in)
+        return mlp_out.view(-1, self.output_features, self.embedding_dim)
+    
+    def optimized_fm(self, x):
+        _, n, d = x.shape
+        if self.rank_k is not None:
+            projected = x.transpose(1, 2) @ self.proj_Y # b x d x k
+            fm_matrix = torch.bmm(x, projected) # b x n x k
+        else:
+            fm_matrix = torch.bmm(x, x.transpose(1, 2)) # b x n x n
+        return fm_matrix.flatten(start_dim=1)
 
 
 class LinearCompressionBlock(nn.Module):
     """ Linear Compression Block (LCB) """
-    def __init__(self, num_features=14, embedding_dim=16, compressed_dim=8,dropout_rate=0.2):
+    def __init__(self, input_features=16, output_features=8):
         super(LinearCompressionBlock, self).__init__()
-        self.linear = nn.Linear(num_features * embedding_dim, compressed_dim)
-        self.dropout = nn.Dropout(p=dropout_rate)
+        self.linear = nn.Linear(input_features, output_features, bias=False)
+        
     def forward(self, x):
-        return self.dropout(self.linear(x.view(x.size(0), -1)))
+        out = self.linear(x.transpose(1, 2))
+        return out.transpose(1, 2)
 
 
 class WuKongLayer(nn.Module):
-    def __init__(self, num_features=14, embedding_dim=16, project_dim=4, fmb_units=[40,40,40], fmb_dim=40, compressed_dim=40, dropout_rate=0.2):
+    def __init__(self, input_features=16, lcb_features=8, fmb_features=8, embedding_dim=16,
+                 fmp_rank_k=4, fmb_mlp_units=[16, 16], fmb_mlp_activations="relu",
+                 fmb_dropout=0.1, layer_norm=True):
         super(WuKongLayer, self).__init__()
-        self.fmb = FMB(num_features, embedding_dim, fmb_units, fmb_dim, project_dim)
-        self.lcb = LinearCompressionBlock(num_features, embedding_dim, compressed_dim, dropout_rate)
-        self.layer_norm = nn.LayerNorm(num_features * embedding_dim)
-        self.transform = nn.Linear(fmb_dim + compressed_dim, num_features*embedding_dim)
+        self.fmb = FactorizationMachineBlock(input_features,
+                                             fmb_features,
+                                             embedding_dim,
+                                             fmp_rank_k,
+                                             fmb_mlp_units,
+                                             fmb_mlp_activations,
+                                             fmb_dropout)
+        self.lcb = LinearCompressionBlock(input_features, lcb_features)
+        self.layer_norm = nn.LayerNorm(embedding_dim) if layer_norm else None
+        if input_features != lcb_features + fmb_features:
+            self.residual_proj = nn.Linear(input_features, lcb_features + fmb_features)
     
     def forward(self, x):
         fmb_out = self.fmb(x)
         lcb_out = self.lcb(x)
-        concat_out = torch.cat([fmb_out, lcb_out], dim=1)
-        concat_out = self.transform(concat_out)
-        add_norm_out = self.layer_norm(concat_out+x.view(x.size(0), -1))
-        return add_norm_out
+        concat_out = torch.cat([fmb_out, lcb_out], dim=1) # b x (fmb + lcb) x d
+        out = self.residual(concat_out, x)
+        if self.layer_norm is not None:
+            out = self.layer_norm(out)
+        return out
+    
+    def residual(self, out, x):
+        if out.shape[1] != x.shape[1]:
+            res = self.residual_proj(x.transpose(1, 2)).transpose(1, 2)
+        else:
+            res = x
+        return out + res
