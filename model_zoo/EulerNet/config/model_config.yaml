@@ -36,7 +36,7 @@ EulerNet_default: # This is a config template
 
 EulerNet_test:
     model: EulerNet
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification

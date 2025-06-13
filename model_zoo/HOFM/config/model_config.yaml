@@ -14,7 +14,7 @@ Base:
 
 HOFM_test:
     model: HOFM
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

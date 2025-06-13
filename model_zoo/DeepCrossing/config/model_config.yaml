@@ -14,7 +14,7 @@ Base:
 
 DeepCrossing_test:
     model: DeepCrossing
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification

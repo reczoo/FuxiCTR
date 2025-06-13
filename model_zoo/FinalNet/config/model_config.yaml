@@ -41,7 +41,7 @@ FinalNet_default: # This is a config template
 
 FinalNet_test:
     model: FinalNet
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

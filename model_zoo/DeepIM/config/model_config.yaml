@@ -14,7 +14,7 @@ Base:
 
 DeepIM_test:
     model: DeepIM
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification
