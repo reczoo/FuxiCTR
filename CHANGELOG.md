@@ -4,7 +4,10 @@
 [Doing] Add support for saving pb file, exporting embeddings
 [Doing] Add support of multi-gpu training
 
-**FuxiCTR v2.3.8, 2025-06-14**
+**FuxiCTR v2.3.9, 2025-06-17**
++ [FIX] Fixing preprocessing issues in v2.3.8.
+
+**FuxiCTR v2.3.8, 2025-06-14** (Deprecated)
 + [FIX] Speed up data loading for large parquet files ([#140](https://github.com/reczoo/FuxiCTR/issues/140))
 + [FEA] Add ETA/SDIM/SIM/TWIN/MIRRN to LongCTR models
 + [RFR] Update WuKong for reproducing results

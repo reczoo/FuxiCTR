@@ -107,7 +107,7 @@ class FeatureProcessor(object):
             elif col["dtype"] in ["float", float]:
                 fill_na = col.get("fill_na", 0.0)
             col_exist = name in col_names
-            if fill_na and col_exist:
+            if (fill_na is not None) and col_exist:
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
             if col.get("preprocess"):
                 preprocess_args = re.split(r"\(|\)", col["preprocess"])
@@ -121,10 +121,10 @@ class FeatureProcessor(object):
                     .alias(name)
                     .cast(self.dtype_dict[name])
                 )
-            if fill_na and (not col_exist):
+            if (fill_na is not None) and (not col_exist):
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
-            if col.get("type") == "sequence":
-                # Convert list to "^" seperated string for the same preprocessing as csv format
+            if col.get("type") == "sequence" and isinstance(ddf.select(name).dtypes[0], pl.List):
+                # Convert list to "^" seperated string for unified preprocessing of parquet and csv formats
                 ddf = ddf.with_columns(pl.col(name).apply(lambda x: "^".join(map(str, x))))
         active_cols = [col["name"] for col in all_cols if col.get("active") != False]
         ddf = ddf.select(active_cols)
