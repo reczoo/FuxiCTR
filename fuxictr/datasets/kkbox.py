@@ -22,11 +22,11 @@ import polars as pl
 
 class CustomizedFeatureProcessor(FeatureProcessor):
     def extract_country_code(self, col_name):
-        return pl.col(col_name).apply(lambda isrc: isrc[0:2] if not pl.is_null(isrc) else "")
+        return pl.col(col_name).map_elements(lambda isrc: isrc[0:2] if isrc is not None else "", return_dtype=pl.Utf8)
 
     def bucketize_age(self, col_name):
         def _bucketize(age):
-            if pl.is_null(age):
+            if age is None:
                 return ""
             else:
                 age = float(age)
@@ -46,4 +46,4 @@ class CustomizedFeatureProcessor(FeatureProcessor):
                     return "6"
                 else:
                     return "7"
-        return pl.col(col_name).apply(_bucketize)
+        return pl.col(col_name).map_elements(_bucketize, return_dtype=pl.Utf8)

@@ -53,8 +53,18 @@ if __name__ == '__main__':
     data_dir = os.path.join(params['data_root'], params['dataset_id'])
     feature_map_json = os.path.join(data_dir, "feature_map.json")
     if params["data_format"] == "csv":
-        # Build feature_map and transform data
-        feature_encoder = FeatureProcessor(**params)
+        # Select dataset-specific FeatureProcessor if available (e.g. criteo, avazu, kkbox),
+        # otherwise fall back to the base FeatureProcessor.
+        processor_class = FeatureProcessor
+        dataset_id = params['dataset_id']
+        for name in dir(datasets):
+            if dataset_id.lower().startswith(name):
+                dataset_module = getattr(datasets, name)
+                if hasattr(dataset_module, 'CustomizedFeatureProcessor'):
+                    processor_class = dataset_module.CustomizedFeatureProcessor
+                    logging.info(f"Using CustomizedFeatureProcessor from fuxictr.datasets.{name}")
+                    break
+        feature_encoder = processor_class(**params)
         params["train_data"], params["valid_data"], params["test_data"] = \
             build_dataset(feature_encoder, **params)
     feature_map = FeatureMap(params['dataset_id'], data_dir)
