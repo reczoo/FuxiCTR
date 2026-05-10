@@ -45,13 +45,13 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         def _convert_weekday(timestamp):
             dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
             return int(dt.strftime('%w'))
-        return pl.col("time_stamp").apply(_convert_weekday)
+        return pl.col("time_stamp").map_elements(_convert_weekday, return_dtype=pl.Int64)
 
     def convert_hour(self, col_name=None):
         def _convert_hour(timestamp):
             dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
             return int(dt.hour)
-        return pl.col("time_stamp").apply(_convert_hour)
+        return pl.col("time_stamp").map_elements(_convert_hour, return_dtype=pl.Int64)
 
 if __name__ == '__main__':
     # Load params from config files

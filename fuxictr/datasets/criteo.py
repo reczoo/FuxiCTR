@@ -29,4 +29,4 @@ class CustomizedFeatureProcessor(FeatureProcessor):
             else:
                 value = int(value)
             return value
-        return pl.col(col_name).apply(_convert_to_bucket).cast(pl.Int32)
+        return pl.col(col_name).map_elements(_convert_to_bucket, return_dtype=pl.Int32)

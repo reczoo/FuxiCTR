@@ -28,7 +28,7 @@ def evaluate_metrics(y_true, y_pred, metrics, group_id=None):
     group_metrics = []
     for metric in metrics:
         if metric in ['logloss', 'binary_crossentropy']:
-            return_dict[metric] = log_loss(y_true, y_pred, eps=1e-7)
+            return_dict[metric] = log_loss(y_true, y_pred)
         elif metric == 'AUC':
             return_dict[metric] = roc_auc_score(y_true, y_pred)
         elif metric in ["gAUC", "avgAUC", "MRR"] or metric.startswith("NDCG"):
