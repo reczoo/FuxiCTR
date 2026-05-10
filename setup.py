@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fd:
 
 setuptools.setup(
     name="fuxictr",
-    version="2.3.9",
+    version="2.3.10",
     author="RECZOO",
     author_email="reczoo@users.noreply.github.com",
     description="A configurable, tunable, and reproducible library for CTR prediction",
@@ -16,8 +16,8 @@ setuptools.setup(
     packages=setuptools.find_packages(
         exclude=["model_zoo", "tests", "data", "docs", "demo"]),
     include_package_data=True,
-    python_requires=">=3.6",
-    install_requires=["keras_preprocessing", "pandas", "PyYAML>=5.1", "scikit-learn",
+    python_requires=">=3.10",
+    install_requires=["keras_preprocessing", "pandas", "PyYAML>=6.0.1", "scikit-learn",
                       "numpy", "h5py", "tqdm", "pyarrow", "polars"],
     classifiers=(
         "License :: OSI Approved :: Apache Software License",

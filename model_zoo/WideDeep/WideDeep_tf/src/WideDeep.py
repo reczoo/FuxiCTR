@@ -53,27 +53,30 @@ class WideDeep(BaseModel):
         self.compile(kwargs["loss"], wide_learning_rate, deep_learning_rate, kwargs["deep_optimizer"])
 
     def compile(self, loss="bce", wide_lr=1.e-4, deep_lr=1.e-3, deep_optimizer="adam"):
-        super(BaseModel, self).compile(optimizer=[optimizers.Ftrl(learning_rate=wide_lr, l1_regularization_strength=0.1),
-                                                  get_optimizer(deep_optimizer, deep_lr)],
-                                       loss=get_loss(loss))
+        self.optimizer_wide = optimizers.Ftrl(learning_rate=wide_lr, l1_regularization_strength=0.1)
+        self.optimizer_deep = get_optimizer(deep_optimizer, deep_lr)
+        self.loss_fn = get_loss(loss)
+        super(BaseModel, self).compile(optimizer=self.optimizer_deep,
+                                       loss=self.loss_fn)
 
     def lr_decay(self, factor=0.1, min_lr=1e-6):
-        self.optimizer[1].learning_rate = max(self.optimizer[1].learning_rate * factor, min_lr)
-        return self.optimizer[1].lr.numpy()
+        self.optimizer_deep.learning_rate = max(self.optimizer_deep.learning_rate * factor, min_lr)
+        return self.optimizer_deep.learning_rate.numpy()
 
     @tf.function
     def train_step(self, batch_data):
         with tf.GradientTape(persistent=True) as tape:
-            loss = self.get_total_loss(batch_data)
-            wide_prefix = "logistic"
+            loss = self.compute_loss(batch_data)
+            wide_prefix = "lr_"
             wide_variables = [var for var in self.trainable_variables if wide_prefix in var.name]
-            wide_grads = tape.gradient(loss, wide_variables)
-            wide_grads, _ = tf.clip_by_global_norm(wide_grads, self._max_gradient_norm)
-            self.optimizer[0].apply_gradients(zip(wide_grads, wide_variables))
+            if wide_variables:
+                wide_grads = tape.gradient(loss, wide_variables)
+                wide_grads, _ = tf.clip_by_global_norm(wide_grads, self._max_gradient_norm)
+                self.optimizer_wide.apply_gradients(zip(wide_grads, wide_variables))
             deep_variables = [var for var in self.trainable_variables if wide_prefix not in var.name]
             deep_grads = tape.gradient(loss, deep_variables)
             deep_grads, _ = tf.clip_by_global_norm(deep_grads, self._max_gradient_norm)
-            self.optimizer[1].apply_gradients(zip(deep_grads, deep_variables))
+            self.optimizer_deep.apply_gradients(zip(deep_grads, deep_variables))
         return loss
 
     def call(self, inputs, training=False):

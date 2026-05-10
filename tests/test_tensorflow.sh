@@ -1,4 +1,5 @@
 #! /bin/sh
+export PYTHONPATH="$(realpath ..):$PYTHONPATH"
 home="$(pwd)/../model_zoo"
 
 echo "=== Testing DNN_tf ===" && cd $home/DNN/DNN_tf && python run_expid.py --expid DNN_test && \

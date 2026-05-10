@@ -105,11 +105,11 @@ We have benchmarked FuxiCTR models on a set of open datasets as follows:
 
 ## Dependencies
 
-FuxiCTR has the following dependencies:
+The following dependencies are recommended:
 
-+ python 3.9+
-+ pytorch 1.10.0--2.1.2 (if using for torch models)
-+ tensorflow 2.1 (if using for tensorflow models)
++ python>=3.10
++ pytorch>=2.7.1 (if using for torch models)
++ tensorflow>=2.21.0 (if using for tensorflow models)
 
 Please install other required packages via `pip install -r requirements.txt`.
 
@@ -163,8 +163,7 @@ If you use our code or benchmarks in your public research, please cite the follo
 + Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
 + Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [BARS-CTR: Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
 
-## 🙋 Discussion
+## 🙋 Contributing
 
-Welcome to join our WeChat group for any question and discussion. If you are interested in research and practice in recommender systems, please reach out via our WeChat group.
+Contributions are welcome via issues or pull requests. Thanks to all contributors listed in [CONTRIBUTORS.md](./CONTRIBUTORS.md).
 
-![Scan QR code](https://openbenchmark.github.io/BARS/_images/wechat.jpg)

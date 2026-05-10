@@ -52,7 +52,7 @@ class BaseModel(Model):
         self.output_activation = self.get_output_activation(task)
         self.model_id = model_id
         self.model_dir = os.path.join(kwargs["model_root"], feature_map.dataset_id)
-        self.checkpoint = os.path.abspath(os.path.join(self.model_dir, self.model_id + ".model"))
+        self.checkpoint = os.path.abspath(os.path.join(self.model_dir, self.model_id + ".model.weights.h5"))
         self.validation_metrics = kwargs["metrics"]
 
     def compile(self, optimizer, loss, lr):

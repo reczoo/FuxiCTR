@@ -46,8 +46,12 @@ class TFRecordDataLoader(object):
         def parse_example(example):
             example_dict = tf.io.parse_single_example(example, features=self.schema)
             return example_dict
-        dataset = tf.data.TFRecordDataset(filenames).map(parse_example, num_parallel_calls=1)
-        dataset = dataset.prefetch(buffer_size=1).batch(batch_size, drop_remainder=self.drop_remainder)
+        dataset = tf.data.TFRecordDataset(
+            filenames,
+            buffer_size=1024 * 1024 # 1MB
+        ).map(parse_example, num_parallel_calls=tf.data.AUTOTUNE)
+        dataset = dataset.batch(batch_size, drop_remainder=self.drop_remainder).prefetch(tf.data.AUTOTUNE)
+
         if shuffle:
             dataset = dataset.shuffle(batch_size * 10)
         return dataset

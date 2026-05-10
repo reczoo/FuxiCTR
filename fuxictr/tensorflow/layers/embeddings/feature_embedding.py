@@ -99,7 +99,6 @@ class FeatureEmbeddingDict(Layer):
                                                  embeddings_initializer=get_initializer(embedding_initializer),
                                                  embeddings_regularizer=get_regularizer(embedding_regularizer),
                                                  mask_zero=True if padding_idx == 0 else False,
-                                                 input_length=1,
                                                  name=name_prefix + feature)
                     if use_pretrain and "pretrained_emb" in feature_spec:
                         embedding_matrix = self.load_pretrained_embedding(embedding_matrix,
@@ -110,12 +109,11 @@ class FeatureEmbeddingDict(Layer):
                     self.embedding_layers[feature] = embedding_matrix
                 elif feature_spec["type"] == "sequence":
                     padding_idx = feature_spec.get("padding_idx", None)
-                    embedding_matrix = Embedding(feature_spec["vocab_size"], 
+                    embedding_matrix = Embedding(feature_spec["vocab_size"],
                                                  feat_emb_dim,
                                                  embeddings_initializer=get_initializer(embedding_initializer),
                                                  embeddings_regularizer=get_regularizer(embedding_regularizer),
                                                  mask_zero=True if padding_idx == 0 else False,
-                                                 input_length=feature_spec["max_len"],
                                                  name=name_prefix + feature)
                     if use_pretrain and "pretrained_emb" in feature_spec:
                         embedding_matrix = self.load_pretrained_embedding(embedding_matrix, 
@@ -137,7 +135,7 @@ class FeatureEmbeddingDict(Layer):
             return encoder_layer
         except:
             raise ValueError("feature_encoder={} is not supported.".format(encoder))
-                              
+
     def is_required(self, feature):
         """ Check whether feature is required for embedding """
         feature_spec = self._feature_map.features[feature]

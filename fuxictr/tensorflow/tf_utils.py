@@ -19,8 +19,8 @@ import numpy as np
 import os
 import tensorflow as tf
 from tensorflow.keras import optimizers
-from tensorflow.python.keras.regularizers import l2, l1, l1_l2
-from tensorflow.python.keras.initializers import *
+from tensorflow.keras.regularizers import l2, l1, l1_l2
+from tensorflow.keras.initializers import *
 import logging
 
 
