@@ -50,7 +50,8 @@ if __name__ == '__main__':
         build_dataset(feature_encoder, 
                       train_data=params["train_data"],
                       valid_data=params["valid_data"],
-                      test_data=params["test_data"])
+                      test_data=params["test_data"],
+                      data_format=params["data_format"])
     
     # Get feature_map that defines feature specs
     data_dir = os.path.join(params['data_root'], params['dataset_id'])

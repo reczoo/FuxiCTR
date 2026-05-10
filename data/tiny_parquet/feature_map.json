@@ -9,7 +9,7 @@
     "features": [
         {
             "userid": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 26
@@ -17,7 +17,7 @@
         },
         {
             "adgroup_id": {
-                "source": "",
+                "source": "item",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 96
@@ -25,7 +25,7 @@
         },
         {
             "pid": {
-                "source": "",
+                "source": "context",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 4
@@ -33,7 +33,7 @@
         },
         {
             "cate_id": {
-                "source": "",
+                "source": "item",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 49
@@ -41,7 +41,7 @@
         },
         {
             "campaign_id": {
-                "source": "",
+                "source": "item",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 99
@@ -49,7 +49,7 @@
         },
         {
             "customer": {
-                "source": "",
+                "source": "item",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 98
@@ -57,7 +57,7 @@
         },
         {
             "brand": {
-                "source": "",
+                "source": "item",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 67
@@ -65,7 +65,7 @@
         },
         {
             "cms_segid": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 11
@@ -73,7 +73,7 @@
         },
         {
             "cms_group_id": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 11
@@ -81,7 +81,7 @@
         },
         {
             "final_gender_code": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 4
@@ -89,7 +89,7 @@
         },
         {
             "age_level": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 7
@@ -97,7 +97,7 @@
         },
         {
             "pvalue_level": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 4
@@ -105,7 +105,7 @@
         },
         {
             "shopping_level": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 5
@@ -113,7 +113,7 @@
         },
         {
             "occupation": {
-                "source": "",
+                "source": "user",
                 "type": "categorical",
                 "padding_idx": 0,
                 "vocab_size": 4

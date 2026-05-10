@@ -1,4 +1,4 @@
-tiny_emb_example8:
+tiny_example8:
     data_format: parquet
     data_root: ../data/
     feature_cols:

@@ -1,4 +1,5 @@
 #! /bin/sh
+export PYTHONPATH="$(realpath ..):$PYTHONPATH"
 home="$(pwd)/../model_zoo"
 
 echo "=== Testing AFM ==="  && cd $home/AFM && python run_expid.py --expid AFM_test && \

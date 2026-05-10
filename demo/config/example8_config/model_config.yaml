@@ -1,7 +1,7 @@
 DCN_test_emb:
     batch_norm: false
     batch_size: 32
-    dataset_id: tiny_emb_example8
+    dataset_id: tiny_example8
     debug_mode: false
     dnn_activations: relu
     dnn_hidden_units: [64, 32]
