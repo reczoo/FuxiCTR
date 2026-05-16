@@ -5,8 +5,9 @@ on:
   push:
     tags:
       - '*'
-  workflow_dispatch:
-  
+    branches:
+    - main
+
 # This job installs dependencies, build the book, and pushes it to `gh-pages`
 jobs:
   deploy-book:
@@ -26,9 +27,9 @@ jobs:
     - name: Deploy github-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
-        personal_token: ${{ secrets.PERSONAL_TOKEN }}
+        personal_token: ${{ secrets.JUPYTER_TOKEN }}
         external_repository: fuxictr/fuxictr.github.io
         publish_branch: main
         publish_dir: ./docs/_build/html
         exclude_assets: '_sources'
-        destination_dir: ${{ github.ref_name }}
+        destination_dir: ${{ startsWith(github.ref_name, 'v') && github.ref_name || 'latest' }}
