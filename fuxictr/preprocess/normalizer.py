@@ -20,6 +20,18 @@ import sklearn.preprocessing as sklearn_preprocess
 
 
 class Normalizer(object):
+    """Normalize feature values using sklearn preprocessors or custom functions.
+
+    Wraps sklearn scalers (``StandardScaler``, ``MinMaxScaler``) or any callable
+    normalization function.
+
+    Args:
+        normalizer (str or callable): Name of sklearn scaler or a custom function.
+
+    Raises:
+        NotImplementedError: If ``normalizer`` is not a supported string.
+    """
+
     def __init__(self, normalizer):
         if not callable(normalizer):
             self.callable = False
@@ -33,10 +45,23 @@ class Normalizer(object):
             self.callable = True
 
     def fit(self, X):
+        """Fit the normalizer on data.
+
+        Args:
+            X (array-like): 1-D array of values to fit.
+        """
         if not self.callable:
             self.normalizer.fit(X.reshape(-1, 1))
 
     def transform(self, X):
+        """Transform data using the fitted normalizer.
+
+        Args:
+            X (array-like): 1-D array of values to transform.
+
+        Returns:
+            numpy.ndarray: Normalized 1-D array.
+        """
         if self.callable:
             return self.normalizer(X)
         else:

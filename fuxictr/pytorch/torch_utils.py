@@ -27,6 +27,11 @@ import re
 
 
 def seed_everything(seed=1029):
+    """Set random seeds for reproducibility across Python, NumPy, and PyTorch.
+
+    Args:
+        seed (int): Random seed value. Default: ``1029``.
+    """
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
@@ -35,13 +40,35 @@ def seed_everything(seed=1029):
     torch.backends.cudnn.deterministic = True
 
 def get_device(gpu=-1):
+    """Get a PyTorch compute device.
+
+    Args:
+        gpu (int): GPU device index. If negative or CUDA unavailable, returns CPU.
+            Default: ``-1``.
+
+    Returns:
+        torch.device: The selected compute device.
+    """
     if gpu >= 0 and torch.cuda.is_available():
         device = torch.device("cuda:" + str(gpu))
     else:
-        device = torch.device("cpu")   
+        device = torch.device("cpu")
     return device
 
 def get_optimizer(optimizer, params, lr):
+    """Get a PyTorch optimizer instance.
+
+    Args:
+        optimizer (str or torch.optim.Optimizer): Optimizer name or class.
+        params (iterable): Model parameters to optimize.
+        lr (float): Learning rate.
+
+    Returns:
+        torch.optim.Optimizer: Configured optimizer instance.
+
+    Raises:
+        NotImplementedError: If the optimizer name is not recognized.
+    """
     if isinstance(optimizer, str):
         if optimizer.lower() == "adam":
             optimizer = "Adam"
@@ -52,19 +79,44 @@ def get_optimizer(optimizer, params, lr):
     return optimizer
 
 def get_loss(loss):
+    """Get a PyTorch loss function.
+
+    Args:
+        loss (str or callable): Loss function name (e.g., ``"binary_cross_entropy"``)
+            or a callable loss function.
+
+    Returns:
+        callable: Loss function.
+
+    Raises:
+        NotImplementedError: If the loss name is not supported.
+    """
     if isinstance(loss, str):
         if loss in ["bce", "binary_crossentropy", "binary_cross_entropy"]:
             loss = "binary_cross_entropy"
     try:
         loss_fn = getattr(torch.functional.F, loss)
     except:
-        try: 
+        try:
             loss_fn = eval("losses." + loss)
         except:
-            raise NotImplementedError("loss={} is not supported.".format(loss))       
+            raise NotImplementedError("loss={} is not supported.".format(loss))
     return loss_fn
 
 def get_regularizer(reg):
+    """Parse a regularization specification into (p_norm, weight) tuples.
+
+    Supports ``float`` (L2), ``"l1(x)"``, ``"l2(x)"``, and ``"l1_l2(x,y)"`` strings.
+
+    Args:
+        reg (float or str): Regularization specification.
+
+    Returns:
+        list: List of ``(p_norm, weight)`` tuples.
+
+    Raises:
+        NotImplementedError: If the regularization format is not supported.
+    """
     reg_pair = [] # of tuples (p_norm, weight)
     if isinstance(reg, float):
         reg_pair.append((2, reg))
@@ -83,6 +135,17 @@ def get_regularizer(reg):
     return reg_pair
 
 def get_activation(activation, hidden_units=None):
+    """Get a PyTorch activation module or function.
+
+    Args:
+        activation (str, list, or callable): Activation name (e.g., ``"relu"``,
+            ``"dice"``, ``"prelu"``), a list of names, or a callable.
+        hidden_units (int or list, optional): Number of hidden units. Required
+            for ``"prelu"`` and ``"dice"``.
+
+    Returns:
+        torch.nn.Module or callable: Activation module/function, or a list thereof.
+    """
     if isinstance(activation, str):
         if activation.lower() in ["prelu", "dice"]:
             assert type(hidden_units) == int
@@ -110,6 +173,18 @@ def get_activation(activation, hidden_units=None):
     return activation
 
 def get_initializer(initializer):
+    """Get a PyTorch weight initializer.
+
+    Args:
+        initializer (str or callable): Initializer name (e.g., ``"torch.nn.init.xavier_uniform_"``)
+            or a callable initializer function.
+
+    Returns:
+        callable: Initializer function.
+
+    Raises:
+        ValueError: If the initializer name is not supported.
+    """
     if isinstance(initializer, str):
         try:
             initializer = eval(initializer)

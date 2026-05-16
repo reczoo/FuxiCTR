@@ -24,9 +24,27 @@ from ..blocks.mlp_block import MLP_Block
 
 
 class DIN_Attention(nn.Module):
-    def __init__(self, 
+    """DIN-style target attention that computes attention weights over a history sequence.
+
+    ``DIN_Attention`` concatenates the target item with each item in the history sequence
+    using element-wise difference and product, then feeds the result into an MLP to
+    produce attention scores.
+
+    Args:
+        embedding_dim (int, optional): Dimensionality of item embeddings. Default: ``64``.
+        attention_units (list[int], optional): Hidden units of the attention MLP. Default: ``[32]``.
+        hidden_activations (str or list, optional): Activation(s) for hidden layers.
+            Default: ``"ReLU"``.
+        output_activation (str, optional): Activation for the output layer. Default: ``None``.
+        dropout_rate (float, optional): Dropout rate for the attention MLP. Default: ``0``.
+        batch_norm (bool, optional): Whether to apply batch normalization. Default: ``False``.
+        use_softmax (bool, optional): Whether to apply softmax over attention weights.
+            Default: ``False``.
+    """
+
+    def __init__(self,
                  embedding_dim=64,
-                 attention_units=[32], 
+                 attention_units=[32],
                  hidden_activations="ReLU",
                  output_activation=None,
                  dropout_rate=0,
@@ -46,14 +64,21 @@ class DIN_Attention(nn.Module):
                                          batch_norm=batch_norm)
 
     def forward(self, target_item, history_sequence, mask=None):
-        """
-        target_item: b x emd
-        history_sequence: b x len x emb
-        mask: mask of history_sequence, 0 for masked positions
+        """Compute the DIN attention-weighted sum of the history sequence.
+
+        Args:
+            target_item (torch.Tensor): Target item embedding of shape ``(batch_size, emb)``.
+            history_sequence (torch.Tensor): History sequence embeddings of shape
+                ``(batch_size, seq_len, emb)``.
+            mask (torch.Tensor, optional): Mask of ``history_sequence`` where 0 indicates
+                masked positions. Default: ``None``.
+
+        Returns:
+            torch.Tensor: Aggregated history representation of shape ``(batch_size, emb)``.
         """
         seq_len = history_sequence.size(1)
         target_item = target_item.unsqueeze(1).expand(-1, seq_len, -1)
-        attention_input = torch.cat([target_item, history_sequence, target_item - history_sequence, 
+        attention_input = torch.cat([target_item, history_sequence, target_item - history_sequence,
                                      target_item * history_sequence], dim=-1) # b x len x 4*emb
         attention_weight = self.attention_layer(attention_input.view(-1, 4 * self.embedding_dim))
         attention_weight = attention_weight.view(-1, seq_len) # b x len
@@ -68,6 +93,24 @@ class DIN_Attention(nn.Module):
 
 
 class MultiHeadTargetAttention(nn.Module):
+    """Multi-head target attention for sequential recommendation.
+
+    ``MultiHeadTargetAttention`` projects the target item and history sequence into
+    multiple attention heads, applies scaled dot-product attention, and concatenates
+    the results.
+
+    Args:
+        input_dim (int, optional): Dimensionality of input embeddings. Default: ``64``.
+        attention_dim (int, optional): Total dimensionality of the attention space.
+            Default: ``64``.
+        num_heads (int, optional): Number of attention heads. Default: ``1``.
+        dropout_rate (float, optional): Dropout rate for attention weights. Default: ``0``.
+        use_scale (bool, optional): Whether to scale dot products by ``sqrt(head_dim)``.
+            Default: ``True``.
+        use_qkvo (bool, optional): Whether to use linear projections for Q, K, V, and O.
+            If False, ``attention_dim`` is set to ``input_dim``. Default: ``True``.
+    """
+
     def __init__(self,
                  input_dim=64,
                  attention_dim=64,
@@ -92,10 +135,17 @@ class MultiHeadTargetAttention(nn.Module):
         self.dot_attention = ScaledDotProductAttention(dropout_rate)
 
     def forward(self, target_item, history_sequence, mask=None):
-        """
-        target_item: b x emd
-        history_sequence: b x len x emb
-        mask: mask of history_sequence, 0 for masked positions
+        """Compute multi-head target attention over the history sequence.
+
+        Args:
+            target_item (torch.Tensor): Target item embedding of shape ``(batch_size, emb)``.
+            history_sequence (torch.Tensor): History sequence embeddings of shape
+                ``(batch_size, seq_len, emb)``.
+            mask (torch.Tensor, optional): Mask of ``history_sequence`` where 0 indicates
+                masked positions. Default: ``None``.
+
+        Returns:
+            torch.Tensor: Aggregated representation of shape ``(batch_size, input_dim)``.
         """
         # linear projection
         if self.use_qkvo:

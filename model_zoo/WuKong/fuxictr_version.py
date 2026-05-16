@@ -1,3 +1,4 @@
 # pip install -U fuxictr
 import fuxictr
-assert fuxictr.__version__ >= "2.3.8"
+from packaging import version
+assert version.parse(fuxictr.__version__) >= version.parse("2.3.8")

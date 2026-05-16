@@ -23,6 +23,26 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class ShareBottom(MultiTaskModel):
+    """Shared-Bottom multi-task learning model.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"SharedBottom"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        task (list): List of task types. Default: ``["binary_classification"]``.
+        num_tasks (int): Number of tasks. Default: ``1``.
+        loss_weight (str): Loss weighting strategy. Default: ``"EQ"``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        bottom_hidden_units (list): Hidden units of the shared bottom network. Default: ``[64, 64, 64]``.
+        tower_hidden_units (list): Hidden units of task-specific towers. Default: ``[64]``.
+        hidden_activations (str): Activation function for hidden layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
     def __init__(self,
                  feature_map,
                  model_id="SharedBottom",
@@ -69,6 +89,14 @@ class ShareBottom(MultiTaskModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of ShareBottom.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary with task predictions.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         bottom_output = self.bottom(feature_emb.flatten(start_dim=1)) # (?, bottom_hidden_units[-1])

@@ -22,29 +22,51 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, CrossNetV2, Cros
 
 
 class DCNv2(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DCNv2", 
+    """Deep & Cross Network v2 (DCNv2) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DCNv2"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        model_structure (str): Model structure, one of ["crossnet_only", "stacked", "parallel", "stacked_parallel"]. Default: ``"parallel"``.
+        use_low_rank_mixture (bool): Whether to use low-rank mixture cross network. Default: ``False``.
+        low_rank (int): Low rank for mixture cross network. Default: ``32``.
+        num_experts (int): Number of experts for mixture cross network. Default: ``4``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        stacked_dnn_hidden_units (list): Hidden units for stacked DNN. Default: ``[]``.
+        parallel_dnn_hidden_units (list): Hidden units for parallel DNN. Default: ``[]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        num_cross_layers (int): Number of cross layers. Default: ``3``.
+        net_dropout (float): Dropout rate for network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DCNv2",
                  gpu=-1,
                  model_structure="parallel",
                  use_low_rank_mixture=False,
                  low_rank=32,
                  num_experts=4,
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 stacked_dnn_hidden_units=[], 
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 stacked_dnn_hidden_units=[],
                  parallel_dnn_hidden_units=[],
                  dnn_activations="ReLU",
                  num_cross_layers=3,
-                 net_dropout=0, 
-                 batch_norm=False, 
+                 net_dropout=0,
+                 batch_norm=False,
                  embedding_regularizer=None,
-                 net_regularizer=None, 
+                 net_regularizer=None,
                  **kwargs):
-        super(DCNv2, self).__init__(feature_map, 
-                                    model_id=model_id, 
-                                    gpu=gpu, 
-                                    embedding_regularizer=embedding_regularizer, 
+        super(DCNv2, self).__init__(feature_map,
+                                    model_id=model_id,
+                                    gpu=gpu,
+                                    embedding_regularizer=embedding_regularizer,
                                     net_regularizer=net_regularizer,
                                     **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -84,6 +106,14 @@ class DCNv2(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DCNv2.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)
         cross_out = self.crossnet(feature_emb)

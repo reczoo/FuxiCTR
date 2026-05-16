@@ -22,17 +22,55 @@ from torch import nn
 
 
 class CrossInteraction(nn.Module):
+    """Single cross interaction layer for CrossNet.
+
+    ``CrossInteraction`` computes a feature crossing between the base input ``X_0`` and the
+    current layer input ``X_i`` using a weight vector and a bias term.
+
+    Args:
+        input_dim (int): Dimension of the input features.
+
+    Example::
+
+        cross = CrossInteraction(input_dim=128)
+        output = cross(X_0, X_i)
+    """
+
     def __init__(self, input_dim):
         super(CrossInteraction, self).__init__()
         self.weight = nn.Linear(input_dim, 1, bias=False)
         self.bias = nn.Parameter(torch.zeros(input_dim))
 
     def forward(self, X_0, X_i):
+        """Compute the cross interaction.
+
+        Args:
+            X_0 (torch.Tensor): Base input tensor of shape (batch_size, input_dim).
+            X_i (torch.Tensor): Current layer input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            torch.Tensor: Interaction output of shape (batch_size, input_dim).
+        """
         interact_out = self.weight(X_i) * X_0 + self.bias
         return interact_out
 
 
 class CrossNet(nn.Module):
+    """Cross Network that learns explicit feature crossings of bounded degree.
+
+    ``CrossNet`` stacks multiple ``CrossInteraction`` layers to model explicit feature interactions
+    while keeping the memory cost linear with input dimension.
+
+    Args:
+        input_dim (int): Dimension of the input features.
+        num_layers (int): Number of cross layers.
+
+    Example::
+
+        cross_net = CrossNet(input_dim=128, num_layers=3)
+        output = cross_net(X_0)
+    """
+
     def __init__(self, input_dim, num_layers):
         super(CrossNet, self).__init__()
         self.num_layers = num_layers
@@ -40,6 +78,14 @@ class CrossNet(nn.Module):
                                        for _ in range(self.num_layers))
 
     def forward(self, X_0):
+        """Compute the cross network output.
+
+        Args:
+            X_0 (torch.Tensor): Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, input_dim).
+        """
         X_i = X_0 # b x dim
         for i in range(self.num_layers):
             X_i = X_i + self.cross_net[i](X_0, X_i)
@@ -47,6 +93,21 @@ class CrossNet(nn.Module):
 
 
 class CrossNetV2(nn.Module):
+    """Improved Cross Network that uses full linear projections for feature crossing.
+
+    ``CrossNetV2`` replaces the rank-1 weight matrix in ``CrossNet`` with a full linear layer,
+    enabling richer feature interactions.
+
+    Args:
+        input_dim (int): Dimension of the input features.
+        num_layers (int): Number of cross layers.
+
+    Example::
+
+        cross_net_v2 = CrossNetV2(input_dim=128, num_layers=3)
+        output = cross_net_v2(X_0)
+    """
+
     def __init__(self, input_dim, num_layers):
         super(CrossNetV2, self).__init__()
         self.num_layers = num_layers
@@ -54,6 +115,14 @@ class CrossNetV2(nn.Module):
                                           for _ in range(self.num_layers))
 
     def forward(self, X_0):
+        """Compute the cross network output.
+
+        Args:
+            X_0 (torch.Tensor): Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, input_dim).
+        """
         X_i = X_0 # b x dim
         for i in range(self.num_layers):
             X_i = X_i + X_0 * self.cross_layers[i](X_i)
@@ -65,6 +134,7 @@ class CrossNetMix(nn.Module):
         1. add MOE to learn feature interactions in different subspaces
         2. add nonlinear transformations in low-dimensional space
     """
+
     def __init__(self, in_features, layer_num=2, low_rank=32, num_experts=4):
         super(CrossNetMix, self).__init__()
         self.layer_num = layer_num
@@ -86,6 +156,14 @@ class CrossNetMix(nn.Module):
         # self.to(device)
 
     def forward(self, inputs):
+        """Compute the CrossNetMix output.
+
+        Args:
+            inputs (torch.Tensor): Input tensor of shape (batch_size, in_features).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, in_features).
+        """
         x_0 = inputs.unsqueeze(2)  # (bs, in_features, 1)
         x_l = x_0
         for i in range(self.layer_num):

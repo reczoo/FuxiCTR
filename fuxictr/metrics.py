@@ -24,6 +24,24 @@ from collections import OrderedDict
 
 
 def evaluate_metrics(y_true, y_pred, metrics, group_id=None):
+    """Evaluate a list of metrics on predictions.
+
+    Supports ``logloss``, ``AUC``, ``gAUC``, ``avgAUC``, ``MRR``, and ``NDCG@k``.
+    Group-level metrics (``gAUC``, ``avgAUC``, ``MRR``, ``NDCG``) require
+    ``group_id`` to be provided.
+
+    Args:
+        y_true (array-like): Ground-truth binary labels.
+        y_pred (array-like): Predicted probabilities or scores.
+        metrics (list): List of metric names to compute.
+        group_id (array-like, optional): Group identifiers for group-level metrics.
+
+    Returns:
+        OrderedDict: Mapping from metric name to computed value.
+
+    Raises:
+        ValueError: If an unsupported metric is requested.
+    """
     return_dict = OrderedDict()
     group_metrics = []
     for metric in metrics:
@@ -60,6 +78,15 @@ def evaluate_metrics(y_true, y_pred, metrics, group_id=None):
     return return_dict
 
 def evaluate_block(df, metric_funcs):
+    """Evaluate a list of metric functions on a single group DataFrame.
+
+    Args:
+        df (pd.DataFrame): DataFrame with ``y_true`` and ``y_pred`` columns.
+        metric_funcs (list): List of callable metric functions.
+
+    Returns:
+        list: List of ``(value, weight)`` tuples.
+    """
     res_list = []
     for fn in metric_funcs:
         v = fn(df.y_true.values, df.y_pred.values)
@@ -70,7 +97,15 @@ def evaluate_block(df, metric_funcs):
     return res_list
 
 def avgAUC(y_true, y_pred):
-    """ avgAUC used in MIND news recommendation """
+    """Compute average AUC used in MIND news recommendation.
+
+    Args:
+        y_true (array-like): Ground-truth labels.
+        y_pred (array-like): Predicted scores.
+
+    Returns:
+        tuple: ``(auc_value, weight)`` or ``(0, 0)`` for all-same-label groups.
+    """
     if np.sum(y_true) > 0 and np.sum(y_true) < len(y_true):
         auc = roc_auc_score(y_true, y_pred)
         return (auc, 1)
@@ -78,7 +113,15 @@ def avgAUC(y_true, y_pred):
         return (0, 0)
 
 def gAUC(y_true, y_pred):
-    """ gAUC defined in DIN paper """
+    """Compute group AUC defined in the DIN paper.
+
+    Args:
+        y_true (array-like): Ground-truth labels.
+        y_pred (array-like): Predicted scores.
+
+    Returns:
+        tuple: ``(weighted_auc, n_samples)`` or ``(0, 0)`` for all-same-label groups.
+    """
     if np.sum(y_true) > 0 and np.sum(y_true) < len(y_true):
         auc = roc_auc_score(y_true, y_pred)
         n_samples = len(y_true)
@@ -87,6 +130,15 @@ def gAUC(y_true, y_pred):
         return (0, 0)
 
 def MRR(y_true, y_pred):
+    """Compute Mean Reciprocal Rank.
+
+    Args:
+        y_true (array-like): Ground-truth binary relevance labels.
+        y_pred (array-like): Predicted scores for ranking.
+
+    Returns:
+        float: MRR score.
+    """
     order = np.argsort(y_pred)[::-1]
     y_true = np.take(y_true, order)
     rr_score = y_true / (np.arange(len(y_true)) + 1)
@@ -95,11 +147,27 @@ def MRR(y_true, y_pred):
 
 
 class NDCG(object):
-    """Normalized discounted cumulative gain metric."""
+    """Normalized discounted cumulative gain metric.
+
+    Computes DCG at a given cutoff ``k`` and normalizes by the ideal DCG.
+
+    Args:
+        k (int): Rank cutoff for DCG computation. Default: ``1``.
+    """
+
     def __init__(self, k=1):
         self.topk = k
 
     def dcg_score(self, y_true, y_pred):
+        """Compute discounted cumulative gain at ``self.topk``.
+
+        Args:
+            y_true (array-like): Ground-truth relevance labels.
+            y_pred (array-like): Predicted scores for ranking.
+
+        Returns:
+            float: DCG score.
+        """
         order = np.argsort(y_pred)[::-1]
         y_true = np.take(y_true, order[:self.topk])
         gains = 2 ** y_true - 1
@@ -107,6 +175,15 @@ class NDCG(object):
         return np.sum(gains / discounts)
 
     def __call__(self, y_true, y_pred):
+        """Compute NDCG at ``self.topk``.
+
+        Args:
+            y_true (array-like): Ground-truth relevance labels.
+            y_pred (array-like): Predicted scores for ranking.
+
+        Returns:
+            float: NDCG score in ``[0, 1]``.
+        """
         idcg = self.dcg_score(y_true, y_true)
         dcg = self.dcg_score(y_true, y_pred)
         return dcg / (idcg + 1e-12)

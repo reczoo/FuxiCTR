@@ -25,12 +25,28 @@ from fuxictr.pytorch.layers import FeatureEmbedding
 
 
 class FiGNN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FiGNN", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Feature Interaction Graph Neural Network (FiGNN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FiGNN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        gnn_layers (int): Number of GNN layers. Default: ``3``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        use_gru (bool): Whether to use GRU for feature updating. Default: ``True``.
+        reuse_graph_layer (bool): Whether to reuse the same graph layer. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="FiGNN",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  gnn_layers=3,
                  use_residual=True,
                  use_gru=True,
@@ -58,6 +74,14 @@ class FiGNN(BaseModel):
         self.model_to_device()
                     
     def forward(self, inputs):
+        """Forward pass of FiGNN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         h_out = self.fignn(feature_emb)
@@ -68,8 +92,18 @@ class FiGNN(BaseModel):
 
 
 class FiGNN_Layer(nn.Module):
-    def __init__(self, 
-                 num_fields, 
+    """FiGNN layer with attentional graph and GRU updating.
+
+    Args:
+        num_fields (int): Number of input fields.
+        embedding_dim (int): Dimension of feature embeddings.
+        gnn_layers (int): Number of GNN layers. Default: ``3``.
+        reuse_graph_layer (bool): Whether to reuse the same graph layer. Default: ``False``.
+        use_gru (bool): Whether to use GRU for feature updating. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+    """
+    def __init__(self,
+                 num_fields,
                  embedding_dim,
                  gnn_layers=3,
                  reuse_graph_layer=False,
@@ -92,6 +126,14 @@ class FiGNN_Layer(nn.Module):
         self.W_attn = nn.Linear(embedding_dim * 2, 1, bias=False)
 
     def build_graph_with_attention(self, feature_emb):
+        """Build attentional graph from feature embeddings.
+
+        Args:
+            feature_emb: Feature embedding tensor of shape (B, F, D).
+
+        Returns:
+            torch.Tensor: Attentional graph of shape (B, F, F).
+        """
         src_emb = feature_emb[:, self.src_nodes, :]
         dst_emb = feature_emb[:, self.dst_nodes, :]
         concat_emb = torch.cat([src_emb, dst_emb], dim=-1)
@@ -103,6 +145,14 @@ class FiGNN_Layer(nn.Module):
         return graph
 
     def forward(self, feature_emb):
+        """Forward pass of FiGNN_Layer.
+
+        Args:
+            feature_emb: Feature embedding tensor of shape (B, F, D).
+
+        Returns:
+            torch.Tensor: Updated feature embeddings after GNN propagation.
+        """
         g = self.build_graph_with_attention(feature_emb)
         h = feature_emb
         for i in range(self.gnn_layers):
@@ -123,6 +173,12 @@ class FiGNN_Layer(nn.Module):
 
 
 class GraphLayer(nn.Module):
+    """Single graph convolution layer for FiGNN.
+
+    Args:
+        num_fields (int): Number of input fields.
+        embedding_dim (int): Dimension of feature embeddings.
+    """
     def __init__(self, num_fields, embedding_dim):
         super(GraphLayer, self).__init__()
         self.W_in = torch.nn.Parameter(torch.Tensor(num_fields, embedding_dim, embedding_dim))
@@ -132,6 +188,15 @@ class GraphLayer(nn.Module):
         self.bias_p = nn.Parameter(torch.zeros(embedding_dim))
 
     def forward(self, g, h):
+        """Forward pass of GraphLayer.
+
+        Args:
+            g: Attentional graph tensor of shape (B, F, F).
+            h: Feature embedding tensor of shape (B, F, D).
+
+        Returns:
+            torch.Tensor: Aggregated feature embeddings.
+        """
         h_out = torch.matmul(self.W_out, h.unsqueeze(-1)).squeeze(-1) # broadcast multiply
         aggr = torch.bmm(g, h_out)
         a = torch.matmul(self.W_in, aggr.unsqueeze(-1)).squeeze(-1) + self.bias_p
@@ -139,6 +204,12 @@ class GraphLayer(nn.Module):
 
 
 class AttentionalPrediction(nn.Module):
+    """Attentional prediction layer for FiGNN.
+
+    Args:
+        num_fields (int): Number of input fields.
+        embedding_dim (int): Dimension of feature embeddings.
+    """
     def __init__(self, num_fields, embedding_dim):
         super(AttentionalPrediction, self).__init__()
         self.mlp1 = nn.Linear(embedding_dim, 1, bias=False)
@@ -146,6 +217,14 @@ class AttentionalPrediction(nn.Module):
                                   nn.Sigmoid())
 
     def forward(self, h):
+        """Forward pass of AttentionalPrediction.
+
+        Args:
+            h: Feature embedding tensor of shape (B, F, D).
+
+        Returns:
+            torch.Tensor: Prediction logits.
+        """
         score = self.mlp1(h).squeeze(-1) # b x f
         weight = self.mlp2(h.flatten(start_dim=1)) # b x f
         logit = (weight * score).sum(dim=1, keepdim=True)

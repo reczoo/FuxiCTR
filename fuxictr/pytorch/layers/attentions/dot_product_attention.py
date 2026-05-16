@@ -30,6 +30,20 @@ class ScaledDotProductAttention(nn.Module):
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
 
     def forward(self, Q, K, V, scale=None, mask=None):
+        """Compute scaled dot-product attention.
+
+        Args:
+            Q (torch.Tensor): Query tensor.
+            K (torch.Tensor): Key tensor.
+            V (torch.Tensor): Value tensor.
+            scale (float, optional): Scaling factor for the dot products. Default: ``None``.
+            mask (torch.Tensor, optional): Mask tensor where 0 indicates masked positions.
+                Default: ``None``.
+
+        Returns:
+            tuple: ``(output, attention)`` where ``output`` is the attended representation
+            and ``attention`` is the attention weight distribution.
+        """
         # mask: 0 for masked positions
         scores = torch.matmul(Q, K.transpose(-1, -2))
         if scale:

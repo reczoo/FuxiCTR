@@ -29,19 +29,39 @@ from tqdm import tqdm
 
 
 class BaseModel(nn.Module):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="BaseModel", 
-                 task="binary_classification", 
-                 gpu=-1, 
-                 monitor="AUC", 
-                 save_best_only=True, 
-                 monitor_mode="max", 
-                 early_stop_patience=2, 
-                 eval_steps=None, 
-                 embedding_regularizer=None, 
-                 net_regularizer=None, 
-                 reduce_lr_on_plateau=True, 
+    """Base class for ranking models in PyTorch.
+
+    Provides training, evaluation, checkpointing, early stopping, and regularization
+    utilities for CTR prediction models.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        model_id (str): Model identifier. Default: ``"BaseModel"``.
+        task (str): Task type, e.g., ``binary_classification`` or ``regression``. Default: ``"binary_classification"``.
+        gpu (int): GPU device ID, -1 for CPU. Default: ``-1``.
+        monitor (str): Metric to monitor for early stopping. Default: ``"AUC"``.
+        save_best_only (bool): Whether to save only the best checkpoint. Default: ``True``.
+        monitor_mode (str): ``max`` or ``min`` for the monitored metric. Default: ``"max"``.
+        early_stop_patience (int): Patience for early stopping. Default: ``2``.
+        eval_steps (int or None): Evaluation frequency in steps; ``None`` means once per epoch. Default: ``None``.
+        embedding_regularizer (str or None): Regularizer for embedding parameters. Default: ``None``.
+        net_regularizer (str or None): Regularizer for non-embedding parameters. Default: ``None``.
+        reduce_lr_on_plateau (bool): Whether to reduce learning rate on plateau. Default: ``True``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="BaseModel",
+                 task="binary_classification",
+                 gpu=-1,
+                 monitor="AUC",
+                 save_best_only=True,
+                 monitor_mode="max",
+                 early_stop_patience=2,
+                 eval_steps=None,
+                 embedding_regularizer=None,
+                 net_regularizer=None,
+                 reduce_lr_on_plateau=True,
                  **kwargs):
         super(BaseModel, self).__init__()
         self.device = get_device(gpu)
@@ -62,10 +82,22 @@ class BaseModel(nn.Module):
         self.validation_metrics = kwargs["metrics"]
 
     def compile(self, optimizer, loss, lr):
+        """Configure the optimizer and loss function.
+
+        Args:
+            optimizer (str): Optimizer name.
+            loss (str): Loss function name.
+            lr (float): Learning rate.
+        """
         self.optimizer = get_optimizer(optimizer, self.parameters(), lr)
         self.loss_fn = get_loss(loss)
 
     def regularization_loss(self):
+        """Compute the combined embedding and network regularization loss.
+
+        Returns:
+            torch.Tensor: Scalar regularization loss.
+        """
         reg_term = 0
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = get_regularizer(self._embedding_regularizer)
@@ -86,28 +118,64 @@ class BaseModel(nn.Module):
         return reg_term
 
     def add_loss(self, return_dict, y_true):
+        """Compute the task loss without regularization.
+
+        Args:
+            return_dict (dict): Model forward outputs containing ``y_pred``.
+            y_true (torch.Tensor): Ground-truth labels.
+
+        Returns:
+            torch.Tensor: Loss value.
+        """
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         return loss
 
     def compute_loss(self, return_dict, y_true):
+        """Compute the total loss including regularization.
+
+        Args:
+            return_dict (dict): Model forward outputs.
+            y_true (torch.Tensor): Ground-truth labels.
+
+        Returns:
+            torch.Tensor: Total loss value.
+        """
         loss = self.add_loss(return_dict, y_true) + self.regularization_loss()
         return loss
 
     def reset_parameters(self):
+        """Reset model parameters using default and custom initializers."""
         def default_reset_params(m):
-            # initialize nn.Linear/nn.Conv1d layers by default
+            """Initialize nn.Linear/nn.Conv1d layers by default.
+
+            Args:
+                m (nn.Module): Module to initialize.
+            """
             if type(m) in [nn.Linear, nn.Conv1d]:
                 nn.init.xavier_normal_(m.weight)
                 if m.bias is not None:
                     m.bias.data.fill_(0)
         def custom_reset_params(m):
-            # initialize layers with customized init_weights()
+            """Initialize layers with customized init_weights().
+
+            Args:
+                m (nn.Module): Module to initialize.
+            """
             if hasattr(m, 'init_weights'):
                 m.init_weights()
         self.apply(default_reset_params)
         self.apply(custom_reset_params)
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input features from a batch dictionary.
+
+        Args:
+            inputs (dict): Batch data dictionary.
+            feature_source (list, optional): Whitelist of feature sources to include.
+
+        Returns:
+            dict: Mapping of feature names to tensors on the model device.
+        """
         X_dict = dict()
         for feature in inputs.keys():
             if feature in self.feature_map.labels:
@@ -121,38 +189,73 @@ class BaseModel(nn.Module):
         return X_dict
 
     def get_labels(self, inputs):
-        """ Please override get_labels() when using multiple labels!
+        """Extract labels from a batch dictionary.
+
+        Please override get_labels() when using multiple labels!
+
+        Args:
+            inputs (dict): Batch data dictionary.
+
+        Returns:
+            torch.Tensor: Label tensor of shape ``(batch_size, 1)``.
         """
         labels = self.feature_map.labels
         y = inputs[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Extract group IDs from a batch dictionary.
+
+        Args:
+            inputs (dict): Batch data dictionary.
+
+        Returns:
+            torch.Tensor: Group ID tensor.
+        """
         return inputs[self.feature_map.group_id]
 
     def model_to_device(self):
+        """Move the model to the configured device."""
         self.to(device=self.device)
 
     def lr_decay(self, factor=0.1, min_lr=1e-6):
+        """Reduce the learning rate by a multiplicative factor.
+
+        Args:
+            factor (float): Multiplicative factor applied to the current LR.
+            min_lr (float): Lower bound for the learning rate.
+
+        Returns:
+            float: Updated learning rate.
+        """
         for param_group in self.optimizer.param_groups:
             reduced_lr = max(param_group["lr"] * factor, min_lr)
             param_group["lr"] = reduced_lr
         return reduced_lr
-           
+
     def fit(self, data_generator, epochs=1, validation_data=None,
             max_gradient_norm=10., **kwargs):
+        """Train the model for a fixed number of epochs.
+
+        Args:
+            data_generator: Training data generator.
+            epochs (int): Number of training epochs.
+            validation_data: Validation data generator.
+            max_gradient_norm (float): Maximum gradient norm for clipping.
+            **kwargs: Additional keyword arguments.
+        """
         self.valid_gen = validation_data
         self._max_gradient_norm = max_gradient_norm
         self._best_metric = np.inf if self._monitor_mode == "min" else -np.inf
         self._stopping_steps = 0
-        self._steps_per_epoch = len(data_generator)
         self._stop_training = False
+        self._steps_per_epoch = len(data_generator)
         self._total_steps = 0
         self._batch_index = 0
         self._epoch_index = 0
         if self._eval_steps is None:
             self._eval_steps = self._steps_per_epoch
-        
+
         logging.info("Start training: {} batches/epoch".format(self._steps_per_epoch))
         logging.info("************ Epoch=1 start ************")
         for epoch in range(epochs):
@@ -167,6 +270,12 @@ class BaseModel(nn.Module):
         self.load_weights(self.checkpoint)
 
     def checkpoint_and_earlystop(self, logs, min_delta=1e-6):
+        """Update checkpoints and determine whether to trigger early stopping.
+
+        Args:
+            logs (dict): Metric values from the latest evaluation.
+            min_delta (float): Minimum change to qualify as an improvement.
+        """
         monitor_value = self._monitor.get_value(logs)
         if (self._monitor_mode == "min" and monitor_value > self._best_metric - min_delta) or \
            (self._monitor_mode == "max" and monitor_value < self._best_metric + min_delta):
@@ -189,12 +298,21 @@ class BaseModel(nn.Module):
             self.save_weights(self.checkpoint)
 
     def eval_step(self):
+        """Run a single evaluation step on the validation set."""
         logging.info('Evaluation @epoch {} - batch {}: '.format(self._epoch_index + 1, self._batch_index + 1))
         val_logs = self.evaluate(self.valid_gen, metrics=self._monitor.get_metrics())
         self.checkpoint_and_earlystop(val_logs)
         self.train()
 
     def train_step(self, batch_data):
+        """Execute one training step on a single batch.
+
+        Args:
+            batch_data (dict): Batch data dictionary.
+
+        Returns:
+            torch.Tensor: Training loss value.
+        """
         self.optimizer.zero_grad()
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
@@ -205,6 +323,11 @@ class BaseModel(nn.Module):
         return loss
 
     def train_epoch(self, data_generator):
+        """Train the model for one epoch.
+
+        Args:
+            data_generator: Training data generator.
+        """
         self._batch_index = 0
         train_loss = 0
         self.train()
@@ -225,6 +348,15 @@ class BaseModel(nn.Module):
                 break
 
     def evaluate(self, data_generator, metrics=None):
+        """Evaluate the model on a validation data generator.
+
+        Args:
+            data_generator: Validation data generator.
+            metrics (list, optional): List of metric names to compute.
+
+        Returns:
+            dict: Mapping of metric names to computed values.
+        """
         self.eval()  # set to evaluation mode
         with torch.no_grad():
             y_pred = []
@@ -249,6 +381,14 @@ class BaseModel(nn.Module):
             return val_logs
 
     def predict(self, data_generator):
+        """Generate predictions on a data generator.
+
+        Args:
+            data_generator: Data generator yielding batches.
+
+        Returns:
+            np.ndarray: Flattened prediction array.
+        """
         self.eval()  # set to evaluation mode
         with torch.no_grad():
             y_pred = []
@@ -261,17 +401,49 @@ class BaseModel(nn.Module):
             return y_pred
 
     def evaluate_metrics(self, y_true, y_pred, metrics, group_id=None):
+        """Compute evaluation metrics.
+
+        Args:
+            y_true (np.ndarray): Ground-truth labels.
+            y_pred (np.ndarray): Predicted values.
+            metrics (list): List of metric names.
+            group_id (np.ndarray, optional): Group identifiers for grouped metrics.
+
+        Returns:
+            dict: Mapping of metric names to computed values.
+        """
         return evaluate_metrics(y_true, y_pred, metrics, group_id)
 
     def save_weights(self, checkpoint):
+        """Save model weights to a checkpoint file.
+
+        Args:
+            checkpoint (str): Path to the checkpoint file.
+        """
         torch.save(self.state_dict(), checkpoint)
-    
+
     def load_weights(self, checkpoint):
+        """Load model weights from a checkpoint file.
+
+        Args:
+            checkpoint (str): Path to the checkpoint file.
+        """
         self.to(self.device)
         state_dict = torch.load(checkpoint, map_location="cpu")
         self.load_state_dict(state_dict)
 
     def get_output_activation(self, task):
+        """Get the output activation layer for a given task.
+
+        Args:
+            task (str): Task type, e.g., ``binary_classification`` or ``regression``.
+
+        Returns:
+            nn.Module: Output activation module.
+
+        Raises:
+            NotImplementedError: If the task type is not supported.
+        """
         if task == "binary_classification":
             return nn.Sigmoid()
         elif task == "regression":
@@ -280,8 +452,16 @@ class BaseModel(nn.Module):
             raise NotImplementedError("task={} is not supported.".format(task))
 
     def count_parameters(self, count_embedding=True):
+        """Count the number of trainable parameters.
+
+        Args:
+            count_embedding (bool): Whether to include embedding parameters.
+
+        Returns:
+            int: Total number of trainable parameters.
+        """
         total_params = 0
-        for name, param in self.named_parameters(): 
+        for name, param in self.named_parameters():
             if not count_embedding and "embedding" in name:
                 continue
             if param.requires_grad:

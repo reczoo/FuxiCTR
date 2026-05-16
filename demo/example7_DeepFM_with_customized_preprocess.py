@@ -42,12 +42,28 @@ class CustomizedFeatureProcessor(FeatureProcessor):
     """
 
     def convert_weekday(self, col_name=None):
+        """Extract the weekday (0-6) from the ``time_stamp`` column.
+
+        Args:
+            col_name (str, optional): Unused; kept for API compatibility.
+
+        Returns:
+            pl.Expr: Polars expression that yields the weekday as an integer.
+        """
         def _convert_weekday(timestamp):
             dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
             return int(dt.strftime('%w'))
         return pl.col("time_stamp").map_elements(_convert_weekday, return_dtype=pl.Int64)
 
     def convert_hour(self, col_name=None):
+        """Extract the hour-of-day (0-23) from the ``time_stamp`` column.
+
+        Args:
+            col_name (str, optional): Unused; kept for API compatibility.
+
+        Returns:
+            pl.Expr: Polars expression that yields the hour as an integer.
+        """
         def _convert_hour(timestamp):
             dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
             return int(dt.hour)

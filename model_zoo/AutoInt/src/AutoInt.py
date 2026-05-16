@@ -23,30 +23,53 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, ScaledDotProduct
 
 
 class AutoInt(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="AutoInt", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 dnn_hidden_units=[64, 64, 64], 
-                 dnn_activations="ReLU", 
+    """AutoInt model with multi-head self-attention for feature interactions.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"AutoInt"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[64, 64, 64]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        attention_layers (int): Number of self-attention layers. Default: ``2``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        attention_dim (int): Dimension of attention vectors. Default: ``8``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        layer_norm (bool): Whether to use layer normalization in attention. Default: ``False``.
+        use_scale (bool): Whether to scale attention scores. Default: ``False``.
+        use_wide (bool): Whether to use a wide (linear) component. Default: ``False``.
+        use_residual (bool): Whether to use residual connections in attention. Default: ``True``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="AutoInt",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 dnn_hidden_units=[64, 64, 64],
+                 dnn_activations="ReLU",
                  attention_layers=2,
                  num_heads=1,
                  attention_dim=8,
-                 net_dropout=0, 
+                 net_dropout=0,
                  batch_norm=False,
                  layer_norm=False,
                  use_scale=False,
                  use_wide=False,
                  use_residual=True,
-                 embedding_regularizer=None, 
-                 net_regularizer=None, 
+                 embedding_regularizer=None,
+                 net_regularizer=None,
                  **kwargs):
-        super(AutoInt, self).__init__(feature_map, 
-                                      model_id=model_id, 
-                                      gpu=gpu, 
-                                      embedding_regularizer=embedding_regularizer, 
+        super(AutoInt, self).__init__(feature_map,
+                                      model_id=model_id,
+                                      gpu=gpu,
+                                      embedding_regularizer=embedding_regularizer,
                                       net_regularizer=net_regularizer,
                                       **kwargs) 
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -74,8 +97,13 @@ class AutoInt(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of AutoInt.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
@@ -92,9 +120,20 @@ class AutoInt(BaseModel):
 
 
 class MultiHeadSelfAttention(nn.Module):
-    """ Multi-head attention module """
+    """Multi-head self-attention module.
 
-    def __init__(self, input_dim, attention_dim=None, num_heads=1, dropout_rate=0., 
+    Args:
+        input_dim (int): Input feature dimension.
+        attention_dim (int or None): Dimension of attention vectors. If None, defaults to input_dim.
+            Default: ``None``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        dropout_rate (float): Dropout rate for attention weights. Default: ``0.``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        use_scale (bool): Whether to scale attention scores. Default: ``False``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``False``.
+    """
+
+    def __init__(self, input_dim, attention_dim=None, num_heads=1, dropout_rate=0.,
                  use_residual=True, use_scale=False, layer_norm=False):
         super(MultiHeadSelfAttention, self).__init__()
         if attention_dim is None:
@@ -116,13 +155,21 @@ class MultiHeadSelfAttention(nn.Module):
         self.layer_norm = nn.LayerNorm(attention_dim) if layer_norm else None
 
     def forward(self, X):
+        """Forward pass of multi-head self-attention.
+
+        Args:
+            X: Input tensor of shape (batch_size, num_fields, input_dim).
+
+        Returns:
+            torch.Tensor: Output tensor after self-attention.
+        """
         residual = X
-        
+
         # linear projection
         query = self.W_q(X)
         key = self.W_k(X)
         value = self.W_v(X)
-        
+
         # split by heads
         batch_size = query.size(0)
         query = query.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
@@ -133,7 +180,7 @@ class MultiHeadSelfAttention(nn.Module):
         output, attention = self.dot_attention(query, key, value, scale=self.scale)
         # concat heads
         output = output.transpose(1, 2).contiguous().view(batch_size, -1, self.num_heads * self.head_dim)
-        
+
         if self.W_res is not None:
             residual = self.W_res(residual)
         if self.use_residual:

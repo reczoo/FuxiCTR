@@ -22,11 +22,30 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class PPNet(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="PPNet", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
+    """Parameter Personalized Network (PPNet) model.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"PPNet"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        gate_emb_dim (int): Embedding dimension for gate features. Default: ``10``.
+        gate_priors (list): List of feature names used as gate priors. Default: ``[]``.
+        gate_hidden_dim (int): Hidden dimension of gate networks. Default: ``64``.
+        hidden_units (list): Hidden units of the MLP. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation function for hidden layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="PPNet",
+                 gpu=-1,
+                 learning_rate=1e-3,
                  embedding_dim=10,
                  gate_emb_dim=10,
                  gate_priors=[],
@@ -35,17 +54,17 @@ class PPNet(BaseModel):
                  hidden_activations="ReLU",
                  net_dropout=0,
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(PPNet, self).__init__(feature_map, 
-                                    model_id=model_id, 
-                                    gpu=gpu, 
-                                    embedding_regularizer=embedding_regularizer, 
+        super(PPNet, self).__init__(feature_map,
+                                    model_id=model_id,
+                                    gpu=gpu,
+                                    embedding_regularizer=embedding_regularizer,
                                     net_regularizer=net_regularizer,
                                     **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
-        self.gate_embed_layer = FeatureEmbedding(feature_map, gate_emb_dim, 
+        self.gate_embed_layer = FeatureEmbedding(feature_map, gate_emb_dim,
                                                  required_feature_columns=gate_priors)
         gate_input_dim = feature_map.sum_emb_out_dim() + len(gate_priors) * gate_emb_dim
         self.ppn = PPNet_MLP(input_dim=feature_map.sum_emb_out_dim(),
@@ -59,8 +78,16 @@ class PPNet(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-            
+
     def forward(self, inputs):
+        """Forward pass of PPNet.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)
         gate_emb = self.gate_embed_layer(X, flatten_emb=True)
@@ -71,7 +98,20 @@ class PPNet(BaseModel):
 
 
 class PPNet_MLP(nn.Module):
-    def __init__(self, 
+    """PPNet MLP with gated units.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        output_dim (int): Output dimension. Default: ``1``.
+        gate_input_dim (int): Input dimension for gate networks. Default: ``64``.
+        gate_hidden_dim (int or None): Hidden dimension of gate networks. Default: ``None``.
+        hidden_units (list): Hidden units of the MLP. Default: ``[]``.
+        hidden_activations (str): Activation function for hidden layers. Default: ``"ReLU"``.
+        dropout_rates (float): Dropout rates. Default: ``0.0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        use_bias (bool): Whether to use bias in linear layers. Default: ``True``.
+    """
+    def __init__(self,
                  input_dim,
                  output_dim=1,
                  gate_input_dim=64,
@@ -99,11 +139,20 @@ class PPNet_MLP(nn.Module):
             if dropout_rates[idx] > 0:
                 layers.append(nn.Dropout(p=dropout_rates[idx]))
             self.mlp_layers.append(nn.Sequential(*layers))
-            self.gate_layers.append(GateNU(gate_input_dim, gate_hidden_dim, 
+            self.gate_layers.append(GateNU(gate_input_dim, gate_hidden_dim,
                                            output_dim=hidden_units[idx + 1]))
         self.mlp_layers.append(nn.Linear(hidden_units[-1], output_dim, bias=use_bias))
-    
+
     def forward(self, feature_emb, gate_emb):
+        """Forward pass of PPNet_MLP.
+
+        Args:
+            feature_emb: Feature embeddings.
+            gate_emb: Gate embeddings.
+
+        Returns:
+            Tensor: Output tensor.
+        """
         gate_input = torch.cat([feature_emb.detach(), gate_emb], dim=-1)
         h = feature_emb
         for i in range(len(self.gate_layers)):
@@ -115,7 +164,16 @@ class PPNet_MLP(nn.Module):
 
 
 class GateNU(nn.Module):
-    def __init__(self, 
+    """Gated Neural Unit for PPNet.
+
+    Args:
+        input_dim (int): Input dimension.
+        hidden_dim (int or None): Hidden dimension. Default: ``None``.
+        output_dim (int or None): Output dimension. Default: ``None``.
+        hidden_activation (str): Activation function for hidden layer. Default: ``"ReLU"``.
+        dropout_rate (float): Dropout rate. Default: ``0.0``.
+    """
+    def __init__(self,
                  input_dim,
                  hidden_dim=None,
                  output_dim=None,
@@ -133,4 +191,12 @@ class GateNU(nn.Module):
         self.gate = nn.Sequential(*layers)
 
     def forward(self, inputs):
+        """Forward pass of GateNU.
+
+        Args:
+            inputs: Input tensor.
+
+        Returns:
+            Tensor: Gated output scaled by 2.
+        """
         return self.gate(inputs) * 2

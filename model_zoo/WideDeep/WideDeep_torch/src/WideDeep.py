@@ -23,41 +23,62 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, LogisticRegressi
 
 
 class WideDeep(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="WideDeep", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 hidden_units=[64, 64, 64], 
-                 hidden_activations="ReLU", 
-                 net_dropout=0, 
-                 batch_norm=False, 
-                 embedding_regularizer=None, 
+    """Wide and Deep learning model (PyTorch version).
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"WideDeep"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        hidden_units (list): Hidden units of the deep network. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation function for deep network layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for deep network. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="WideDeep",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 hidden_units=[64, 64, 64],
+                 hidden_activations="ReLU",
+                 net_dropout=0,
+                 batch_norm=False,
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(WideDeep, self).__init__(feature_map, 
-                                       model_id=model_id, 
-                                       gpu=gpu, 
-                                       embedding_regularizer=embedding_regularizer, 
+        super(WideDeep, self).__init__(feature_map,
+                                       model_id=model_id,
+                                       gpu=gpu,
+                                       embedding_regularizer=embedding_regularizer,
                                        net_regularizer=net_regularizer,
                                        **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
         self.lr_layer = LogisticRegression(feature_map, use_bias=False)
         self.dnn = MLP_Block(input_dim=embedding_dim * feature_map.num_fields,
-                             output_dim=1, 
+                             output_dim=1,
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             output_activation=None, 
-                             dropout_rates=net_dropout, 
+                             output_activation=None,
+                             dropout_rates=net_dropout,
                              batch_norm=batch_norm)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-            
+
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of WideDeep.
+
+        Args:
+            inputs: Model inputs ``[X, y]``.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)

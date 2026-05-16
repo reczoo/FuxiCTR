@@ -21,18 +21,29 @@ from fuxictr.pytorch.layers import FeatureEmbedding, FactorizationMachine
 
 
 class FM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 regularizer=None, 
+    """Factorization Machine (FM) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        regularizer (str or None): Regularizer for embeddings and network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="FM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 regularizer=None,
                  **kwargs):
-        super(FM, self).__init__(feature_map, 
-                                 model_id=model_id, 
-                                 gpu=gpu, 
-                                 embedding_regularizer=regularizer, 
+        super(FM, self).__init__(feature_map,
+                                 model_id=model_id,
+                                 gpu=gpu,
+                                 embedding_regularizer=regularizer,
                                  net_regularizer=regularizer,
                                  **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -40,10 +51,15 @@ class FM(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-            
+
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of FM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)

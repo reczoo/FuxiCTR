@@ -26,6 +26,23 @@ import multiprocessing as mp
 
 
 class Tokenizer(object):
+    """Tokenizes text data and builds vocabularies for categorical or sequence features.
+
+    Supports building vocab from raw text, merging with shared tokenizers,
+    and encoding text into integer indices with optional padding for sequences.
+
+    Args:
+        max_features (int, optional): Maximum vocabulary size. Default: ``None``.
+        na_value (str): String value treated as missing/NA. Default: ``\"\"``.
+        min_freq (int): Minimum token frequency to include in vocabulary. Default: ``1``.
+        splitter (str, optional): Delimiter for sequence splitting. Default: ``None``.
+        remap (bool): If ``True``, remap tokens to consecutive integer indices.
+            Default: ``True``.
+        lower (bool): If ``True``, lowercase tokens. Default: ``False``.
+        max_len (int): Maximum sequence length. ``0`` means auto-detect. Default: ``0``.
+        padding (str): ``"pre"`` or ``"post"`` padding for sequences. Default: ``"pre"``.
+    """
+
     def __init__(self, max_features=None, na_value="", min_freq=1, splitter=None, remap=True,
                  lower=False, max_len=0, padding="pre"):
         self._max_features = max_features
@@ -39,6 +56,13 @@ class Tokenizer(object):
         self.remap = remap
 
     def fit_on_texts(self, series):
+        """Fit tokenizer on a text series and build vocabulary.
+
+        Uses parallel processing to count tokens across chunks.
+
+        Args:
+            series (pandas.Series): Text data series.
+        """
         max_len = 0
         word_counts = Counter()
         with ProcessPoolExecutor(max_workers=(mp.cpu_count() // 2)) as executor:
@@ -56,6 +80,11 @@ class Tokenizer(object):
         self.build_vocab(word_counts)
 
     def build_vocab(self, word_counts):
+        """Build vocabulary from token frequency counts.
+
+        Args:
+            word_counts (Counter): Token frequency counts.
+        """
         # sort to guarantee the determinism of index order
         word_counts = word_counts.most_common()
         if self._max_features: # keep the most frequent features
@@ -75,6 +104,14 @@ class Tokenizer(object):
         self.vocab["__OOV__"] = self.vocab_size() # use the last index for __OOV__
 
     def merge_vocab(self, shared_tokenizer):
+        """Merge this tokenizer's vocabulary into a shared tokenizer.
+
+        Args:
+            shared_tokenizer (Tokenizer): Tokenizer to merge into.
+
+        Returns:
+            Tokenizer: The updated shared tokenizer.
+        """
         if self.remap:
             new_words = 0
             for word in self.vocab.keys():
@@ -91,9 +128,19 @@ class Tokenizer(object):
         return shared_tokenizer
 
     def vocab_size(self):
+        """Return the vocabulary size.
+
+        Returns:
+            int: Size of the vocabulary (max index + 1).
+        """
         return max(self.vocab.values()) + 1 # In case that keys start from 1
 
     def update_vocab(self, word_list):
+        """Update vocabulary with new words.
+
+        Args:
+            word_list (iterable): Words to add.
+        """
         new_words = 0
         for word in word_list:
             if word not in self.vocab:
@@ -103,6 +150,14 @@ class Tokenizer(object):
             self.vocab["__OOV__"] = self.vocab_size()
 
     def encode_meta(self, series):
+        """Encode a meta column series to integer indices.
+
+        Args:
+            series (pandas.Series): Raw meta values.
+
+        Returns:
+            numpy.ndarray: Encoded integer values.
+        """
         word_counts = dict(series.value_counts())
         if len(self.vocab) == 0:
             self.build_vocab(word_counts)
@@ -112,10 +167,26 @@ class Tokenizer(object):
         return series.values
 
     def encode_category(self, series):
+        """Encode a categorical series to integer indices.
+
+        Args:
+            series (pandas.Series): Raw categorical values.
+
+        Returns:
+            numpy.ndarray: Encoded integer values.
+        """
         series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
         return series.values
 
     def encode_sequence(self, series):
+        """Encode a sequence series to padded integer arrays.
+
+        Args:
+            series (pandas.Series): Raw sequence strings.
+
+        Returns:
+            list: List of padded integer sequences.
+        """
         series = series.map(
             lambda text: [self.vocab.get(x, self.vocab["__OOV__"]) if x != self._na_value \
             else self.vocab["__PAD__"] for x in text.split(self._splitter)]
@@ -124,8 +195,15 @@ class Tokenizer(object):
                              value=self.vocab["__PAD__"],
                              padding=self.padding, truncating=self.padding)
         return seqs.tolist()
-    
+
     def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
+        """Load pretrained embedding keys and optionally expand vocabulary.
+
+        Args:
+            feature_dtype (type): Data type for feature keys.
+            pretrain_path (str): Path to pretrained embedding file.
+            expand_vocab (bool): Whether to add new keys to vocabulary. Default: ``True``.
+        """
         keys = load_pretrain_emb(pretrain_path, keys=["key"])
         # in case mismatch of dtype between int and str
         keys = keys.astype(feature_dtype)
@@ -140,6 +218,16 @@ class Tokenizer(object):
 
 
 def count_tokens(series, splitter=None):
+    """Count token frequencies and max sequence length in a series.
+
+    Args:
+        series (pandas.Series): Text data series.
+        splitter (str, optional): Delimiter for splitting sequences.
+
+    Returns:
+        tuple: ``(word_counts, max_len)`` where ``word_counts`` is a dict
+        and ``max_len`` is the maximum sequence length.
+    """
     max_len = 0
     if splitter is not None: # for sequence
         series = series.map(lambda text: text.split(splitter))
@@ -151,6 +239,20 @@ def count_tokens(series, splitter=None):
 
 
 def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
+    """Load pretrained embedding data from file.
+
+    Supports ``.h5``, ``.npz``, and ``.parquet`` formats.
+
+    Args:
+        pretrain_path (str): Path to embedding file.
+        keys (list): Keys to read from the file. Default: ``["key", "value"]``.
+
+    Returns:
+        numpy.ndarray or tuple: Loaded embedding data.
+
+    Raises:
+        ValueError: If the file format is not supported.
+    """
     if type(keys) != list:
         keys = [keys]
     if pretrain_path.endswith("h5"):

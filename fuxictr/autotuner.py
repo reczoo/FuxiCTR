@@ -30,6 +30,18 @@ from .utils import print_to_json, load_model_config, load_dataset_config
 yaml.Dumper.ignore_aliases = lambda *args : True
 
 def enumerate_params(config_file, exclude_expid=[]):
+    """Enumerate all hyperparameter combinations from a tuner config file.
+
+    Generates ``dataset_config.yaml`` and ``model_config.yaml`` in a directory
+    named after the config file (without ``.yaml`` extension).
+
+    Args:
+        config_file (str): Path to the tuner YAML configuration.
+        exclude_expid (list): List of experiment IDs to exclude.
+
+    Returns:
+        str: Path to the generated config directory.
+    """
     with open(config_file, "r") as cfg:
         config_dict = yaml.load(cfg, Loader=yaml.FullLoader)
     # tuning space
@@ -113,6 +125,14 @@ def enumerate_params(config_file, exclude_expid=[]):
     return config_dir
 
 def load_experiment_ids(config_dir):
+    """Load all experiment IDs from model config files in a directory.
+
+    Args:
+        config_dir (str): Directory containing model configuration YAML files.
+
+    Returns:
+        list: Sorted list of experiment ID strings.
+    """
     model_configs = glob.glob(os.path.join(config_dir, "model_config.yaml"))
     if not model_configs:
         model_configs = glob.glob(os.path.join(config_dir, "model_config/*.yaml"))
@@ -124,6 +144,17 @@ def load_experiment_ids(config_dir):
     return sorted(experiment_id_list)
 
 def grid_search(config_dir, gpu_list, expid_tag=None, script='run_expid.py'):
+    """Run grid search experiments across multiple GPUs.
+
+    Launches experiments in parallel on the specified GPUs, cycling through
+    available devices.
+
+    Args:
+        config_dir (str): Directory containing model configs with experiment IDs.
+        gpu_list (list): List of GPU device indices.
+        expid_tag (str, optional): Substring filter for experiment IDs.
+        script (str): Script to run for each experiment. Default: ``"run_expid.py"``.
+    """
     experiment_id_list = load_experiment_ids(config_dir)
     if expid_tag is not None:
         experiment_id_list = [expid for expid in experiment_id_list if str(expid_tag) in expid]

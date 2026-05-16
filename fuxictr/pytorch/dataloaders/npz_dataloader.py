@@ -21,17 +21,45 @@ from torch.utils.data.dataloader import default_collate
 
 
 class NpzDataset(Dataset):
+    """PyTorch Dataset that loads a single NPZ file into memory.
+
+    Args:
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+        data_path (str): Path to the NPZ file.
+    """
+
     def __init__(self, feature_map, data_path):
         self.feature_map = feature_map
         self.darray = self.load_data(data_path)
-        
+
     def __getitem__(self, index):
+        """Get a single row by index.
+
+        Args:
+            index (int): Row index.
+
+        Returns:
+            np.ndarray: The row at the given index.
+        """
         return self.darray[index, :]
-    
+
     def __len__(self):
+        """Return the number of rows in the dataset.
+
+        Returns:
+            int: Number of samples.
+        """
         return self.darray.shape[0]
 
     def load_data(self, data_path):
+        """Load data from an NPZ file and stack columns.
+
+        Args:
+            data_path (str): Path to the NPZ file.
+
+        Returns:
+            np.ndarray: Stacked array of shape (num_samples, num_columns).
+        """
         data_dict = np.load(data_path) # dict of arrays
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
         data_arrays = [data_dict[col] for col in all_cols]
@@ -39,6 +67,17 @@ class NpzDataset(Dataset):
 
 
 class NpzDataLoader(DataLoader):
+    """DataLoader for a single NPZ dataset.
+
+    Args:
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+        data_path (str): Path to the NPZ file.
+        batch_size (int, optional): Number of samples per batch. Default: ``32``.
+        shuffle (bool, optional): Whether to shuffle the data. Default: ``False``.
+        num_workers (int, optional): Number of worker processes. Default: ``1``.
+        **kwargs: Additional arguments passed to ``DataLoader``.
+    """
+
     def __init__(self, feature_map, data_path, batch_size=32, shuffle=False, num_workers=1, **kwargs):
         if not data_path.endswith(".npz"):
             data_path += ".npz"
@@ -51,14 +90,33 @@ class NpzDataLoader(DataLoader):
         self.num_batches = int(np.ceil(self.num_samples * 1.0 / self.batch_size))
 
     def __len__(self):
+        """Return the number of batches per epoch.
+
+        Returns:
+            int: Number of batches.
+        """
         return self.num_batches
 
 
 class BatchCollator(object):
+    """Collate a batch of rows into a dictionary of column tensors.
+
+    Args:
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+    """
+
     def __init__(self, feature_map):
         self.feature_map = feature_map
 
     def __call__(self, batch):
+        """Collate a list of rows into a batched dictionary.
+
+        Args:
+            batch (list[np.ndarray]): List of rows.
+
+        Returns:
+            dict[str, torch.Tensor]: Mapping from column name to batched tensor.
+        """
         batch_tensor = default_collate(batch)
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
         batch_dict = dict()

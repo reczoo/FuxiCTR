@@ -30,23 +30,26 @@ class WuKong(BaseModel):
     The WuKong model class that implements Meta's ICML'24 paper.
 
     Args:
-        feature_map: A FeatureMap instance used to store feature specs (e.g., vocab_size).
-        model_id: Equivalent to model class name by default, which is used in config to determine 
-            which model to call.
-        gpu: gpu device used to load model. -1 means cpu (default=-1).
-        learning_rate: learning rate for training (default=1e-3).
-        embedding_dim: embedding dimension of features (default=64).
-        num_wukong_layers: number of WuKong layers (default=3).
-        lcb_features: dimension of compressed features in LCB (default=40).
-        fmb_features: dimension of FMB output (default=40).
-        fmb_mlp_units: hidden MLP units of FMB (default=[32,32]).
-        fmb_mlp_activations: hidden MLP activations of FMB (default=relu).
-        fmp_rank_k: dimension of projection matrix in FMB (default=8).
-        mlp_hidden_units: hidden units of MLP on top of WuKong (default=[32,32]).
-        mlp_hidden_activations: hidden activations of MLP on top of WuKong (default=[32,32]).
-        net_dropout: dropout rate used in Wukong (default=0).
-        embedding_regularizer: regularization term used for embedding parameters (default=None).
-        net_regularizer: regularization term used for network parameters (default=None).
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs (e.g., vocab_size).
+        model_id (str): Equivalent to model class name by default, which is used in config to determine
+            which model to call. Default: ``"WuKong"``.
+        gpu (int): gpu device used to load model. ``-1`` means cpu. Default: ``-1``.
+        learning_rate (float): learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): embedding dimension of features. Default: ``64``.
+        num_wukong_layers (int): number of WuKong layers. Default: ``3``.
+        lcb_features (int): dimension of compressed features in LCB. Default: ``40``.
+        fmb_features (int): dimension of FMB output. Default: ``40``.
+        fmb_mlp_units (list): hidden MLP units of FMB. Default: ``[32, 32]``.
+        fmb_mlp_activations (str): hidden MLP activations of FMB. Default: ``"relu"``.
+        fmp_rank_k (int): dimension of projection matrix in FMB. Default: ``8``.
+        mlp_hidden_units (list): hidden units of MLP on top of WuKong. Default: ``[32, 32]``.
+        mlp_hidden_activations (str): hidden activations of MLP on top of WuKong. Default: ``"relu"``.
+        mlp_batch_norm (bool): whether to apply batch normalization in MLP. Default: ``True``.
+        layer_norm (bool): whether to apply layer normalization. Default: ``True``.
+        net_dropout (float): dropout rate used in Wukong. Default: ``0``.
+        embedding_regularizer (str or None): regularization term used for embedding parameters. Default: ``None``.
+        net_regularizer (str or None): regularization term used for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
     def __init__(self,
                  feature_map,
@@ -101,6 +104,14 @@ class WuKong(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of WuKong.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         wukong_out = self.wukong_stack(feature_emb)
@@ -110,7 +121,17 @@ class WuKong(BaseModel):
 
 
 class FactorizationMachineBlock(nn.Module):
-    """ Factorization Machine Block (FMB) """
+    """Factorization Machine Block (FMB).
+
+    Args:
+        input_features (int): Number of input features. Default: ``16``.
+        output_features (int): Number of output features. Default: ``16``.
+        embedding_dim (int): Embedding dimension. Default: ``16``.
+        rank_k (int): Rank for the projection matrix (None for vanilla FM). Default: ``8``.
+        mlp_hidden_units (list): Hidden units of the MLP. Default: ``[16, 16]``.
+        mlp_hidden_activations (str): Activation function for MLP layers. Default: ``"relu"``.
+        mlp_dropout (float): Dropout rate for MLP. Default: ``0``.
+    """
     def __init__(self, input_features=16, output_features=16, embedding_dim=16, rank_k=8,
                  mlp_hidden_units=[16, 16], mlp_hidden_activations="relu", mlp_dropout=0):
         super(FactorizationMachineBlock, self).__init__()
@@ -134,12 +155,28 @@ class FactorizationMachineBlock(nn.Module):
                              dropout_rates=mlp_dropout)
 
     def forward(self, x):
+        """Forward pass of FMB.
+
+        Args:
+            x: Input tensor of shape ``(batch, features, embedding_dim)``.
+
+        Returns:
+            Tensor: Output of shape ``(batch, output_features, embedding_dim)``.
+        """
         flatten_fm = self.optimized_fm(x)
         mlp_in = self.layer_norm(flatten_fm)
         mlp_out = self.mlp(mlp_in)
         return mlp_out.view(-1, self.output_features, self.embedding_dim)
-    
+
     def optimized_fm(self, x):
+        """Compute optimized or vanilla FM interaction.
+
+        Args:
+            x: Input tensor of shape ``(batch, features, embedding_dim)``.
+
+        Returns:
+            Tensor: Flattened FM matrix.
+        """
         _, n, d = x.shape
         if self.rank_k is not None:
             projected = x.transpose(1, 2) @ self.proj_Y # b x d x k
@@ -150,17 +187,43 @@ class FactorizationMachineBlock(nn.Module):
 
 
 class LinearCompressionBlock(nn.Module):
-    """ Linear Compression Block (LCB) """
+    """Linear Compression Block (LCB).
+
+    Args:
+        input_features (int): Number of input features. Default: ``16``.
+        output_features (int): Number of output features. Default: ``8``.
+    """
     def __init__(self, input_features=16, output_features=8):
         super(LinearCompressionBlock, self).__init__()
         self.linear = nn.Linear(input_features, output_features, bias=False)
-        
+
     def forward(self, x):
+        """Forward pass of LCB.
+
+        Args:
+            x: Input tensor of shape ``(batch, features, embedding_dim)``.
+
+        Returns:
+            Tensor: Compressed tensor of shape ``(batch, output_features, embedding_dim)``.
+        """
         out = self.linear(x.transpose(1, 2))
         return out.transpose(1, 2)
 
 
 class WuKongLayer(nn.Module):
+    """WuKong layer combining FMB and LCB with residual connection.
+
+    Args:
+        input_features (int): Number of input features. Default: ``16``.
+        lcb_features (int): Number of LCB output features. Default: ``8``.
+        fmb_features (int): Number of FMB output features. Default: ``8``.
+        embedding_dim (int): Embedding dimension. Default: ``16``.
+        fmp_rank_k (int): Rank for FMB projection. Default: ``4``.
+        fmb_mlp_units (list): Hidden units of FMB MLP. Default: ``[16, 16]``.
+        fmb_mlp_activations (str): Activation function for FMB MLP. Default: ``"relu"``.
+        fmb_dropout (float): Dropout rate for FMB. Default: ``0.1``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``True``.
+    """
     def __init__(self, input_features=16, lcb_features=8, fmb_features=8, embedding_dim=16,
                  fmp_rank_k=4, fmb_mlp_units=[16, 16], fmb_mlp_activations="relu",
                  fmb_dropout=0.1, layer_norm=True):
@@ -176,8 +239,16 @@ class WuKongLayer(nn.Module):
         self.layer_norm = nn.LayerNorm(embedding_dim) if layer_norm else None
         if input_features != lcb_features + fmb_features:
             self.residual_proj = nn.Linear(input_features, lcb_features + fmb_features)
-    
+
     def forward(self, x):
+        """Forward pass of WuKongLayer.
+
+        Args:
+            x: Input tensor of shape ``(batch, features, embedding_dim)``.
+
+        Returns:
+            Tensor: Output tensor with residual connection.
+        """
         fmb_out = self.fmb(x)
         lcb_out = self.lcb(x)
         concat_out = torch.cat([fmb_out, lcb_out], dim=1) # b x (fmb + lcb) x d
@@ -185,8 +256,17 @@ class WuKongLayer(nn.Module):
         if self.layer_norm is not None:
             out = self.layer_norm(out)
         return out
-    
+
     def residual(self, out, x):
+        """Apply residual connection with projection if needed.
+
+        Args:
+            out: Output tensor.
+            x: Input tensor for residual.
+
+        Returns:
+            Tensor: Residual output.
+        """
         if out.shape[1] != x.shape[1]:
             res = self.residual_proj(x.transpose(1, 2)).transpose(1, 2)
         else:

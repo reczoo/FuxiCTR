@@ -39,6 +39,19 @@ class InnerProductInteraction(nn.Module):
             self.triu_index = nn.Parameter(torch.triu_indices(num_fields, num_fields, offset=1), requires_grad=False)
 
     def forward(self, feature_emb):
+        """Compute inner product interactions between feature embeddings.
+
+        Args:
+            feature_emb (torch.Tensor): Feature embeddings of shape
+                (batch_size, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Output tensor whose shape depends on the ``output`` format:
+                - ``product_sum``: (batch_size, 1)
+                - ``bi_interaction``: (batch_size, embedding_dim)
+                - ``inner_product``: (batch_size, interaction_units)
+                - ``elementwise_product``: (batch_size, interaction_units, embedding_dim)
+        """
         if self._output_type in ["product_sum", "bi_interaction"]:
             sum_of_square = torch.sum(feature_emb, dim=1) ** 2  # sum then square
             square_of_sum = torch.sum(feature_emb ** 2, dim=1) # square then sum

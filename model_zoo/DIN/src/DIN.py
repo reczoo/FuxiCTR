@@ -24,24 +24,47 @@ from fuxictr.pytorch.layers import FeatureEmbeddingDict, MLP_Block, DIN_Attentio
 
 
 class DIN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DIN", 
-                 gpu=-1, 
+    """Deep Interest Network (DIN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DIN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        attention_hidden_units (list): Hidden units for attention MLP. Default: ``[64]``.
+        attention_hidden_activations (str): Activation functions for attention MLP. Default: ``"Dice"``.
+        attention_output_activation (str or None): Output activation for attention MLP. Default: ``None``.
+        attention_dropout (float): Dropout rate for attention. Default: ``0``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        din_target_field (list): Target field(s) for DIN. Default: ``[("item_id", "cate_id")]``.
+        din_sequence_field (list): Sequence field(s) for DIN. Default: ``[("click_history", "cate_history")]``.
+        din_use_softmax (bool): Whether to use softmax in attention. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DIN",
+                 gpu=-1,
                  dnn_hidden_units=[512, 128, 64],
                  dnn_activations="ReLU",
                  attention_hidden_units=[64],
                  attention_hidden_activations="Dice",
                  attention_output_activation=None,
                  attention_dropout=0,
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 net_dropout=0, 
-                 batch_norm=False, 
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 net_dropout=0,
+                 batch_norm=False,
                  din_target_field=[("item_id", "cate_id")],
                  din_sequence_field=[("click_history", "cate_history")],
                  din_use_softmax=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(DIN, self).__init__(feature_map,
@@ -84,9 +107,17 @@ class DIN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DIN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
-        for idx, (target_field, sequence_field) in enumerate(zip(self.din_target_field, 
+        for idx, (target_field, sequence_field) in enumerate(zip(self.din_target_field,
                                                                  self.din_sequence_field)):
             target_emb = self.get_embedding(target_field, feature_emb_dict)
             sequence_emb = self.get_embedding(sequence_field, feature_emb_dict)
@@ -102,6 +133,15 @@ class DIN(BaseModel):
         return return_dict
 
     def get_embedding(self, field, feature_emb_dict):
+        """Get embedding for a field or tuple of fields.
+
+        Args:
+            field: Field name or tuple of field names.
+            feature_emb_dict: Dictionary of feature embeddings.
+
+        Returns:
+            torch.Tensor: Concatenated embedding tensor.
+        """
         if type(field) == tuple:
             emb_list = [feature_emb_dict[f] for f in field]
             return torch.cat(emb_list, dim=-1)

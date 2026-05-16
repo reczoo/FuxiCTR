@@ -23,6 +23,25 @@ import logging
 
 
 class RankDataLoader(object):
+    """Unified data loader that creates train/validation/test generators for ranking tasks.
+
+    ``RankDataLoader`` selects the appropriate underlying ``DataLoader`` based on the
+    ``data_format`` (``npz`` or ``parquet``) and whether streaming mode is enabled.
+
+    Args:
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+        stage (str, optional): Stage to load, one of ``"both"``, ``"train"``, or ``"test"``.
+            Default: ``"both"``.
+        train_data (str, optional): Path to training data. Default: ``None``.
+        valid_data (str, optional): Path to validation data. Default: ``None``.
+        test_data (str, optional): Path to test data. Default: ``None``.
+        batch_size (int, optional): Number of samples per batch. Default: ``32``.
+        shuffle (bool, optional): Whether to shuffle training data. Default: ``True``.
+        streaming (bool, optional): Whether to use block-wise streaming loaders. Default: ``False``.
+        data_format (str, optional): Data format, one of ``"npz"`` or ``"parquet"``. Default: ``"npz"``.
+        **kwargs: Additional arguments passed to the underlying ``DataLoader``.
+    """
+
     def __init__(self, feature_map, stage="both", train_data=None, valid_data=None, test_data=None,
                  batch_size=32, shuffle=True, streaming=False, data_format="npz", **kwargs):
         logging.info("Loading datasets...")
@@ -43,7 +62,7 @@ class RankDataLoader(object):
             logging.info(
                 "Train samples: total/{:d}, blocks/{:d}"
                 .format(train_gen.num_samples, train_gen.num_blocks)
-            )     
+            )
             if valid_data:
                 valid_gen = DataLoader(feature_map, valid_data, split="valid",
                                        batch_size=batch_size, shuffle=False, **kwargs)
@@ -63,6 +82,14 @@ class RankDataLoader(object):
         self.train_gen, self.valid_gen, self.test_gen = train_gen, valid_gen, test_gen
 
     def make_iterator(self):
+        """Return the data generator(s) corresponding to the current stage.
+
+        Returns:
+            tuple or DataLoader: Depending on ``stage``:
+                - ``"train"``: ``(train_gen, valid_gen)``
+                - ``"test"``: ``test_gen``
+                - ``"both"``: ``(train_gen, valid_gen, test_gen)``
+        """
         if self.stage == "train":
             logging.info("Loading train and validation data done.")
             return self.train_gen, self.valid_gen

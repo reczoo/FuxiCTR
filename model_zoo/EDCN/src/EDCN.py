@@ -22,27 +22,44 @@ from fuxictr.pytorch.layers import FeatureEmbedding, CrossInteraction, MLP_Block
 
 
 class EDCN(BaseModel):
-    """ The EDCN model
-        References:
-          - Bo Chen, Yichao Wang, Zhirong Liu, Ruiming Tang, Wei Guo, Hongkun Zheng, Weiwei Yao, Muyu Zhang, 
-            Xiuqiang He: Enhancing Explicit and Implicit Feature Interactions via Information Sharing for Parallel 
-            Deep CTR Models, CIKM 2021.
-          - [PDF] https://dlp-kdd.github.io/assets/pdf/DLP-KDD_2021_paper_12.pdf
-          - [Code] https://github.com/mindspore-ai/models/blob/master/research/recommend/EDCN/src/edcn.py 
+    """Enhanced Deep Cross Network (EDCN) model.
+
+    References:
+        - Bo Chen, Yichao Wang, Zhirong Liu, Ruiming Tang, Wei Guo, Hongkun Zheng, Weiwei Yao, Muyu Zhang,
+          Xiuqiang He: Enhancing Explicit and Implicit Feature Interactions via Information Sharing for Parallel
+          Deep CTR Models, CIKM 2021.
+        - [PDF] https://dlp-kdd.github.io/assets/pdf/DLP-KDD_2021_paper_12.pdf
+        - [Code] https://github.com/mindspore-ai/models/blob/master/research/recommend/EDCN/src/edcn.py
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"EDCN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        num_cross_layers (int): Number of cross layers. Default: ``3``.
+        hidden_activations (str): Activation functions for hidden layers. Default: ``"ReLU"``.
+        bridge_type (str): Bridge type, one of ["hadamard_product", "pointwise_addition", "concatenation", "attention_pooling"]. Default: ``"hadamard_product"``.
+        temperature (int): Temperature for regulation module. Default: ``1``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
-    def __init__(self, 
-                 feature_map, 
-                 model_id="EDCN", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    def __init__(self,
+                 feature_map,
+                 model_id="EDCN",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  num_cross_layers=3,
                  hidden_activations="ReLU",
                  bridge_type="hadamard_product",
                  temperature=1,
                  net_dropout=0,
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(EDCN, self).__init__(feature_map, 
@@ -74,8 +91,13 @@ class EDCN(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of EDCN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feat_emb = self.embedding_layer(X)
@@ -94,13 +116,19 @@ class EDCN(BaseModel):
 
 
 class BridgeModule(nn.Module):
+    """Bridge module for information sharing between cross and deep towers.
+
+    Args:
+        hidden_dim (int): Hidden dimension.
+        bridge_type (str): Bridge type, one of ["hadamard_product", "pointwise_addition", "concatenation", "attention_pooling"]. Default: ``"hadamard_product"``.
+    """
     def __init__(self, hidden_dim, bridge_type="hadamard_product"):
         super(BridgeModule, self).__init__()
         assert bridge_type in ["hadamard_product", "pointwise_addition", "concatenation", "attention_pooling"],\
                "bridge_type={} is not supported.".format(bridge_type)
         self.bridge_type = bridge_type
         if bridge_type == "concatenation":
-            self.concat_pooling = nn.Sequential(nn.Linear(hidden_dim * 2, hidden_dim), 
+            self.concat_pooling = nn.Sequential(nn.Linear(hidden_dim * 2, hidden_dim),
                                                 nn.ReLU())
         elif bridge_type == "attention_pooling":
             self.attention1 = nn.Sequential(nn.Linear(hidden_dim, hidden_dim),
@@ -111,8 +139,17 @@ class BridgeModule(nn.Module):
                                             nn.ReLU(),
                                             nn.Linear(hidden_dim, hidden_dim, bias=False),
                                             nn.Softmax(dim=-1))
-    
+
     def forward(self, X1, X2):
+        """Forward pass of BridgeModule.
+
+        Args:
+            X1: First input tensor.
+            X2: Second input tensor.
+
+        Returns:
+            torch.Tensor: Bridged output tensor.
+        """
         out = None
         if self.bridge_type == "hadamard_product":
             out = X1 * X2
@@ -126,6 +163,14 @@ class BridgeModule(nn.Module):
             
 
 class RegulationModule(nn.Module):
+    """Regulation module for controlling feature flow.
+
+    Args:
+        num_fields (int): Number of input fields.
+        embedding_dim (int): Dimension of feature embeddings.
+        tau (int): Temperature for regulation. Default: ``1``.
+        use_bn (bool): Whether to use batch normalization. Default: ``False``.
+    """
     def __init__(self, num_fields, embedding_dim, tau=1, use_bn=False):
         super(RegulationModule, self).__init__()
         self.tau = tau
@@ -136,8 +181,16 @@ class RegulationModule(nn.Module):
         if self.use_bn:
             self.bn1 = nn.BatchNorm1d(num_fields * embedding_dim)
             self.bn2 = nn.BatchNorm1d(num_fields * embedding_dim)
-    
+
     def forward(self, X):
+        """Forward pass of RegulationModule.
+
+        Args:
+            X: Input tensor.
+
+        Returns:
+            tuple: Two regulated output tensors.
+        """
         g1 = (self.g1 / self.tau).softmax(dim=-1).unsqueeze(-1).repeat(1, self.embedding_dim).view(1, -1)
         g2 = (self.g2 / self.tau).softmax(dim=-1).unsqueeze(-1).repeat(1, self.embedding_dim).view(1, -1)
         out1, out2 = g1 * X, g2 * X

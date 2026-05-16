@@ -22,10 +22,12 @@ from tensorflow.keras.layers import Layer
 
 
 class InnerProductInteraction(Layer):
-    """ output: product_sum (bs x 1), 
-                bi_interaction (bs * dim), 
-                inner_product (bs x f^2/2), 
-                elementwise_product (bs x f^2/2 x emb_dim)
+    """Inner product interaction layer with multiple output modes.
+
+    Args:
+        num_fields (int): Number of feature fields.
+        output (str): Output type, one of ``product_sum``, ``bi_interaction``,
+            ``inner_product``, or ``elementwise_product``. Default: ``"product_sum"``.
     """
     def __init__(self, num_fields, output="product_sum"):
         super(InnerProductInteraction, self).__init__()
@@ -40,6 +42,15 @@ class InnerProductInteraction(Layer):
             self.triu_index = tf.Variable(np.triu_indices(num_fields, 1), trainable=False)
 
     def call(self, feature_emb):
+        """Compute the specified interaction output.
+
+        Args:
+            feature_emb (tf.Tensor): Feature embeddings of shape
+                ``(batch_size, num_fields, emb_dim)``.
+
+        Returns:
+            tf.Tensor: Interaction result depending on ``output``.
+        """
         if self.output_type in ["product_sum", "bi_interaction"]:
             sum_of_square = tf.reduce_sum(feature_emb, axis=1) ** 2  # sum then square
             square_of_sum = tf.reduce_sum(feature_emb ** 2, axis=1) # square then sum

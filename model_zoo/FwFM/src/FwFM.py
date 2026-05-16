@@ -22,22 +22,30 @@ from fuxictr.pytorch.layers import FeatureEmbedding, InnerProductInteraction
 
 
 class FwFM(BaseModel):
-    """ The FwFM model
-        Reference:
-          - Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising, WWW'2018.
+    """Field-weighted Factorization Machine (FwFM) model.
+
+    Reference:
+        - Field-weighted Factorization Machines for Click-Through Rate Prediction in Display Advertising, WWW'2018.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FwFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        regularizer (str or None): Regularizer for embeddings and network parameters. Default: ``None``.
+        linear_type (str): Linear type, one of ["LW", "FeLV", "FiLV"]. Default: ``"FiLV"``.
+        **kwargs: Additional keyword arguments.
     """
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FwFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 regularizer=None, 
-                 linear_type="FiLV", 
+    def __init__(self,
+                 feature_map,
+                 model_id="FwFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 regularizer=None,
+                 linear_type="FiLV",
                  **kwargs):
-        """ 
-        linear_type: `LW`, `FeLV`, or `FiLV`
-        """
         super(FwFM, self).__init__(feature_map, 
                                    model_id=model_id, 
                                    gpu=gpu, 

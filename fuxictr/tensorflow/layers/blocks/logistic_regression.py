@@ -22,15 +22,30 @@ from fuxictr.tensorflow.layers import FeatureEmbedding
 
 
 class LogisticRegression(Layer):
+    """Logistic Regression layer using 1D feature embeddings.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        use_bias (bool): Whether to add a bias term. Default: ``True``.
+        regularizer (optional): Optional regularizer for the embedding weights. Default: ``None``.
+    """
     def __init__(self, feature_map, use_bias=True, regularizer=None):
         super(LogisticRegression, self).__init__()
         self.bias = tf.Variable(tf.zeros(1)) if use_bias else None
-        self.embedding_layer = FeatureEmbedding(feature_map, 1, use_pretrain=False, 
+        self.embedding_layer = FeatureEmbedding(feature_map, 1, use_pretrain=False,
                                                 use_sharing=False,
                                                 embedding_regularizer=regularizer,
                                                 name_prefix="lr_")
 
     def call(self, X):
+        """Compute the LR logits.
+
+        Args:
+            X (dict): Input feature dictionary.
+
+        Returns:
+            tf.Tensor: Logits tensor of shape ``(batch_size, 1)``.
+        """
         embed_weights = self.embedding_layer(X)
         output = tf.reduce_sum(embed_weights, axis=1)
         if self.bias is not None:

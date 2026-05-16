@@ -39,34 +39,34 @@ class TransAct(BaseModel):
     Make sure the behavior sequences are sorted in chronological order and padded in the left part.
 
     Args:
-        feature_map: A FeatureMap instance used to store feature specs (e.g., vocab_size).
-        model_id: Equivalent to model class name by default, which is used in config to determine 
-            which model to call.
-        gpu: gpu device used to load model.
-        hidden_activations: hidden activations used in MLP blocks (default="ReLU").
-        dcn_cross_layers: number of cross layers in DCNv2 (default=3).
-        dcn_hidden_units: hidden units of deep part in DCNv2 (default=[256, 128, 64]).
-        mlp_hidden_units: hidden units of MLP on top of DCNv2 (default=[]).
-        num_heads: number of heads of transformer (default=1).
-        transformer_layers: number of stacked transformer layers used in TransAct (default=1).
-        transformer_dropout: dropout rate used in transformer (default=0).
-        dim_feedforward: FFN dimension in transformer (default=512)
-        learning_rate: learning rate for training (default=1e-3).
-        embedding_dim: embedding dimension of features (default=64).
-        net_dropout: dropout rate for deep part in DCNv2 (default=0).
-        batch_norm: whether to apply batch normalization in DCNv2 (default=False).
-        target_item_field (List[tuple] or List[str]): which field is used for target item
-            embedding. When tuple is applied, the fields in each tuple are concatenated, e.g.,
-            item_id and cate_id can be concatenated as target item embedding.
-        sequence_item_field (List[tuple] or List[str]): which field is used for sequence item
-            embedding. When tuple is applied, the fields in each tuple are concatenated.
-        first_k_cols: number of hidden representations to pick as transformer output (default=1).
-        use_time_window_mask (Boolean): whether to use time window mask in TransAct (default=False).
-        time_window_ms: time window in ms to mask the most recent behaviors (default=86400000).
-        concat_max_pool (Boolean): whether cancate max pooling result in transformer output
-            (default=True).
-        embedding_regularizer: regularization term used for embedding parameters (default=0).
-        net_regularizer: regularization term used for network parameters (default=0).
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs (e.g., vocab_size).
+        model_id (str): Equivalent to model class name by default, which is used in config to determine
+            which model to call. Default: ``"TransAct"``.
+        gpu (int): gpu device used to load model. Default: ``-1``.
+        hidden_activations (str): hidden activations used in MLP blocks. Default: ``"ReLU"``.
+        dcn_cross_layers (int): number of cross layers in DCNv2. Default: ``3``.
+        dcn_hidden_units (list): hidden units of deep part in DCNv2. Default: ``[256, 128, 64]``.
+        mlp_hidden_units (list): hidden units of MLP on top of DCNv2. Default: ``[]``.
+        num_heads (int): number of heads of transformer. Default: ``1``.
+        transformer_layers (int): number of stacked transformer layers used in TransAct. Default: ``1``.
+        transformer_dropout (float): dropout rate used in transformer. Default: ``0``.
+        dim_feedforward (int): FFN dimension in transformer. Default: ``512``.
+        learning_rate (float): learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): embedding dimension of features. Default: ``64``.
+        net_dropout (float): dropout rate for deep part in DCNv2. Default: ``0``.
+        batch_norm (bool): whether to apply batch normalization in DCNv2. Default: ``False``.
+        target_item_field (list): which field is used for target item embedding.
+            When tuple is applied, the fields in each tuple are concatenated. Default: ``[("item_id", "cate_id")]``.
+        sequence_item_field (list): which field is used for sequence item embedding.
+            When tuple is applied, the fields in each tuple are concatenated. Default: ``[("click_history", "cate_history")]``.
+        first_k_cols (int): number of hidden representations to pick as transformer output. Default: ``1``.
+        use_time_window_mask (bool): whether to use time window mask in TransAct. Default: ``False``.
+        time_window_ms (int): time window in ms to mask the most recent behaviors. Default: ``86400000``.
+        concat_max_pool (bool): whether concatenate max pooling result in transformer output.
+            Default: ``True``.
+        embedding_regularizer (str or None): regularization term used for embedding parameters. Default: ``None``.
+        net_regularizer (str or None): regularization term used for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
     def __init__(self,
                  feature_map,
@@ -93,10 +93,10 @@ class TransAct(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super().__init__(feature_map, 
-                         model_id=model_id, 
-                         gpu=gpu, 
-                         embedding_regularizer=embedding_regularizer, 
+        super().__init__(feature_map,
+                         model_id=model_id,
+                         gpu=gpu,
+                         embedding_regularizer=embedding_regularizer,
                          net_regularizer=net_regularizer,
                          **kwargs)
         self.target_item_field = (
@@ -154,6 +154,14 @@ class TransAct(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of TransAct.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
         for idx, (target_field, sequence_field) in enumerate(
@@ -178,6 +186,15 @@ class TransAct(BaseModel):
         return return_dict
 
     def concat_embedding(self, field, feature_emb_dict):
+        """Concatenate embeddings for a given field tuple or string.
+
+        Args:
+            field: Field name or tuple of field names.
+            feature_emb_dict: Dictionary of feature embeddings.
+
+        Returns:
+            Tensor: Concatenated embedding tensor.
+        """
         if type(field) == tuple:
             emb_list = [feature_emb_dict[f] for f in field]
             return torch.cat(emb_list, dim=-1)
@@ -186,6 +203,20 @@ class TransAct(BaseModel):
 
 
 class TransActTransformer(nn.Module):
+    """Transformer encoder for TransAct with time window masking support.
+
+    Args:
+        transformer_in_dim (int): Input dimension for the transformer.
+        dim_feedforward (int): Feedforward network dimension. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        dropout (float): Dropout rate. Default: ``0``.
+        transformer_layers (int): Number of transformer layers. Default: ``1``.
+        use_time_window_mask (bool): Whether to apply random time window masking.
+            Default: ``False``.
+        time_window_ms (int): Time window in milliseconds for masking. Default: ``86400000``.
+        first_k_cols (int): Number of last columns to extract as output. Default: ``1``.
+        concat_max_pool (bool): Whether to concatenate max pooling output. Default: ``True``.
+    """
     def __init__(self,
                  transformer_in_dim,
                  dim_feedforward=64,
@@ -215,6 +246,17 @@ class TransActTransformer(nn.Module):
             self.out_linear = nn.Linear(transformer_in_dim, transformer_in_dim)
 
     def forward(self, target_emb, sequence_emb, time_interval_seq=None, mask=None):
+        """Forward pass of the TransAct transformer.
+
+        Args:
+            target_emb: Target item embedding.
+            sequence_emb: Behavior sequence embeddings.
+            time_interval_seq: Optional time interval sequence.
+            mask: Padding mask where 1's are masked positions.
+
+        Returns:
+            Tensor: Transformer output.
+        """
         # concat action sequence emb with target emb
         seq_len = sequence_emb.size(1)
         concat_seq_emb = torch.cat([sequence_emb,
@@ -243,6 +285,14 @@ class TransActTransformer(nn.Module):
         return torch.cat(output_concat, dim=-1)
 
     def adjust_mask(self, mask):
+        """Adjust mask to ensure not all positions are masked.
+
+        Args:
+            mask: Boolean mask tensor.
+
+        Returns:
+            Tensor: Adjusted mask.
+        """
         # make sure not all actions in the sequence are masked
         fully_masked = mask.all(dim=-1)
         mask[fully_masked, -1] = 0

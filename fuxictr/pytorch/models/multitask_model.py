@@ -27,6 +27,28 @@ from collections import defaultdict
 
 
 class MultiTaskModel(BaseModel):
+    """Base class for multi-task learning models in PyTorch.
+
+    Extends ``BaseModel`` to support multiple prediction tasks with separate
+    output activations and loss functions per task.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        model_id (str): Model identifier. Default: ``"MultiTaskModel"``.
+        task (list or str): Task type(s) for each task. Default: ``["binary_classification"]``.
+        num_tasks (int): Number of tasks. Default: ``1``.
+        loss_weight (str): Loss weighting strategy (e.g., ``EQ`` for equal weighting). Default: ``"EQ"``.
+        gpu (int): GPU device ID, -1 for CPU. Default: ``-1``.
+        monitor (str): Metric to monitor for early stopping. Default: ``"AUC"``.
+        save_best_only (bool): Whether to save only the best model. Default: ``True``.
+        monitor_mode (str): ``max`` or ``min`` for the monitored metric. Default: ``"max"``.
+        early_stop_patience (int): Patience for early stopping. Default: ``2``.
+        eval_steps (int or None): Evaluation frequency in steps. Default: ``None``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        reduce_lr_on_plateau (bool): Whether to reduce LR on plateau. Default: ``True``.
+        **kwargs: Additional keyword arguments.
+    """
     def __init__(self,
                  feature_map,
                  model_id="MultiTaskModel",
@@ -69,6 +91,14 @@ class MultiTaskModel(BaseModel):
             )
 
     def compile(self, optimizer, loss, lr):
+        """Configure the optimizer and loss functions for multi-task training.
+
+        Args:
+            optimizer (str): Optimizer name.
+            loss (str or list): Loss function name(s). If a list, each task uses
+                the corresponding loss; otherwise the same loss is used for all tasks.
+            lr (float): Learning rate.
+        """
         self.optimizer = get_optimizer(optimizer, self.parameters(), lr)
         if isinstance(loss, list):
             self.loss_fn = [get_loss(l) for l in loss]
@@ -76,13 +106,25 @@ class MultiTaskModel(BaseModel):
             self.loss_fn = [get_loss(loss) for _ in range(self.num_tasks)]
 
     def get_labels(self, inputs):
-        """ Override get_labels() to use multiple labels """
+        """Override get_labels() to use multiple labels.
+
+        Args:
+            inputs (dict): Dictionary of input tensors keyed by feature name.
+
+        Returns:
+            list: List of label tensors for each task.
+        """
         labels = self.feature_map.labels
         y = [inputs[labels[i]].to(self.device).float().view(-1, 1)
              for i in range(len(labels))]
         return y
 
     def regularization_loss(self):
+        """Compute the combined embedding and network regularization loss.
+
+        Returns:
+            torch.Tensor: Scalar regularization loss.
+        """
         reg_loss = 0
         if self._embedding_regularizer or self._net_regularizer:
             emb_reg = get_regularizer(self._embedding_regularizer)
@@ -102,6 +144,15 @@ class MultiTaskModel(BaseModel):
         return reg_loss
 
     def add_loss(self, return_dict, y_true):
+        """Compute the task losses without regularization.
+
+        Args:
+            return_dict (dict): Model forward outputs containing per-task predictions.
+            y_true (list): List of ground-truth tensors for each task.
+
+        Returns:
+            torch.Tensor: Combined task loss.
+        """
         labels = self.feature_map.labels
         loss = [self.loss_fn[i](return_dict["{}_pred".format(labels[i])], y_true[i], reduction='mean')
                 for i in range(len(labels))]
@@ -111,10 +162,28 @@ class MultiTaskModel(BaseModel):
         return loss
 
     def compute_loss(self, return_dict, y_true):
+        """Compute the total loss including regularization.
+
+        Args:
+            return_dict (dict): Model forward outputs.
+            y_true (list): List of ground-truth tensors for each task.
+
+        Returns:
+            torch.Tensor: Total loss value.
+        """
         loss = self.add_loss(return_dict, y_true) + self.regularization_loss()
         return loss
-    
+
     def evaluate(self, data_generator, metrics=None):
+        """Evaluate the model on a validation data generator.
+
+        Args:
+            data_generator: Data generator yielding batches.
+            metrics (list, optional): List of metric names to compute.
+
+        Returns:
+            dict: Mapping of per-task and mean metric names to values.
+        """
         self.eval()  # set to evaluation mode
         with torch.no_grad():
             y_pred_all = defaultdict(list)
@@ -154,6 +223,14 @@ class MultiTaskModel(BaseModel):
             return all_val_logs
 
     def predict(self, data_generator):
+        """Generate predictions on a data generator.
+
+        Args:
+            data_generator: Data generator yielding batches.
+
+        Returns:
+            dict: Mapping of label names to predicted numpy arrays.
+        """
         self.eval()  # set to evaluation mode
         with torch.no_grad():
             y_pred_all = defaultdict(list)

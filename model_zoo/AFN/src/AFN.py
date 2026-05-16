@@ -23,17 +23,38 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, LogisticRegressi
 
 
 class AFN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="AFN", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Adaptive Factorization Network (AFN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"AFN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        ensemble_dnn (bool): Whether to ensemble with a DNN. Default: ``True``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[64, 64, 64]``.
+        dnn_activations (str): Activation functions for the DNN. Default: ``"ReLU"``.
+        dnn_dropout (float): Dropout rate for the DNN. Default: ``0``.
+        afn_hidden_units (list): Hidden units for the AFN tower. Default: ``[64, 64, 64]``.
+        afn_activations (str): Activation functions for the AFN. Default: ``"ReLU"``.
+        afn_dropout (float): Dropout rate for the AFN. Default: ``0``.
+        logarithmic_neurons (int): Number of logarithmic neurons. Default: ``5``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``True``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="AFN",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  ensemble_dnn=True,
-                 dnn_hidden_units=[64, 64, 64], 
+                 dnn_hidden_units=[64, 64, 64],
                  dnn_activations="ReLU",
                  dnn_dropout=0,
-                 afn_hidden_units=[64, 64, 64], 
+                 afn_hidden_units=[64, 64, 64],
                  afn_activations="ReLU",
                  afn_dropout=0,
                  logarithmic_neurons=5,
@@ -41,10 +62,10 @@ class AFN(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(AFN, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(AFN, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs) 
         self.num_fields = feature_map.num_fields
@@ -75,6 +96,14 @@ class AFN(BaseModel):
         self.model_to_device()
         
     def forward(self, inputs):
+        """Forward pass of AFN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         dnn_input = self.logarithmic_net(feature_emb)
@@ -90,10 +119,18 @@ class AFN(BaseModel):
         return return_dict
 
     def logarithmic_net(self, feature_emb):
+        """Logarithmic transformation network.
+
+        Args:
+            feature_emb: Feature embedding tensor.
+
+        Returns:
+            torch.Tensor: Flattened output after logarithmic transformation.
+        """
         feature_emb = torch.abs(feature_emb)
         feature_emb = torch.clamp(feature_emb, min=1e-5) # ReLU with min 1e-5 (better than 1e-7 suggested in paper)
-        log_feature_emb = torch.log(feature_emb) # element-wise log 
-        log_feature_emb = self.log_batch_norm(log_feature_emb) # batch_size * num_fields * embedding_dim 
+        log_feature_emb = torch.log(feature_emb) # element-wise log
+        log_feature_emb = self.log_batch_norm(log_feature_emb) # batch_size * num_fields * embedding_dim
         logarithmic_out = self.coefficient_W(log_feature_emb.transpose(2, 1)).transpose(1, 2)
         cross_out = torch.exp(logarithmic_out) # element-wise exp
         cross_out = self.exp_batch_norm(cross_out)  # batch_size * logarithmic_neurons * embedding_dim

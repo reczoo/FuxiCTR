@@ -23,12 +23,34 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, ScaledDotProduct
 
 
 class InterHAt(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="InterHAt", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Interacting Hierarchical Attention (InterHAt) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"InterHAt"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        hidden_dim (int or None): Hidden dimension for attention aggregation. Default: ``None``.
+        order (int): Order of hierarchical interactions. Default: ``2``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        attention_dim (int): Dimension of attention vectors. Default: ``10``.
+        hidden_units (list): Hidden units for the MLP tower. Default: ``[64, 64]``.
+        hidden_activations (str): Activation functions for MLP. Default: ``"relu"``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="InterHAt",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  hidden_dim=None,
                  order=2,
                  num_heads=1,
@@ -42,26 +64,26 @@ class InterHAt(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(InterHAt, self).__init__(feature_map, 
-                                       model_id=model_id, 
-                                       gpu=gpu, 
-                                       embedding_regularizer=embedding_regularizer, 
+        super(InterHAt, self).__init__(feature_map,
+                                       model_id=model_id,
+                                       gpu=gpu,
+                                       embedding_regularizer=embedding_regularizer,
                                        net_regularizer=net_regularizer,
                                        **kwargs)
         self.order = order
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
-        self.multi_head_attention = MultiHeadSelfAttention(embedding_dim, 
-                                                           attention_dim, 
+        self.multi_head_attention = MultiHeadSelfAttention(embedding_dim,
+                                                           attention_dim,
                                                            num_heads,
                                                            dropout_rate=net_dropout,
                                                            use_residual=use_residual,
                                                            use_scale=True,
                                                            layer_norm=layer_norm)
-        self.feedforward = FeedForwardNetwork(embedding_dim, 
+        self.feedforward = FeedForwardNetwork(embedding_dim,
                                               hidden_dim=hidden_dim,
-                                              layer_norm=layer_norm, 
+                                              layer_norm=layer_norm,
                                               use_residual=use_residual)
-        self.aggregation_layers = nn.ModuleList([AttentionalAggregation(embedding_dim, hidden_dim) 
+        self.aggregation_layers = nn.ModuleList([AttentionalAggregation(embedding_dim, hidden_dim)
                                                  for _ in range(order)])
         self.attentional_score = AttentionalAggregation(embedding_dim, hidden_dim)
         self.mlp = MLP_Block(input_dim=embedding_dim,
@@ -74,10 +96,15 @@ class InterHAt(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-            
+
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of InterHAt.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         X0 = self.embedding_layer(X)
@@ -98,9 +125,19 @@ class InterHAt(BaseModel):
 
 
 class MultiHeadAttention(nn.Module):
-    """ Multi-head attention module """
+    """Multi-head attention module.
 
-    def __init__(self, input_dim, attention_dim=None, num_heads=1, dropout_rate=0., 
+    Args:
+        input_dim (int): Input feature dimension.
+        attention_dim (int or None): Dimension of attention vectors. Default: ``None``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        dropout_rate (float): Dropout rate for attention weights. Default: ``0.``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        use_scale (bool): Whether to scale attention scores. Default: ``False``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``False``.
+    """
+
+    def __init__(self, input_dim, attention_dim=None, num_heads=1, dropout_rate=0.,
                  use_residual=True, use_scale=False, layer_norm=False):
         super(MultiHeadAttention, self).__init__()
         if attention_dim is None:
@@ -122,12 +159,23 @@ class MultiHeadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
 
     def forward(self, query, key, value, mask=None):
+        """Forward pass of multi-head attention.
+
+        Args:
+            query: Query tensor.
+            key: Key tensor.
+            value: Value tensor.
+            mask: Optional attention mask, 0 for masked positions.
+
+        Returns:
+            tuple: (output tensor, attention weights).
+        """
         # mask: B x L x L, 0 for masked positions
         if mask:
             # Repeat to (B * heads) x L x L
             mask = mask.unsqueeze(1).repeat(1, self.num_heads, 1, 1).flatten(end_dim=1)
         residual = query
-        
+
         # linear projection
         query = self.W_q(query)
         key = self.W_k(key)
@@ -157,25 +205,45 @@ class MultiHeadAttention(nn.Module):
 
 
 class MultiHeadSelfAttention(MultiHeadAttention):
+    """Multi-head self-attention module."""
     def forward(self, X):
+        """Forward pass of multi-head self-attention.
+
+        Args:
+            X: Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after self-attention.
+        """
         output, attention = super(MultiHeadSelfAttention, self).forward(X, X, X)
         return output
 
 
 class AttentionalAggregation(nn.Module):
-    '''
-    agg attention for InterHAt
-    '''
+    """Attentional aggregation module for InterHAt.
+
+    Args:
+        embedding_dim (int): Dimension of feature embeddings.
+        hidden_dim (int or None): Hidden dimension for the attention MLP. Default: ``None``.
+    """
     def __init__(self, embedding_dim, hidden_dim=None):
         super(AttentionalAggregation, self).__init__()
         if hidden_dim is None:
             hidden_dim = 4 * embedding_dim
-        self.agg = nn.Sequential(nn.Linear(embedding_dim, hidden_dim), 
+        self.agg = nn.Sequential(nn.Linear(embedding_dim, hidden_dim),
                                  nn.ReLU(),
                                  nn.Linear(hidden_dim, 1, bias=False),
                                  nn.Softmax(dim=1))
 
     def forward(self, X):
+        """Forward pass of AttentionalAggregation.
+
+        Args:
+            X: Input tensor of shape (B, F, D).
+
+        Returns:
+            torch.Tensor: Aggregated tensor of shape (B, D).
+        """
         # X: b x f x emb
         attentions = self.agg(X) # b x f x 1
         attention_out = (attentions * X).sum(dim=1) # b x emb
@@ -183,6 +251,14 @@ class AttentionalAggregation(nn.Module):
 
 
 class FeedForwardNetwork(nn.Module):
+    """Feed-forward network with residual connections.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        hidden_dim (int or None): Hidden dimension for the feed-forward network. Default: ``None``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+    """
     def __init__(self, input_dim, hidden_dim=None, layer_norm=True, use_residual=True):
         super(FeedForwardNetwork, self).__init__()
         self.use_residual = use_residual
@@ -194,6 +270,14 @@ class FeedForwardNetwork(nn.Module):
         self.layer_norm = nn.LayerNorm(input_dim) if layer_norm else None
 
     def forward(self, X):
+        """Forward pass of FeedForwardNetwork.
+
+        Args:
+            X: Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after feed-forward transformation.
+        """
         output = self.ffn(X)
         if self.use_residual:
             output += X

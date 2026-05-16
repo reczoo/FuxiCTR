@@ -21,17 +21,33 @@ from fuxictr.tensorflow.layers import FeatureEmbedding, MLP_Block, CrossNet, Lin
 
 
 class DCN(BaseModel):
-    def __init__(self, 
+    """Deep & Cross Network (DCN) model (TensorFlow implementation).
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DCN"``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        num_cross_layers (int): Number of cross layers. Default: ``3``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
-                 model_id="DCN", 
-                 learning_rate=1e-3, 
+                 model_id="DCN",
+                 learning_rate=1e-3,
                  embedding_dim=10,
                  dnn_hidden_units=[],
                  dnn_activations="ReLU",
                  net_dropout=0,
                  num_cross_layers=3,
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(DCN, self).__init__(feature_map, model_id=model_id, **kwargs)
@@ -43,7 +59,7 @@ class DCN(BaseModel):
                              output_dim=None, # output hidden layer
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
-                             output_activation=None, 
+                             output_activation=None,
                              dropout_rates=net_dropout,
                              batch_norm=batch_norm,
                              regularizer=net_regularizer) \
@@ -55,6 +71,15 @@ class DCN(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
 
     def call(self, inputs, training=False):
+        """Forward pass of DCN.
+
+        Args:
+            inputs: Input data containing features.
+            training: Whether in training mode.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)
         cross_out = self.crossnet(feature_emb)

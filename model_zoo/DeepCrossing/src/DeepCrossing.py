@@ -23,24 +23,41 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class DeepCrossing(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DeepCrossing", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Deep Crossing model with residual blocks.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DeepCrossing"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        residual_blocks (list): List of hidden dimensions for residual blocks. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation functions for hidden layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DeepCrossing",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  residual_blocks=[64, 64, 64],
-                 hidden_activations="ReLU", 
-                 net_dropout=0, 
-                 batch_norm=False, 
+                 hidden_activations="ReLU",
+                 net_dropout=0,
+                 batch_norm=False,
                  use_residual=True,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(DeepCrossing, self).__init__(feature_map, 
-                                           model_id=model_id, 
-                                           gpu=gpu, 
-                                           embedding_regularizer=embedding_regularizer, 
+        super(DeepCrossing, self).__init__(feature_map,
+                                           model_id=model_id,
+                                           gpu=gpu,
+                                           embedding_regularizer=embedding_regularizer,
                                            net_regularizer=net_regularizer,
                                            **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -62,8 +79,13 @@ class DeepCrossing(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of DeepCrossing.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
@@ -74,9 +96,19 @@ class DeepCrossing(BaseModel):
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, 
-                 input_dim, 
-                 hidden_dim, 
+    """Residual block for DeepCrossing.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        hidden_dim (int): Hidden layer dimension.
+        hidden_activation (str): Activation function name. Default: ``"ReLU"``.
+        dropout_rate (float): Dropout rate. Default: ``0``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+    """
+    def __init__(self,
+                 input_dim,
+                 hidden_dim,
                  hidden_activation="ReLU",
                  dropout_rate=0,
                  use_residual=True,
@@ -91,6 +123,14 @@ class ResidualBlock(nn.Module):
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
 
     def forward(self, X):
+        """Forward pass of ResidualBlock.
+
+        Args:
+            X: Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after residual block.
+        """
         X_out = self.layer(X)
         if self.use_residual:
             X_out = X_out + X

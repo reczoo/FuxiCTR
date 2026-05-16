@@ -22,7 +22,20 @@ import polars as pl
 
 
 class CustomizedFeatureProcessor(FeatureProcessor):
+    """Criteo dataset feature processor with log-squared bucketing."""
+
     def convert_to_bucket(self, col_name):
+        """Apply a log-squared bucketing transform to a numeric column.
+
+        Values greater than 2 are mapped to ``int(floor(log(value)**2))``;
+        smaller values are truncated to integers.
+
+        Args:
+            col_name (str): Name of the column to transform.
+
+        Returns:
+            pl.Expr: Polars expression applying the bucket transform.
+        """
         def _convert_to_bucket(value):
             if value > 2:
                 value = int(np.floor(np.log(value) ** 2))

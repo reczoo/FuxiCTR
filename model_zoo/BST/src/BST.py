@@ -31,16 +31,42 @@ from torch.nn import MultiheadAttention
 
 
 class BST(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="BST", 
-                 gpu=-1, 
+    """Behavior Sequence Transformer (BST) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"BST"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[256, 128, 64]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        num_heads (int): Number of attention heads. Default: ``2``.
+        stacked_transformer_layers (int): Number of stacked transformer layers. Default: ``1``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        bst_target_field (list): Target field(s) for BST. Default: ``[("item_id", "cate_id")]``.
+        bst_sequence_field (list): Sequence field(s) for BST. Default: ``[("click_history", "cate_history")]``.
+        seq_pooling_type (str): Pooling type for sequence output, one of ["mean", "sum", "target", "concat"]. Default: ``"mean"``.
+        use_position_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        use_causal_mask (bool): Whether to use causal masking. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="BST",
+                 gpu=-1,
                  dnn_hidden_units=[256, 128, 64],
                  dnn_activations="ReLU",
                  num_heads=2,
                  stacked_transformer_layers=1,
                  attention_dropout=0,
-                 learning_rate=1e-3, 
+                 learning_rate=1e-3,
                  embedding_dim=10,
                  net_dropout=0,
                  batch_norm=False,
@@ -54,10 +80,10 @@ class BST(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(BST, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(BST, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         if type(bst_target_field) != list:
@@ -108,14 +134,33 @@ class BST(BaseModel):
         self.model_to_device()
 
     def get_seq_out_dim(self, model_dim, seq_len, sequence_field, embedding_dim):
+        """Compute the output dimension of sequence pooling.
+
+        Args:
+            model_dim: Model dimension.
+            seq_len: Sequence length.
+            sequence_field: Sequence field name or tuple.
+            embedding_dim: Embedding dimension.
+
+        Returns:
+            int: Output dimension after pooling.
+        """
         num_seq_field = len(sequence_field) if type(sequence_field) == tuple else 1
         if self.seq_pooling_type == "concat":
             seq_out_dim = seq_len * model_dim - num_seq_field * embedding_dim
         else:
             seq_out_dim = model_dim - num_seq_field * embedding_dim
         return seq_out_dim
-        
+
     def forward(self, inputs):
+        """Forward pass of BST.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
         for idx, (target_field, sequence_field) in enumerate(zip(self.bst_target_field, 
@@ -136,8 +181,14 @@ class BST(BaseModel):
         return return_dict
 
     def get_mask(self, x):
-        """ padding_mask: B x L, 1 for masked positions
-            attn_mask: (B*H) x L x L, 1 for masked positions in nn.MultiheadAttention
+        """Compute padding and attention masks.
+
+        Args:
+            x: Input sequence tensor.
+
+        Returns:
+            tuple: (padding_mask, attn_mask) where padding_mask is B x L with 1 for masked
+                positions and attn_mask is (B*H) x L x L with 1 for masked positions.
         """
         padding_mask = (x == 0)
         padding_mask = torch.cat([padding_mask, torch.zeros(x.size(0), 1).bool().to(x.device)],
@@ -156,6 +207,15 @@ class BST(BaseModel):
         return padding_mask, attn_mask
 
     def sequence_pooling(self, transformer_out, mask):
+        """Pool transformer output over the sequence dimension.
+
+        Args:
+            transformer_out: Transformer output tensor of shape (B, L, D).
+            mask: Padding mask tensor.
+
+        Returns:
+            torch.Tensor: Pooled tensor of shape (B, D).
+        """
         mask = (1 - mask.float()).unsqueeze(-1) # 0 for masked positions
         if self.seq_pooling_type == "mean":
             return (transformer_out * mask).sum(dim=1) / (mask.sum(dim=1) + 1.e-12)
@@ -169,6 +229,15 @@ class BST(BaseModel):
             raise ValueError("seq_pooling_type={} not supported.".format(self.seq_pooling_type))
 
     def concat_embedding(self, field, feature_emb_dict):
+        """Concatenate embeddings for a given field or tuple of fields.
+
+        Args:
+            field: Field name or tuple of field names.
+            feature_emb_dict: Dictionary of feature embeddings.
+
+        Returns:
+            torch.Tensor: Concatenated embedding tensor.
+        """
         if type(field) == tuple:
             emb_list = [feature_emb_dict[f] for f in field]
             return torch.cat(emb_list, dim=-1)
@@ -177,6 +246,20 @@ class BST(BaseModel):
 
 
 class BehaviorTransformer(nn.Module):
+    """Behavior Transformer module with positional encoding.
+
+    Args:
+        seq_len (int): Sequence length. Default: ``1``.
+        model_dim (int): Model dimension. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``8``.
+        stacked_transformer_layers (int): Number of stacked transformer layers. Default: ``1``.
+        attn_dropout (float): Dropout rate for attention. Default: ``0.0``.
+        net_dropout (float): Dropout rate for the network. Default: ``0.0``.
+        use_position_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        position_dim (int): Dimension of positional embeddings. Default: ``4``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+    """
     def __init__(self,
                  seq_len=1,
                  model_dim=64,
@@ -193,8 +276,8 @@ class BehaviorTransformer(nn.Module):
         self.use_position_emb = use_position_emb
         self.transformer_blocks = nn.ModuleList(TransformerBlock(model_dim=model_dim,
                                                                  ffn_dim=model_dim,
-                                                                 num_heads=num_heads, 
-                                                                 attn_dropout=attn_dropout, 
+                                                                 num_heads=num_heads,
+                                                                 attn_dropout=attn_dropout,
                                                                  net_dropout=net_dropout,
                                                                  layer_norm=layer_norm,
                                                                  use_residual=use_residual)
@@ -204,6 +287,7 @@ class BehaviorTransformer(nn.Module):
             self.reset_parameters()
 
     def reset_parameters(self):
+        """Initialize positional embeddings with sinusoidal encoding."""
         seq_len = self.position_emb.size(0)
         pe = torch.zeros(seq_len, self.position_dim)
         position = torch.arange(0, seq_len).float().unsqueeze(1)
@@ -213,6 +297,15 @@ class BehaviorTransformer(nn.Module):
         self.position_emb.data = pe
 
     def forward(self, x, attn_mask=None):
+        """Forward pass of BehaviorTransformer.
+
+        Args:
+            x: Input tensor of shape (B, L, D).
+            attn_mask: Optional attention mask.
+
+        Returns:
+            torch.Tensor: Output tensor after transformer layers.
+        """
         # input b x len x dim
         if self.use_position_emb:
             x = torch.cat([x, self.position_emb.unsqueeze(0).repeat(x.size(0), 1, 1)], dim=-1)
@@ -222,11 +315,22 @@ class BehaviorTransformer(nn.Module):
 
 
 class TransformerBlock(nn.Module):
+    """Single Transformer block with multi-head attention and feed-forward network.
+
+    Args:
+        model_dim (int): Model dimension. Default: ``64``.
+        ffn_dim (int): Feed-forward network dimension. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``8``.
+        attn_dropout (float): Dropout rate for attention. Default: ``0.0``.
+        net_dropout (float): Dropout rate for the network. Default: ``0.0``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+    """
     def __init__(self, model_dim=64, ffn_dim=64, num_heads=8, attn_dropout=0.0, net_dropout=0.0,
                  layer_norm=True, use_residual=True):
         super(TransformerBlock, self).__init__()
         self.attention = MultiheadAttention(model_dim,
-                                            num_heads=num_heads, 
+                                            num_heads=num_heads,
                                             dropout=attn_dropout,
                                             batch_first=True)
         self.ffn = nn.Sequential(nn.Linear(model_dim, ffn_dim),
@@ -239,6 +343,15 @@ class TransformerBlock(nn.Module):
         self.layer_norm2 = nn.LayerNorm(model_dim) if layer_norm else None
 
     def forward(self, x, attn_mask=None):
+        """Forward pass of TransformerBlock.
+
+        Args:
+            x: Input tensor of shape (B, L, D).
+            attn_mask: Optional attention mask.
+
+        Returns:
+            torch.Tensor: Output tensor after transformer block.
+        """
         attn, _ = self.attention(x, x, x, attn_mask=attn_mask)
         s = self.dropout1(attn)
         if self.use_residual:

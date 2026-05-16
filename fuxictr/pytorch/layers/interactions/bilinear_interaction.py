@@ -21,6 +21,25 @@ from itertools import combinations
 
 
 class BilinearInteraction(nn.Module):
+    """Bilinear interaction layer that models pairwise feature interactions with learnable bilinear weights.
+
+    ``BilinearInteraction`` computes interactions between every pair of feature embeddings using
+    a bilinear transformation. Three types of bilinear weights are supported: ``field_all``
+    (shared across all pairs), ``field_each`` (per-field weights), and ``field_interaction``
+    (per-pair weights).
+
+    Args:
+        num_fields (int): Number of feature fields.
+        embedding_dim (int): Dimension of the feature embeddings.
+        bilinear_type (str, optional): Type of bilinear weights, one of ``"field_all"``,
+            ``"field_each"``, or ``"field_interaction"``. Default: ``"field_interaction"``.
+
+    Example::
+
+        bilinear = BilinearInteraction(num_fields=10, embedding_dim=16, bilinear_type="field_all")
+        interact_out = bilinear(feature_emb)
+    """
+
     def __init__(self, num_fields, embedding_dim, bilinear_type="field_interaction"):
         super(BilinearInteraction, self).__init__()
         self.bilinear_type = bilinear_type
@@ -36,9 +55,20 @@ class BilinearInteraction(nn.Module):
         self.init_weights()
 
     def init_weights(self):
+        """Initialize bilinear weights with Xavier normal initialization."""
         nn.init.xavier_normal_(self.bilinear_W)
 
     def forward(self, feature_emb):
+        """Compute bilinear interactions between feature embeddings.
+
+        Args:
+            feature_emb (torch.Tensor): Feature embeddings of shape
+                (batch_size, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Bilinear interaction output of shape
+                (batch_size, interact_dim, embedding_dim).
+        """
         feature_emb_list = torch.split(feature_emb, 1, dim=1)
         if self.bilinear_type == "field_all":
             bilinear_list = [torch.matmul(v_i, self.bilinear_W) * v_j
@@ -55,6 +85,24 @@ class BilinearInteraction(nn.Module):
 
 
 class BilinearInteractionV2(nn.Module):
+    """Optimized bilinear interaction layer using triu indexing for efficiency.
+
+    ``BilinearInteractionV2`` computes the same bilinear interactions as ``BilinearInteraction``
+    but uses upper-triangular index selection to avoid explicit pairwise iteration, improving
+    computational efficiency.
+
+    Args:
+        num_fields (int): Number of feature fields.
+        embedding_dim (int): Dimension of the feature embeddings.
+        bilinear_type (str, optional): Type of bilinear weights, one of ``"field_all"``,
+            ``"field_each"``, or ``"field_interaction"``. Default: ``"field_interaction"``.
+
+    Example::
+
+        bilinear_v2 = BilinearInteractionV2(num_fields=10, embedding_dim=16, bilinear_type="field_all")
+        interact_out = bilinear_v2(feature_emb)
+    """
+
     def __init__(self, num_fields, embedding_dim, bilinear_type="field_interaction"):
         super(BilinearInteractionV2, self).__init__()
         self.bilinear_type = bilinear_type
@@ -73,9 +121,20 @@ class BilinearInteractionV2(nn.Module):
         self.init_weights()
 
     def init_weights(self):
+        """Initialize bilinear weights with Xavier normal initialization."""
         nn.init.xavier_normal_(self.bilinear_W)
 
     def forward(self, feature_emb):
+        """Compute bilinear interactions using triu index selection.
+
+        Args:
+            feature_emb (torch.Tensor): Feature embeddings of shape
+                (batch_size, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Bilinear interaction output of shape
+                (batch_size, interact_dim, embedding_dim).
+        """
         if self.bilinear_type == "field_interaction":
             left_emb =  torch.index_select(feature_emb, 1, self.triu_index[0])
             right_emb = torch.index_select(feature_emb, 1, self.triu_index[1])

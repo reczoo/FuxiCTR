@@ -22,14 +22,26 @@ from fuxictr.pytorch.layers import FeatureEmbedding, LogisticRegression
 
 
 class FFM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FFM", 
-                 gpu=-1, 
-                 task="binary_classification", 
-                 learning_rate=1e-3, 
-                 embedding_dim=2, 
-                 regularizer=None, 
+    """Field-aware Factorization Machine (FFM) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        task (str): Task type, e.g., "binary_classification". Default: ``"binary_classification"``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``2``.
+        regularizer (str or None): Regularizer for embeddings and network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="FFM",
+                 gpu=-1,
+                 task="binary_classification",
+                 learning_rate=1e-3,
+                 embedding_dim=2,
+                 regularizer=None,
                  **kwargs):
         super(FFM, self).__init__(feature_map, 
                                   model_id=model_id, 
@@ -46,8 +58,13 @@ class FFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of FFM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         lr_out = self.lr_layer(X)
@@ -59,6 +76,14 @@ class FFM(BaseModel):
         return return_dict
 
     def ffm_interaction(self, field_wise_emb_list):
+        """Compute FFM field-aware interactions.
+
+        Args:
+            field_wise_emb_list: List of field-wise embeddings.
+
+        Returns:
+            torch.Tensor: Interaction output tensor.
+        """
         dot = 0
         for i in range(self.num_fields - 1):
             for j in range(i + 1, self.num_fields):

@@ -27,7 +27,23 @@ from tensorflow.keras.layers import Layer, Embedding
 
 
 class FeatureEmbedding(Layer):
-    def __init__(self, 
+    """Feature embedding layer that returns a concatenated embedding tensor.
+
+    Wraps ``FeatureEmbeddingDict`` and converts its dictionary output to a single
+    tensor.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        embedding_dim (int): Default embedding dimension.
+        embedding_initializer (str, optional): Initializer for embedding weights. Default: ``"random_normal(stddev=1e-4)"``.
+        embedding_regularizer (optional): Optional regularizer for embeddings. Default: ``None``.
+        required_feature_columns (list, optional): Features to include. Default: ``None``.
+        not_required_feature_columns (list, optional): Features to exclude. Default: ``None``.
+        use_pretrain (bool, optional): Whether to load pretrained embeddings. Default: ``True``.
+        use_sharing (bool, optional): Whether to share embedding matrices. Default: ``True``.
+        name_prefix (str, optional): Prefix for embedding layer names. Default: ``"emb_"``.
+    """
+    def __init__(self,
                  feature_map,
                  embedding_dim,
                  embedding_initializer="random_normal(stddev=1e-4)",
@@ -38,7 +54,7 @@ class FeatureEmbedding(Layer):
                  use_sharing=True,
                  name_prefix="emb_"):
         super(FeatureEmbedding, self).__init__()
-        self.embedding_layer = FeatureEmbeddingDict(feature_map, 
+        self.embedding_layer = FeatureEmbeddingDict(feature_map,
                                                     embedding_dim,
                                                     embedding_initializer=embedding_initializer,
                                                     embedding_regularizer=embedding_regularizer,
@@ -49,13 +65,40 @@ class FeatureEmbedding(Layer):
                                                     name_prefix=name_prefix)
 
     def call(self, X, feature_source=[], feature_type=[], flatten_emb=False):
+        """Return concatenated feature embeddings.
+
+        Args:
+            X (dict): Input feature dictionary.
+            feature_source (list, optional): Filter by feature source.
+            feature_type (list, optional): Filter by feature type.
+            flatten_emb (bool): Whether to flatten the embedding output.
+
+        Returns:
+            tf.Tensor: Concatenated embedding tensor.
+        """
         feature_emb_dict = self.embedding_layer(X, feature_source=feature_source, feature_type=feature_type)
         feature_emb = self.embedding_layer.dict2tensor(feature_emb_dict, flatten_emb=flatten_emb)
         return feature_emb
 
 
 class FeatureEmbeddingDict(Layer):
-    def __init__(self, 
+    """Feature embedding layer that returns an ordered dictionary of embeddings.
+
+    Supports numeric, categorical, and sequence features, with optional pretrained
+    embeddings, feature encoders, and embedding sharing.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        embedding_dim (int): Default embedding dimension.
+        embedding_initializer (str, optional): Initializer for embedding weights. Default: ``"random_normal(stddev=1e-4)"``.
+        embedding_regularizer (optional): Optional regularizer for embeddings. Default: ``None``.
+        required_feature_columns (list, optional): Features to include. Default: ``None``.
+        not_required_feature_columns (list, optional): Features to exclude. Default: ``None``.
+        use_pretrain (bool, optional): Whether to load pretrained embeddings. Default: ``True``.
+        use_sharing (bool, optional): Whether to share embedding matrices. Default: ``True``.
+        name_prefix (str, optional): Prefix for embedding layer names. Default: ``"emb_"``.
+    """
+    def __init__(self,
                  feature_map,
                  embedding_dim,
                  embedding_initializer="random_normal(stddev=1e-4)",
@@ -94,7 +137,7 @@ class FeatureEmbeddingDict(Layer):
                     self.embedding_layers[feature] = tf.keras.layers.Dense(feat_emb_dim, use_bias=False)
                 elif feature_spec["type"] == "categorical":
                     padding_idx = feature_spec.get("padding_idx", None)
-                    embedding_matrix = Embedding(feature_spec["vocab_size"], 
+                    embedding_matrix = Embedding(feature_spec["vocab_size"],
                                                  feat_emb_dim,
                                                  embeddings_initializer=get_initializer(embedding_initializer),
                                                  embeddings_regularizer=get_regularizer(embedding_regularizer),
@@ -102,8 +145,8 @@ class FeatureEmbeddingDict(Layer):
                                                  name=name_prefix + feature)
                     if use_pretrain and "pretrained_emb" in feature_spec:
                         embedding_matrix = self.load_pretrained_embedding(embedding_matrix,
-                                                                          feature_map, 
-                                                                          feature, 
+                                                                          feature_map,
+                                                                          feature,
                                                                           freeze=feature_spec["freeze_emb"],
                                                                           padding_idx=padding_idx)
                     self.embedding_layers[feature] = embedding_matrix
@@ -116,14 +159,25 @@ class FeatureEmbeddingDict(Layer):
                                                  mask_zero=True if padding_idx == 0 else False,
                                                  name=name_prefix + feature)
                     if use_pretrain and "pretrained_emb" in feature_spec:
-                        embedding_matrix = self.load_pretrained_embedding(embedding_matrix, 
-                                                                          feature_map, 
+                        embedding_matrix = self.load_pretrained_embedding(embedding_matrix,
+                                                                          feature_map,
                                                                           feature,
                                                                           freeze=feature_spec["freeze_emb"],
                                                                           padding_idx=padding_idx)
                     self.embedding_layers[feature] = embedding_matrix
 
     def get_feature_encoder(self, encoder):
+        """Instantiate a feature encoder from its string specification.
+
+        Args:
+            encoder (str or list): Encoder specification(s).
+
+        Returns:
+            tf.keras.layers.Layer: Instantiated encoder layer.
+
+        Raises:
+            ValueError: If the encoder specification is not supported.
+        """
         try:
             if type(encoder) == list:
                 encoder_list = []
@@ -137,7 +191,7 @@ class FeatureEmbeddingDict(Layer):
             raise ValueError("feature_encoder={} is not supported.".format(encoder))
 
     def is_required(self, feature):
-        """ Check whether feature is required for embedding """
+        """Check whether feature is required for embedding."""
         feature_spec = self._feature_map.features[feature]
         if feature_spec["type"] == "meta":
             return False
@@ -149,11 +203,32 @@ class FeatureEmbeddingDict(Layer):
             return True
 
     def get_pretrained_embedding(self, pretrained_path, feature_name):
+        """Load pretrained embeddings from an HDF5 file.
+
+        Args:
+            pretrained_path (str): Path to the HDF5 file.
+            feature_name (str): Name of the feature dataset in the file.
+
+        Returns:
+            np.ndarray: Pretrained embedding matrix.
+        """
         with h5py.File(pretrained_path, 'r') as hf:
             embeddings = hf[feature_name][:]
         return embeddings
 
     def load_pretrained_embedding(self, embedding_matrix, feature_map, feature_name, freeze=False, padding_idx=None):
+        """Load pretrained weights into an embedding matrix.
+
+        Args:
+            embedding_matrix (Embedding): Target embedding layer.
+            feature_map (FeatureMap): Feature map object.
+            feature_name (str): Feature name.
+            freeze (bool): Whether to freeze the loaded embeddings.
+            padding_idx (int, optional): Index to zero out for padding.
+
+        Returns:
+            Embedding: Embedding layer with pretrained weights loaded.
+        """
         pretrained_path = os.path.join(feature_map.data_dir, feature_map.features[feature_name]["pretrained_emb"])
         embeddings = self.get_pretrained_embedding(pretrained_path, feature_name)
         if padding_idx is not None:
@@ -166,6 +241,18 @@ class FeatureEmbeddingDict(Layer):
         return embedding_matrix
 
     def dict2tensor(self, embedding_dict, feature_list=[], feature_source=[], feature_type=[], flatten_emb=False):
+        """Convert an embedding dictionary to a concatenated tensor.
+
+        Args:
+            embedding_dict (dict): Mapping of feature names to embedding tensors.
+            feature_list (list, optional): Subset of features to include.
+            feature_source (list, optional): Filter by feature source.
+            feature_type (list, optional): Filter by feature type.
+            flatten_emb (bool): Whether to flatten the concatenated embeddings.
+
+        Returns:
+            tf.Tensor: Concatenated embedding tensor.
+        """
         if type(feature_source) != list:
             feature_source = [feature_source]
         if type(feature_type) != list:
@@ -187,6 +274,16 @@ class FeatureEmbeddingDict(Layer):
         return feature_emb
 
     def call(self, inputs, feature_source=[], feature_type=[]):
+        """Compute feature embeddings and return them as an ordered dictionary.
+
+        Args:
+            inputs (dict): Input feature dictionary.
+            feature_source (list, optional): Filter by feature source.
+            feature_type (list, optional): Filter by feature type.
+
+        Returns:
+            OrderedDict: Mapping of feature names to embedding tensors.
+        """
         if type(feature_source) != list:
             feature_source = [feature_source]
         if type(feature_type) != list:

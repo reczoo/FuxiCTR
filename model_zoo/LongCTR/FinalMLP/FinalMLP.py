@@ -22,8 +22,38 @@ from fuxictr.utils import not_in_whitelist
 
 
 class FinalMLP(BaseModel):
-    def __init__(self, 
-                 feature_map, 
+    """FinalMLP model with dual MLP towers and feature selection.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"FinalMLP"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        mlp1_hidden_units (list): Hidden units of the first MLP tower. Default: ``[64, 64, 64]``.
+        mlp1_hidden_activations (str): Activation for the first MLP tower. Default: ``"ReLU"``.
+        mlp1_dropout (float): Dropout rate for the first MLP tower. Default: ``0``.
+        mlp1_batch_norm (bool): Whether to apply batch normalization in the first MLP.
+            Default: ``False``.
+        mlp2_hidden_units (list): Hidden units of the second MLP tower. Default: ``[64, 64, 64]``.
+        mlp2_hidden_activations (str): Activation for the second MLP tower. Default: ``"ReLU"``.
+        mlp2_dropout (float): Dropout rate for the second MLP tower. Default: ``0``.
+        mlp2_batch_norm (bool): Whether to apply batch normalization in the second MLP.
+            Default: ``False``.
+        use_fs (bool): Whether to use feature selection module. Default: ``True``.
+        fs_hidden_units (list): Hidden units of feature selection gates. Default: ``[64]``.
+        fs1_context (list): Context features for the first feature selection gate.
+            Default: ``[]``.
+        fs2_context (list): Context features for the second feature selection gate.
+            Default: ``[]``.
+        num_heads (int): Number of heads for interaction aggregation. Default: ``1``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
                  model_id="FinalMLP",
                  gpu=-1,
                  learning_rate=1e-3,
@@ -90,6 +120,14 @@ class FinalMLP(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
+        """Forward pass of FinalMLP.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         batch_dict, item_dict, mask = self.get_inputs(inputs)
         emb_list = []
         if batch_dict: # not empty
@@ -110,6 +148,15 @@ class FinalMLP(BaseModel):
         return return_dict
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -132,11 +179,27 @@ class FinalMLP(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
 
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)
@@ -150,7 +213,17 @@ class FinalMLP(BaseModel):
 
 
 class FeatureSelection(nn.Module):
-    def __init__(self, feature_map, feature_dim, embedding_dim, fs_hidden_units=[], 
+    """Feature selection module for FinalMLP.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance.
+        feature_dim (int): Dimension of the flattened feature embedding.
+        embedding_dim (int): Embedding dimension.
+        fs_hidden_units (list): Hidden units of feature selection gates. Default: ``[]``.
+        fs1_context (list): Context features for the first gate. Default: ``[]``.
+        fs2_context (list): Context features for the second gate. Default: ``[]``.
+    """
+    def __init__(self, feature_map, feature_dim, embedding_dim, fs_hidden_units=[],
                  fs1_context=[], fs2_context=[]):
         super(FeatureSelection, self).__init__()
         self.fs1_context = fs1_context
@@ -179,6 +252,15 @@ class FeatureSelection(nn.Module):
                                   batch_norm=False)
 
     def forward(self, X, flat_emb):
+        """Apply feature selection gates.
+
+        Args:
+            X: Input feature dictionary.
+            flat_emb: Flattened embedding tensor.
+
+        Returns:
+            tuple: ``(feature1, feature2)`` after gating.
+        """
         if len(self.fs1_context) == 0:
             fs1_input = self.fs1_ctx_bias.repeat(flat_emb.size(0), 1)
         else:
@@ -195,6 +277,14 @@ class FeatureSelection(nn.Module):
 
 
 class InteractionAggregation(nn.Module):
+    """Interaction aggregation module with multi-head bilinear interaction.
+
+    Args:
+        x_dim (int): Dimension of the first input.
+        y_dim (int): Dimension of the second input.
+        output_dim (int): Output dimension. Default: ``1``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+    """
     def __init__(self, x_dim, y_dim, output_dim=1, num_heads=1):
         super(InteractionAggregation, self).__init__()
         assert x_dim % num_heads == 0 and y_dim % num_heads == 0, \
@@ -205,15 +295,24 @@ class InteractionAggregation(nn.Module):
         self.head_y_dim = y_dim // num_heads
         self.w_x = nn.Linear(x_dim, output_dim)
         self.w_y = nn.Linear(y_dim, output_dim)
-        self.w_xy = nn.Parameter(torch.Tensor(num_heads * self.head_x_dim * self.head_y_dim, 
+        self.w_xy = nn.Parameter(torch.Tensor(num_heads * self.head_x_dim * self.head_y_dim,
                                               output_dim))
         nn.init.xavier_normal_(self.w_xy)
 
     def forward(self, x, y):
+        """Aggregate two representations with bilinear interaction.
+
+        Args:
+            x: First input tensor.
+            y: Second input tensor.
+
+        Returns:
+            Tensor: Aggregated output tensor.
+        """
         output = self.w_x(x) + self.w_y(y)
         head_x = x.view(-1, self.num_heads, self.head_x_dim)
         head_y = y.view(-1, self.num_heads, self.head_y_dim)
-        xy = torch.matmul(torch.matmul(head_x.unsqueeze(2), 
+        xy = torch.matmul(torch.matmul(head_x.unsqueeze(2),
                                        self.w_xy.view(self.num_heads, self.head_x_dim, -1)) \
                                .view(-1, self.num_heads, self.output_dim, self.head_y_dim),
                           head_y.unsqueeze(-1)).squeeze(-1)

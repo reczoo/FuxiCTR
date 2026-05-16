@@ -25,6 +25,11 @@ import logging
 
 
 def seed_everything(seed=2019):
+    """Set random seeds for reproducibility.
+
+    Args:
+        seed (int): Random seed value. Negative values are ignored.
+    """
     logging.info('Setting random seed={}'.format(seed))
     if seed >= 0:
         random.seed(seed)
@@ -33,6 +38,14 @@ def seed_everything(seed=2019):
         tf.random.set_seed(seed)
 
 def get_activation(activation):
+    """Return a Keras activation layer or callable from a string name.
+
+    Args:
+        activation (str or callable): Activation name or callable.
+
+    Returns:
+        tf.keras.layers.Layer or callable: Activation layer/callable.
+    """
     if isinstance(activation, str):
         if activation.lower() == "relu":
             return tf.keras.layers.Activation("relu")
@@ -48,6 +61,18 @@ def get_activation(activation):
         return activation
 
 def get_optimizer(optimizer, learning_rate=1.0e-3):
+    """Return a Keras optimizer instance from a string name.
+
+    Args:
+        optimizer (str or tf.keras.optimizers.Optimizer): Optimizer name or instance.
+        learning_rate (float): Learning rate.
+
+    Returns:
+        tf.keras.optimizers.Optimizer: Optimizer instance.
+
+    Raises:
+        ValueError: If the optimizer name is not supported.
+    """
     if isinstance(optimizer, str):
         if optimizer.lower() == 'adam':
             return optimizers.Adam(learning_rate=learning_rate)
@@ -63,6 +88,17 @@ def get_optimizer(optimizer, learning_rate=1.0e-3):
     return optimizer
 
 def get_loss(loss):
+    """Return a Keras loss instance from a string name.
+
+    Args:
+        loss (str or tf.keras.losses.Loss): Loss name or instance.
+
+    Returns:
+        tf.keras.losses.Loss: Loss instance.
+
+    Raises:
+        ValueError: If the loss name is not supported.
+    """
     if isinstance(loss, str):
         if loss in ['bce', 'binary_crossentropy', 'binary_cross_entropy']:
             loss = tf.keras.losses.BinaryCrossentropy(from_logits=False)
@@ -71,6 +107,17 @@ def get_loss(loss):
     return loss
 
 def get_regularizer(reg):
+    """Return a Keras regularizer from a numeric or string specification.
+
+    Args:
+        reg (int, float, str, or tf.keras.regularizers.Regularizer): Regularizer specification.
+
+    Returns:
+        tf.keras.regularizers.Regularizer: Regularizer instance.
+
+    Raises:
+        ValueError: If the regularizer specification is not supported.
+    """
     if type(reg) in [int, float]:
         return l2(reg)
     elif isinstance(reg, str):
@@ -82,6 +129,18 @@ def get_regularizer(reg):
     return reg
 
 def get_initializer(initializer, seed=20222023):
+    """Return a Keras initializer from a string specification.
+
+    Args:
+        initializer (str or tf.keras.initializers.Initializer): Initializer name or instance.
+        seed (int): Random seed for the initializer.
+
+    Returns:
+        tf.keras.initializers.Initializer: Initializer instance.
+
+    Raises:
+        ValueError: If the initializer specification is not supported.
+    """
     if isinstance(initializer, str):
         try:
             if '(' in initializer:

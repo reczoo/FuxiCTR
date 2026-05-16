@@ -23,12 +23,36 @@ from ..interactions import InnerProductInteraction
 
 
 class FactorizationMachine(nn.Module):
+    """Factorization Machine layer that combines second-order feature interactions with logistic regression.
+
+    ``FactorizationMachine`` computes pairwise inner products of feature embeddings (FM component)
+    and adds a linear logistic regression term (LR component) to produce the final output.
+
+    Args:
+        feature_map (FeatureMap): A ``FeatureMap`` instance that provides the number of fields
+            and feature metadata.
+
+    Example::
+
+        fm = FactorizationMachine(feature_map)
+        output = fm(X, feature_emb)
+    """
+
     def __init__(self, feature_map):
         super(FactorizationMachine, self).__init__()
         self.fm_layer = InnerProductInteraction(feature_map.num_fields, output="product_sum")
         self.lr_layer = LogisticRegression(feature_map, use_bias=True)
 
     def forward(self, X, feature_emb):
+        """Compute the FM output.
+
+        Args:
+            X (dict): Raw feature inputs.
+            feature_emb (torch.Tensor): Feature embeddings of shape (batch_size, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, 1).
+        """
         lr_out = self.lr_layer(X)
         fm_out = self.fm_layer(feature_emb)
         output = fm_out + lr_out

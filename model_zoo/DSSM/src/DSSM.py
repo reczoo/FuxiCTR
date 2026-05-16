@@ -21,20 +21,39 @@ from fuxictr.pytorch.layers import FeatureEmbeddingDict, MLP_Block
 
 
 class DSSM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DSSM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Deep Structured Semantic Model (DSSM) for recommendation.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DSSM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        user_tower_units (list): Hidden units for the user tower. Default: ``[64, 64, 64]``.
+        item_tower_units (list): Hidden units for the item tower. Default: ``[64, 64, 64]``.
+        user_tower_activations (str): Activation functions for user tower. Default: ``"ReLU"``.
+        item_tower_activations (str): Activation functions for item tower. Default: ``"ReLU"``.
+        user_tower_dropout (float): Dropout rate for user tower. Default: ``0``.
+        item_tower_dropout (float): Dropout rate for item tower. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DSSM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  user_tower_units=[64, 64, 64],
                  item_tower_units=[64, 64, 64],
                  user_tower_activations="ReLU",
                  item_tower_activations="ReLU",
-                 user_tower_dropout=0, 
-                 item_tower_dropout=0, 
+                 user_tower_dropout=0,
+                 item_tower_dropout=0,
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(DSSM, self).__init__(feature_map, 
@@ -68,8 +87,13 @@ class DSSM(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of DSSM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feat_emb_dict = self.embedding_layer(X)

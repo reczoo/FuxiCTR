@@ -21,9 +21,29 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class DualMLP(BaseModel):
-    def __init__(self, 
+    """Dual MLP model with two parallel MLP towers.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DualMLP"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        mlp1_hidden_units (list): Hidden units for the first MLP tower. Default: ``[64, 64, 64]``.
+        mlp1_hidden_activations (str): Activation functions for the first MLP. Default: ``"ReLU"``.
+        mlp1_dropout (float): Dropout rate for the first MLP. Default: ``0``.
+        mlp1_batch_norm (bool): Whether to use batch normalization in the first MLP. Default: ``False``.
+        mlp2_hidden_units (list): Hidden units for the second MLP tower. Default: ``[64, 64, 64]``.
+        mlp2_hidden_activations (str): Activation functions for the second MLP. Default: ``"ReLU"``.
+        mlp2_dropout (float): Dropout rate for the second MLP. Default: ``0``.
+        mlp2_batch_norm (bool): Whether to use batch normalization in the second MLP. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
-                 model_id="DualMLP", 
+                 model_id="DualMLP",
                  gpu=-1,
                  learning_rate=1e-3,
                  embedding_dim=10,
@@ -64,6 +84,14 @@ class DualMLP(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
+        """Forward pass of DualMLP.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         flat_emb = self.embedding_layer(X).flatten(start_dim=1)
         y_pred = self.mlp1(flat_emb) + self.mlp2(flat_emb)

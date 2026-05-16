@@ -22,13 +22,26 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class CGC_Layer(nn.Module):
+    """Customized Gate Control (CGC) layer for PLE.
+
+    Args:
+        num_shared_experts (int): Number of shared expert networks.
+        num_specific_experts (int): Number of task-specific expert networks per task.
+        num_tasks (int): Number of tasks.
+        input_dim (int): Input feature dimension.
+        expert_hidden_units (list): Hidden units of expert MLPs.
+        gate_hidden_units (list): Hidden units of gate MLPs.
+        hidden_activations (str): Activation function for hidden layers.
+        net_dropout (float): Dropout rate.
+        batch_norm (bool): Whether to apply batch normalization.
+    """
     def __init__(self, num_shared_experts, num_specific_experts, num_tasks, input_dim,
                  expert_hidden_units, gate_hidden_units, hidden_activations,
                  net_dropout, batch_norm):
         super(CGC_Layer, self).__init__()
-        self.num_shared_experts = num_shared_experts 
-        self.num_specific_experts = num_specific_experts 
-        self.num_tasks = num_tasks 
+        self.num_shared_experts = num_shared_experts
+        self.num_specific_experts = num_specific_experts
+        self.num_tasks = num_tasks
         self.shared_experts = nn.ModuleList(
             [MLP_Block(input_dim=input_dim,
              hidden_units=expert_hidden_units,
@@ -55,11 +68,18 @@ class CGC_Layer(nn.Module):
              batch_norm=batch_norm) for i in range(self.num_tasks+1)]
         )
         self.gate_activation = get_activation('softmax')
+
     def forward(self, x, require_gate=False):
+        """Forward pass of CGC layer.
+
+        Args:
+            x: List of input tensors, ``len(x) == num_tasks + 1``.
+            require_gate: Whether to return gate values.
+
+        Returns:
+            list or tuple: CGC outputs, optionally with gate values.
         """
-        x: list, len(x)==num_tasks+1
-        """
-        specific_expert_outputs = [] 
+        specific_expert_outputs = []
         shared_expert_outputs = []
         # specific experts
         for i in range(self.num_tasks):
@@ -67,35 +87,58 @@ class CGC_Layer(nn.Module):
             for j in range(self.num_specific_experts):
                 task_expert_outputs.append(self.specific_experts[i][j](x[i]))
             specific_expert_outputs.append(task_expert_outputs)
-        # shared experts 
+        # shared experts
         for i in range(self.num_shared_experts):
             shared_expert_outputs.append(self.shared_experts[i](x[-1]))
-        # gate 
-        cgc_outputs = [] 
-        gates = [] 
+        # gate
+        cgc_outputs = []
+        gates = []
         for i in range(self.num_tasks+1):
             if i < self.num_tasks:
                 # for specific experts
                 # gate_input: (?, num_specific_experts+num_shared_experts, dim)
-                gate_input = torch.stack(specific_expert_outputs[i] + shared_expert_outputs, dim=1) 
+                gate_input = torch.stack(specific_expert_outputs[i] + shared_expert_outputs, dim=1)
                 gate = self.gate_activation(self.gate[i](x[i])) # (?, num_specific_experts+num_shared_experts)
                 gates.append(gate.mean(0))
                 cgc_output = torch.sum(gate.unsqueeze(-1) * gate_input, dim=1) # (?, dim)
                 cgc_outputs.append(cgc_output)
-            else: 
-                # for shared experts 
+            else:
+                # for shared experts
                 gate_input = torch.stack(shared_expert_outputs, dim=1) # (?, num_shared_experts, dim)
                 gate = self.gate_activation(self.gate[i](x[-1])) # (?, num_shared_experts)
                 gates.append(gate.mean(0))
                 cgc_output = torch.sum(gate.unsqueeze(-1) * gate_input, dim=1) # (?, dim)
                 cgc_outputs.append(cgc_output)
         if require_gate:
-            return cgc_outputs, gates 
-        else: 
+            return cgc_outputs, gates
+        else:
             return cgc_outputs
 
 
 class PLE(MultiTaskModel):
+    """Progressive Layered Extraction (PLE) model for multi-task learning.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        task (list): List of task types. Default: ``["binary_classification"]``.
+        num_tasks (int): Number of tasks. Default: ``1``.
+        model_id (str): Model identifier string. Default: ``"PLE"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        num_layers (int): Number of CGC layers. Default: ``1``.
+        num_shared_experts (int): Number of shared expert networks. Default: ``1``.
+        num_specific_experts (int): Number of task-specific expert networks per task. Default: ``1``.
+        expert_hidden_units (list): Hidden units of expert MLPs. Default: ``[512, 256, 128]``.
+        gate_hidden_units (list): Hidden units of gate MLPs. Default: ``[128, 64]``.
+        tower_hidden_units (list): Hidden units of task towers. Default: ``[128, 64]``.
+        hidden_activations (str): Activation function for hidden layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
     def __init__(self,
                  feature_map,
                  task=["binary_classification"],
@@ -150,6 +193,14 @@ class PLE(MultiTaskModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of PLE.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary with task predictions.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         cgc_inputs = [feature_emb.flatten(start_dim=1) for _ in range(self.num_tasks+1)]

@@ -21,12 +21,32 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, InnerProductInte
 
 
 class DLRM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DLRM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Deep Learning Recommendation Model (DLRM).
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DLRM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        top_mlp_units (list): Hidden units for the top MLP. Default: ``[64, 64, 64]``.
+        bottom_mlp_units (list): Hidden units for the bottom MLP. Default: ``[64, 64, 64]``.
+        top_mlp_activations (str): Activation functions for top MLP. Default: ``"ReLU"``.
+        bottom_mlp_activations (str): Activation functions for bottom MLP. Default: ``"ReLU"``.
+        top_mlp_dropout (float): Dropout rate for top MLP. Default: ``0``.
+        bottom_mlp_dropout (float): Dropout rate for bottom MLP. Default: ``0``.
+        interaction_op (str): Interaction operation, one of ["dot", "cat"]. Default: ``"dot"``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DLRM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  top_mlp_units=[64, 64, 64],
                  bottom_mlp_units=[64, 64, 64],
                  top_mlp_activations="ReLU",
@@ -35,7 +55,7 @@ class DLRM(BaseModel):
                  bottom_mlp_dropout=0,
                  interaction_op="dot", # ["dot", "cat"]
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(DLRM, self).__init__(feature_map, 
@@ -81,8 +101,13 @@ class DLRM(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of DLRM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feat_emb = self.embedding_layer(X)

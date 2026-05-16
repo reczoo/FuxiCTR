@@ -22,25 +22,43 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, InteractionMachi
 
 
 class DeepIM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DeepIM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 im_order=2, 
+    """Deep Interaction Machine (DeepIM) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DeepIM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        im_order (int): Order of interaction machine. Default: ``2``.
+        im_batch_norm (bool): Whether to use batch normalization in IM. Default: ``False``.
+        hidden_units (list): Hidden units for the DNN tower. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        net_batch_norm (bool): Whether to use batch normalization in DNN. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DeepIM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 im_order=2,
                  im_batch_norm=False,
-                 hidden_units=[64, 64, 64], 
-                 hidden_activations="ReLU", 
-                 net_dropout=0, 
-                 net_batch_norm=False, 
-                 embedding_regularizer=None, 
+                 hidden_units=[64, 64, 64],
+                 hidden_activations="ReLU",
+                 net_dropout=0,
+                 net_batch_norm=False,
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(DeepIM, self).__init__(feature_map, 
+        super(DeepIM, self).__init__(feature_map,
                                      model_id=model_id,
-                                     gpu=gpu, 
-                                     embedding_regularizer=embedding_regularizer, 
+                                     gpu=gpu,
+                                     embedding_regularizer=embedding_regularizer,
                                      net_regularizer=net_regularizer,
                                      **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -56,10 +74,15 @@ class DeepIM(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-            
+
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of DeepIM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)

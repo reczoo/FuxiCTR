@@ -24,8 +24,36 @@ from fuxictr.utils import not_in_whitelist
 
 
 class DIEN(BaseModel):
-    """ Implementation of DIEN model based on the following reference code:
-        https://github.com/mouna99/dien
+    """Deep Interest Evolution Network (DIEN) model.
+
+    Implementation of DIEN model based on the following reference code:
+    https://github.com/mouna99/dien
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"DIEN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[200, 80]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``16``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``True``.
+        gru_type (str): GRU variant, one of ``"GRU"``, ``"AIGRU"``, ``"AGRU"``, or ``"AUGRU"``.
+            Default: ``"AUGRU"``.
+        enable_sum_pooling (bool): Whether to enable sum pooling of behavior sequence.
+            Default: ``False``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        attention_type (str): Attention mechanism type. Default: ``"bilinear_attention"``.
+        attention_hidden_units (list): Hidden units of attention MLP. Default: ``[80, 40]``.
+        attention_activation (str): Activation for attention MLP. Default: ``"Dice"``.
+        use_attention_softmax (bool): Whether to apply softmax on attention scores.
+            Default: ``True``.
+        item_info_fields (int): Number of item info fields. Default: ``1``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
     def __init__(self,
                  feature_map,
@@ -103,6 +131,14 @@ class DIEN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DIEN.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         batch_dict, item_dict, pad_mask = self.get_inputs(inputs)
         concat_emb = []
         if batch_dict: # not empty
@@ -129,15 +165,34 @@ class DIEN(BaseModel):
         return return_dict
   
     def get_unmasked_tensor(self, h, non_zero_mask):
+        """Restore masked-out rows into a full batch tensor.
+
+        Args:
+            h: Tensor of shape ``(num_nonzero, ...)``.
+            non_zero_mask: Boolean mask indicating non-zero rows.
+
+        Returns:
+            Tensor: Full batch tensor with zeros for masked rows.
+        """
         out = torch.zeros([non_zero_mask.size(0)] + list(h.shape[1:]), device=h.device)
         out[non_zero_mask] = h
         return out
 
     def interest_extraction(self, idx, sequence_emb, mask):
+        """Extract user interest from behavior sequence using GRU.
+
+        Args:
+            idx: Index of the extraction module to use.
+            sequence_emb: Sequence embeddings.
+            mask: Sequence padding mask.
+
+        Returns:
+            tuple: ``(packed_interests, interest_emb)``.
+        """
         seq_lens = mask.sum(dim=1).cpu()
-        packed_seq = pack_padded_sequence(sequence_emb, 
-                                          seq_lens, 
-                                          batch_first=True, 
+        packed_seq = pack_padded_sequence(sequence_emb,
+                                          seq_lens,
+                                          batch_first=True,
                                           enforce_sorted=False)
         packed_interests, _ = self.extraction_modules[idx](packed_seq)
         interest_emb, _ = pad_packed_sequence(packed_interests,
@@ -147,6 +202,18 @@ class DIEN(BaseModel):
         return packed_interests, interest_emb
 
     def interest_evolution(self, idx, packed_interests, interest_emb, target_emb, mask):
+        """Evolve user interest with attention-augmented GRU.
+
+        Args:
+            idx: Index of the evolution module to use.
+            packed_interests: Packed sequence of interests.
+            interest_emb: Padded interest embeddings.
+            target_emb: Target item embedding.
+            mask: Sequence padding mask.
+
+        Returns:
+            Tensor: Evolved interest representation.
+        """
         if self.gru_type == "GRU":
             _, h_out = self.evolving_modules[idx](packed_interests)
         else:
@@ -167,6 +234,15 @@ class DIEN(BaseModel):
         return h_out.squeeze()
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -181,7 +257,7 @@ class DIEN(BaseModel):
         for item, value in item_dict.items():
             item_dict[item] = value.to(self.device)
         return X_dict, item_dict, mask.to(self.device)
-        
+
     def get_labels(self, inputs):
         """ Please override get_labels() when using multiple labels!
         """
@@ -189,11 +265,27 @@ class DIEN(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
-    
+
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)
@@ -207,6 +299,19 @@ class DIEN(BaseModel):
 
 
 class AttentionLayer(nn.Module):
+    """Attention layer for DIEN with multiple attention mechanisms.
+
+    Args:
+        model_dim (int): Dimension of the model embeddings.
+        attention_type (str): Type of attention, one of ``"bilinear_attention"``,
+            ``"dot_attention"``, or ``"din_attention"``. Default: ``"bilinear_attention"``.
+        attention_hidden_units (list): Hidden units for DIN-style attention MLP.
+            Default: ``[80, 40]``.
+        attention_activation (str): Activation function for attention MLP. Default: ``"Dice"``.
+        use_attention_softmax (bool): Whether to apply softmax on attention scores.
+            Default: ``True``.
+        attention_dropout (float): Dropout rate for attention MLP. Default: ``0.0``.
+    """
     def __init__(self, model_dim, attention_type="bilinear_attention", attention_hidden_units=[80, 40],
                  attention_activation="Dice", use_attention_softmax=True, attention_dropout=0.0):
         super(AttentionLayer, self).__init__()
@@ -221,11 +326,21 @@ class AttentionLayer(nn.Module):
                                       output_dim=1,
                                       hidden_units=attention_hidden_units,
                                       hidden_activations=attention_activation,
-                                      output_activation=None, 
+                                      output_activation=None,
                                       dropout_rates=attention_dropout,
                                       batch_norm=False)
 
     def forward(self, sequence_emb, target_emb, mask=None):
+        """Compute attention scores between sequence and target embeddings.
+
+        Args:
+            sequence_emb: Sequence embeddings of shape ``(batch_size, seq_len, dim)``.
+            target_emb: Target embedding of shape ``(batch_size, dim)``.
+            mask: Optional padding mask.
+
+        Returns:
+            Tensor: Attention scores of shape ``(batch_size, seq_len)``.
+        """
         seq_len = sequence_emb.size(1)
         if self.attention_type == "dot_attention":
             attn_score = sequence_emb @ target_emb.unsqueeze(-1)
@@ -233,7 +348,7 @@ class AttentionLayer(nn.Module):
             attn_score = (sequence_emb @ self.W_kernel) @ target_emb.unsqueeze(-1)
         elif self.attention_type == "din_attention":
             target_emb = target_emb.unsqueeze(1).expand(-1, seq_len, -1)
-            din_concat = torch.cat([target_emb, sequence_emb, target_emb - sequence_emb, 
+            din_concat = torch.cat([target_emb, sequence_emb, target_emb - sequence_emb,
                                     target_emb * sequence_emb], dim=-1)
             attn_score = self.attn_mlp(din_concat.view(-1, 4 * target_emb.size(-1)))
         attn_score = attn_score.view(-1, seq_len)
@@ -247,9 +362,14 @@ class AttentionLayer(nn.Module):
 
 
 class AGRUCell(nn.Module):
-    r"""AGRUCell with attentional update gate
-        Reference: GRUCell from https://github.com/emadRad/lstm-gru-pytorch/blob/master/lstm_gru.ipynb
+    """AGRUCell with attentional update gate.
 
+    Reference: GRUCell from https://github.com/emadRad/lstm-gru-pytorch/blob/master/lstm_gru.ipynb
+
+    Args:
+        input_size (int): Input feature dimension.
+        hidden_size (int): Hidden state dimension.
+        bias (bool): Whether to use bias in linear layers. Default: ``True``.
     """
     def __init__(self, input_size, hidden_size, bias=True):
         super(AGRUCell, self).__init__()
@@ -257,12 +377,22 @@ class AGRUCell(nn.Module):
         self.h2h = nn.Linear(hidden_size, 3 * hidden_size, bias=bias)
 
     def forward(self, x, hx, attn):
-        gate_x = self.x2h(x) 
+        """Forward pass of AGRUCell.
+
+        Args:
+            x: Input tensor of shape ``(batch, input_size)``.
+            hx: Previous hidden state of shape ``(batch, hidden_size)``.
+            attn: Attention scores of shape ``(batch,)``.
+
+        Returns:
+            Tensor: Updated hidden state of shape ``(batch, hidden_size)``.
+        """
+        gate_x = self.x2h(x)
         gate_h = self.h2h(hx)
-        
+
         i_u, i_r, i_n = gate_x.chunk(3, 1)
         h_u, h_r, h_n = gate_h.chunk(3, 1)
-        
+
         reset_gate = torch.sigmoid(i_r + h_r)
         new_gate = torch.tanh(i_n + reset_gate * h_n)
         hy = hx + attn.view(-1, 1) * (new_gate - hx)
@@ -270,9 +400,14 @@ class AGRUCell(nn.Module):
 
 
 class AUGRUCell(nn.Module):
-    r"""AUGRUCell with attentional update gate
-        Reference: GRUCell from https://github.com/emadRad/lstm-gru-pytorch/blob/master/lstm_gru.ipynb
+    """AUGRUCell with attentional update gate.
 
+    Reference: GRUCell from https://github.com/emadRad/lstm-gru-pytorch/blob/master/lstm_gru.ipynb
+
+    Args:
+        input_size (int): Input feature dimension.
+        hidden_size (int): Hidden state dimension.
+        bias (bool): Whether to use bias in linear layers. Default: ``True``.
     """
     def __init__(self, input_size, hidden_size, bias=True):
         super(AUGRUCell, self).__init__()
@@ -280,12 +415,22 @@ class AUGRUCell(nn.Module):
         self.h2h = nn.Linear(hidden_size, 3 * hidden_size, bias=bias)
 
     def forward(self, x, hx, attn):
-        gate_x = self.x2h(x) 
+        """Forward pass of AUGRUCell.
+
+        Args:
+            x: Input tensor of shape ``(batch, input_size)``.
+            hx: Previous hidden state of shape ``(batch, hidden_size)``.
+            attn: Attention scores of shape ``(batch,)``.
+
+        Returns:
+            Tensor: Updated hidden state of shape ``(batch, hidden_size)``.
+        """
+        gate_x = self.x2h(x)
         gate_h = self.h2h(hx)
-        
+
         i_u, i_r, i_n = gate_x.chunk(3, 1)
         h_u, h_r, h_n = gate_h.chunk(3, 1)
-        
+
         update_gate = torch.sigmoid(i_u + h_u)
         update_gate = update_gate * attn.unsqueeze(-1)
         reset_gate = torch.sigmoid(i_r + h_r)
@@ -295,8 +440,15 @@ class AUGRUCell(nn.Module):
 
 
 class DynamicGRU(nn.Module):
-    r"""DynamicGRU with GRU, AIGRU, AGRU, and AUGRU choices
-        Reference: https://github.com/GitHub-HongweiZhang/prediction-flow/blob/master/prediction_flow/pytorch/nn/rnn.py
+    """DynamicGRU with GRU, AIGRU, AGRU, and AUGRU choices.
+
+    Reference: https://github.com/GitHub-HongweiZhang/prediction-flow/blob/master/prediction_flow/pytorch/nn/rnn.py
+
+    Args:
+        input_size (int): Input feature dimension.
+        hidden_size (int): Hidden state dimension.
+        bias (bool): Whether to use bias in linear layers. Default: ``True``.
+        gru_type (str): GRU variant, one of ``"AUGRU"`` or ``"AGRU"``. Default: ``"AUGRU"``.
     """
     def __init__(self, input_size, hidden_size, bias=True, gru_type='AUGRU'):
         super(DynamicGRU, self).__init__()
@@ -306,8 +458,18 @@ class DynamicGRU(nn.Module):
             self.gru_cell = AUGRUCell(input_size, hidden_size, bias=bias)
         elif gru_type == "AGRU":
             self.gru_cell = AGRUCell(input_size, hidden_size, bias=bias)
-    
+
     def forward(self, packed_seq_emb, attn_score=None, h=None):
+        """Forward pass of DynamicGRU.
+
+        Args:
+            packed_seq_emb: Packed sequence embedding.
+            attn_score: Packed attention scores.
+            h: Optional initial hidden state.
+
+        Returns:
+            tuple: ``(packed_outputs, hidden_state)``.
+        """
         assert isinstance(packed_seq_emb, PackedSequence) and isinstance(attn_score, PackedSequence), \
                "DynamicGRU supports only `PackedSequence` input."
         x, batch_sizes, sorted_indices, unsorted_indices = packed_seq_emb
@@ -317,7 +479,7 @@ class DynamicGRU(nn.Module):
             h = torch.zeros(batch_sizes[0], self.hidden_size, device=x.device)
         output_h = torch.zeros(batch_sizes[0], self.hidden_size, device=x.device)
         outputs = torch.zeros(x.shape[0], self.hidden_size, device=x.device)
-        
+
         start = 0
         for batch_size in batch_sizes:
             _x = x[start: start + batch_size]
@@ -327,7 +489,7 @@ class DynamicGRU(nn.Module):
             outputs[start: start + batch_size] = h
             output_h[:batch_size] = h
             start += batch_size
-        
+
         return PackedSequence(outputs, batch_sizes, sorted_indices, unsorted_indices), \
                output_h[unsorted_indices]
 

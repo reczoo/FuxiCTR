@@ -28,16 +28,33 @@ from tqdm import tqdm
 
 
 class BaseModel(Model):
-    def __init__(self, 
+    """Base class for ranking models in TensorFlow.
+
+    Provides training loops, evaluation, checkpointing, early stopping, and
+    metric computation for CTR prediction models.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        model_id (str): Model identifier. Default: ``"BaseModel"``.
+        task (str): Task type, e.g., ``binary_classification`` or ``regression``. Default: ``"binary_classification"``.
+        monitor (str): Metric to monitor for early stopping. Default: ``"AUC"``.
+        save_best_only (bool): Whether to save only the best checkpoint. Default: ``True``.
+        monitor_mode (str): ``max`` or ``min`` for the monitored metric. Default: ``"max"``.
+        early_stop_patience (int): Patience for early stopping. Default: ``2``.
+        eval_steps (int): Evaluation frequency in steps; ``None`` means once per epoch. Default: ``None``.
+        reduce_lr_on_plateau (bool): Whether to reduce learning rate on plateau. Default: ``True``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
-                 model_id="BaseModel", 
-                 task="binary_classification", 
-                 monitor="AUC", 
-                 save_best_only=True, 
-                 monitor_mode="max", 
-                 early_stop_patience=2, 
+                 model_id="BaseModel",
+                 task="binary_classification",
+                 monitor="AUC",
+                 save_best_only=True,
+                 monitor_mode="max",
+                 early_stop_patience=2,
                  eval_steps=None,
-                 reduce_lr_on_plateau=True, 
+                 reduce_lr_on_plateau=True,
                  **kwargs):
         super(BaseModel, self).__init__()
         self.valid_gen = None
@@ -56,20 +73,52 @@ class BaseModel(Model):
         self.validation_metrics = kwargs["metrics"]
 
     def compile(self, optimizer, loss, lr):
+        """Configure the optimizer and loss function.
+
+        Args:
+            optimizer (str): Optimizer name.
+            loss (str): Loss function name.
+            lr (float): Learning rate.
+        """
         self.optimizer = get_optimizer(optimizer, lr)
         self.loss_fn = get_loss(loss)
 
     def add_loss(self, inputs):
+        """Compute the task loss without regularization.
+
+        Args:
+            inputs (dict): Batch data dictionary.
+
+        Returns:
+            tf.Tensor: Loss value.
+        """
         return_dict = self(inputs, training=True)
         y_true = self.get_labels(inputs)
         loss = self.loss_fn(return_dict["y_pred"], y_true)
         return loss
-    
+
     def compute_loss(self, inputs):
+        """Compute the total loss including regularization.
+
+        Args:
+            inputs (dict): Batch data dictionary.
+
+        Returns:
+            tf.Tensor: Total loss value.
+        """
         total_loss = self.add_loss(inputs) + sum(self.losses) # with regularization
         return total_loss
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input features from a batch dictionary.
+
+        Args:
+            inputs (dict): Batch data dictionary.
+            feature_source (list, optional): Whitelist of feature sources to include.
+
+        Returns:
+            dict: Mapping of feature names to tensors.
+        """
         if feature_source and type(feature_source) == str:
             feature_source = [feature_source]
         X_dict = dict()
@@ -82,21 +131,55 @@ class BaseModel(Model):
         return X_dict
 
     def get_labels(self, inputs):
-        """ assert len(labels) == 1, "Please override get_labels() when using multiple labels!"
+        """Extract labels from a batch dictionary.
+
+        assert len(labels) == 1, "Please override get_labels() when using multiple labels!"
+
+        Args:
+            inputs (dict): Batch data dictionary.
+
+        Returns:
+            tf.Tensor: Label tensor.
         """
         labels = self.feature_map.labels
         y = inputs[labels[0]]
         return y
 
     def get_group_id(self, inputs):
+        """Extract group IDs from a batch dictionary.
+
+        Args:
+            inputs (dict): Batch data dictionary.
+
+        Returns:
+            tf.Tensor: Group ID tensor.
+        """
         return inputs[self.feature_map.group_id]
 
     def lr_decay(self, factor=0.1, min_lr=1e-6):
+        """Reduce the learning rate by a multiplicative factor.
+
+        Args:
+            factor (float): Multiplicative factor applied to the current LR.
+            min_lr (float): Lower bound for the learning rate.
+
+        Returns:
+            float: Updated learning rate.
+        """
         self.optimizer.learning_rate = max(self.optimizer.learning_rate * factor, min_lr)
         return self.optimizer.lr.numpy()
-           
+
     def fit(self, data_generator, epochs=1, validation_data=None,
             max_gradient_norm=10., **kwargs):
+        """Train the model for a fixed number of epochs.
+
+        Args:
+            data_generator: Training data generator.
+            epochs (int): Number of training epochs.
+            validation_data: Validation data generator.
+            max_gradient_norm (float): Maximum gradient norm for clipping.
+            **kwargs: Additional keyword arguments.
+        """
         self.valid_gen = validation_data
         self._max_gradient_norm = max_gradient_norm
         self._best_metric = np.inf if self._monitor_mode == "min" else -np.inf
@@ -120,6 +203,11 @@ class BaseModel(Model):
         self.load_weights(self.checkpoint)
 
     def train_epoch(self, data_generator):
+        """Train the model for one epoch.
+
+        Args:
+            data_generator: Training data generator.
+        """
         self._batch_index = 0
         train_loss = 0
         if self._verbose == 0:
@@ -143,6 +231,14 @@ class BaseModel(Model):
 
     @tf.function
     def train_step(self, batch_data):
+        """Execute one training step on a single batch.
+
+        Args:
+            batch_data (dict): Batch data dictionary.
+
+        Returns:
+            tf.Tensor: Training loss value.
+        """
         with tf.GradientTape() as tape:
             loss = self.compute_loss(batch_data)
             grads = tape.gradient(loss, self.trainable_variables)
@@ -151,11 +247,18 @@ class BaseModel(Model):
         return loss
 
     def eval_step(self):
+        """Run a single evaluation step on the validation set."""
         logging.info('Evaluation @epoch {} - batch {}: '.format(self._epoch_index + 1, self._batch_index + 1))
         val_logs = self.evaluate(self.valid_gen, metrics=self._monitor.get_metrics())
         self.checkpoint_and_earlystop(val_logs)
 
     def checkpoint_and_earlystop(self, logs, min_delta=1e-6):
+        """Update checkpoints and determine whether to trigger early stopping.
+
+        Args:
+            logs (dict): Metric values from the latest evaluation.
+            min_delta (float): Minimum change to qualify as an improvement.
+        """
         monitor_value = self._monitor.get_value(logs)
         if (self._monitor_mode == "min" and monitor_value > self._best_metric - min_delta) or \
            (self._monitor_mode == "max" and monitor_value < self._best_metric + min_delta):
@@ -178,6 +281,15 @@ class BaseModel(Model):
             self.save_weights(self.checkpoint)
 
     def evaluate(self, data_generator, metrics=None):
+        """Evaluate the model on a validation data generator.
+
+        Args:
+            data_generator: Validation data generator.
+            metrics (list, optional): List of metric names to compute.
+
+        Returns:
+            dict: Mapping of metric names to computed values.
+        """
         y_pred = []
         y_true = []
         group_id = []
@@ -200,13 +312,35 @@ class BaseModel(Model):
         return val_logs
 
     def evaluate_metrics(self, y_true, y_pred, metrics, group_id=None):
+        """Compute evaluation metrics.
+
+        Args:
+            y_true (np.ndarray): Ground-truth labels.
+            y_pred (np.ndarray): Predicted values.
+            metrics (list): List of metric names.
+            group_id (np.ndarray, optional): Group identifiers for grouped metrics.
+
+        Returns:
+            dict: Mapping of metric names to computed values.
+        """
         return evaluate_metrics(y_true, y_pred, metrics, group_id)
 
     def get_output_activation(self, task):
+        """Get the output activation layer for a given task.
+
+        Args:
+            task (str): Task type, e.g., ``binary_classification`` or ``regression``.
+
+        Returns:
+            tf.keras.layers.Layer or callable: Output activation.
+
+        Raises:
+            NotImplementedError: If the task type is not supported.
+        """
         if task == "binary_classification":
             return tf.keras.layers.Activation("sigmoid")
         elif task == "regression":
             return tf.identity
         else:
             raise NotImplementedError("task={} is not supported.".format(task))
-            
+

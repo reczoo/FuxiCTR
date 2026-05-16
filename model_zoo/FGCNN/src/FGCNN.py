@@ -25,12 +25,35 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class FGCNN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FGCNN", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Feature Generation by Convolutional Neural Network (FGCNN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FGCNN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        share_embedding (bool): Whether to share embeddings between FGCNN and DNN. Default: ``False``.
+        channels (list): List of output channels for each conv layer. Default: ``[14, 16, 18, 20]``.
+        kernel_heights (list): List of kernel heights for each conv layer. Default: ``[7, 7, 7, 7]``.
+        pooling_sizes (list): List of pooling sizes for each conv layer. Default: ``[2, 2, 2, 2]``.
+        recombined_channels (list): List of recombined channels for each conv layer. Default: ``[2, 2, 2, 2]``.
+        conv_activation (str): Activation function for conv layers. Default: ``"Tanh"``.
+        conv_batch_norm (bool): Whether to use batch normalization in conv layers. Default: ``True``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[4096, 2048, 1024, 512]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        dnn_batch_norm (bool): Whether to use batch normalization in DNN. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="FGCNN",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  share_embedding=False,
                  channels=[14, 16, 18, 20],
                  kernel_heights=[7, 7, 7, 7],
@@ -40,8 +63,8 @@ class FGCNN(BaseModel):
                  conv_batch_norm=True,
                  dnn_hidden_units=[4096, 2048, 1024, 512],
                  dnn_activations="ReLU",
-                 dnn_batch_norm=False, 
-                 embedding_regularizer=None, 
+                 dnn_batch_norm=False,
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  net_dropout=0,
                  **kwargs):
@@ -86,12 +109,24 @@ class FGCNN(BaseModel):
         self.reset_parameters()
         self.model_to_device()
 
-    def compute_input_dim(self, 
-                          embedding_dim, 
-                          num_fields, 
-                          channels, 
-                          pooling_sizes, 
+    def compute_input_dim(self,
+                          embedding_dim,
+                          num_fields,
+                          channels,
+                          pooling_sizes,
                           recombined_channels):
+        """Compute the input dimension for the DNN tower.
+
+        Args:
+            embedding_dim: Dimension of feature embeddings.
+            num_fields: Number of input fields.
+            channels: List of output channels for each conv layer.
+            pooling_sizes: List of pooling sizes for each conv layer.
+            recombined_channels: List of recombined channels for each conv layer.
+
+        Returns:
+            tuple: (input_dim, total_features).
+        """
         total_features = num_fields
         input_height = num_fields
         for i in range(len(channels)):
@@ -101,11 +136,22 @@ class FGCNN(BaseModel):
                   + total_features * embedding_dim
         return input_dim, total_features
 
-    def validate_input(self, 
-                       channels, 
-                       kernel_heights, 
-                       pooling_sizes, 
+    def validate_input(self,
+                       channels,
+                       kernel_heights,
+                       pooling_sizes,
                        recombined_channels):
+        """Validate and normalize conv layer configuration parameters.
+
+        Args:
+            channels: List of output channels for each conv layer.
+            kernel_heights: List of kernel heights for each conv layer.
+            pooling_sizes: List of pooling sizes for each conv layer.
+            recombined_channels: List of recombined channels for each conv layer.
+
+        Returns:
+            tuple: Normalized (channels, kernel_heights, pooling_sizes, recombined_channels).
+        """
         if not isinstance(kernel_heights, list):
             kernel_heights = [kernel_heights] * len(channels)
         if not isinstance(pooling_sizes, list):
@@ -118,8 +164,13 @@ class FGCNN(BaseModel):
         return channels, kernel_heights, pooling_sizes, recombined_channels
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of FGCNN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
@@ -138,14 +189,25 @@ class FGCNN(BaseModel):
 
 
 class FGCNN_Layer(nn.Module):
-    """
+    """FGCNN layer for feature generation via convolution.
+
     Input X: tensor of shape (batch_size, 1, num_fields, embedding_dim)
+
+    Args:
+        num_fields (int): Number of input fields.
+        embedding_dim (int): Dimension of feature embeddings.
+        channels (list): List of output channels for each conv layer. Default: ``[3]``.
+        kernel_heights (list): List of kernel heights for each conv layer. Default: ``[3]``.
+        pooling_sizes (list): List of pooling sizes for each conv layer. Default: ``[2]``.
+        recombined_channels (list): List of recombined channels for each conv layer. Default: ``[2]``.
+        activation (str): Activation function name. Default: ``"Tanh"``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``True``.
     """
-    def __init__(self, 
-                 num_fields, 
+    def __init__(self,
+                 num_fields,
                  embedding_dim,
-                 channels=[3], 
-                 kernel_heights=[3], 
+                 channels=[3],
+                 kernel_heights=[3],
                  pooling_sizes=[2],
                  recombined_channels=[2],
                  activation="Tanh",
@@ -162,8 +224,8 @@ class FGCNN_Layer(nn.Module):
             kernel_height = kernel_heights[i - 1]
             pooling_size = pooling_sizes[i - 1]
             recombined_channel = recombined_channels[i - 1]
-            conv_layer = [nn.Conv2d(in_channel, out_channel, 
-                                    kernel_size=(kernel_height, 1), 
+            conv_layer = [nn.Conv2d(in_channel, out_channel,
+                                    kernel_size=(kernel_height, 1),
                                     padding=(int((kernel_height - 1) / 2), 0))] \
                        + ([nn.BatchNorm2d(out_channel)] if batch_norm else []) \
                        + [get_activation(activation),
@@ -179,6 +241,14 @@ class FGCNN_Layer(nn.Module):
         self.recombine_layers = nn.ModuleList(recombine_list)
 
     def forward(self, X):
+        """Forward pass of FGCNN_Layer.
+
+        Args:
+            X: Input tensor of shape (batch_size, 1, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Generated feature embeddings.
+        """
         conv_out = X
         new_feature_list = []
         for i in range(len(self.channels) - 1):

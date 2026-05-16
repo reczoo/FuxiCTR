@@ -21,11 +21,29 @@ import polars as pl
 
 
 class CustomizedFeatureProcessor(FeatureProcessor):
+    """KKBox dataset feature processor with ISRC and age helpers."""
+
     def extract_country_code(self, col_name):
+        """Extract the 2-letter country code from an ISRC string.
+
+        Args:
+            col_name (str): Name of the ISRC column.
+
+        Returns:
+            pl.Expr: Polars expression yielding the country code or an empty string.
+        """
         return pl.col(col_name).map_elements(lambda isrc: isrc[0:2] if not pl.is_null(isrc) else "",
                                              return_dtype=pl.String)
 
     def bucketize_age(self, col_name):
+        """Bucketize a raw age value into one of seven string buckets.
+
+        Args:
+            col_name (str): Name of the age column.
+
+        Returns:
+            pl.Expr: Polars expression yielding the bucket id as a string.
+        """
         def _bucketize(age):
             if pl.is_null(age):
                 return ""

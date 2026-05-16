@@ -23,21 +23,35 @@ from itertools import combinations
 
 
 class HOFM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="HOFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
+    """High-Order Factorization Machine (HOFM) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"HOFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        order (int): Order of feature interactions. Default: ``3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        reuse_embedding (bool): Whether to reuse the same embedding layer across orders. Default: ``False``.
+        embedding_dropout (float): Dropout rate for embeddings. Default: ``0``.
+        regularizer (str or None): Regularizer for embeddings and network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="HOFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
                  order=3,
                  embedding_dim=10,
                  reuse_embedding=False,
                  embedding_dropout=0,
-                 regularizer=None, 
+                 regularizer=None,
                  **kwargs):
-        super(HOFM, self).__init__(feature_map, 
-                                   model_id=model_id, 
-                                   gpu=gpu, 
-                                   embedding_regularizer=regularizer, 
+        super(HOFM, self).__init__(feature_map,
+                                   model_id=model_id,
+                                   gpu=gpu,
+                                   embedding_regularizer=regularizer,
                                    net_regularizer=regularizer,
                                    **kwargs)
         self.order = order
@@ -63,8 +77,13 @@ class HOFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of HOFM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         y_pred = self.lr_layer(X)
@@ -79,6 +98,15 @@ class HOFM(BaseModel):
         return return_dict
 
     def high_order_interaction(self, feature_emb, order_i):
+        """Compute high-order feature interactions.
+
+        Args:
+            feature_emb: Feature embedding tensor.
+            order_i: Interaction order.
+
+        Returns:
+            torch.Tensor: Interaction output tensor.
+        """
         if order_i == 2:
             interaction_out = self.inner_product_layer(feature_emb)
         elif order_i > 2:

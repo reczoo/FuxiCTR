@@ -22,7 +22,19 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class APG_Linear(nn.Module):
-    def __init__(self, input_dim, output_dim, condition_dim, bias=True, rank_k=None, 
+    """Adaptive Parameter Generation Linear layer.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        output_dim (int): Output feature dimension.
+        condition_dim (int): Dimension of the condition vector.
+        bias (bool): Whether to use bias. Default: ``True``.
+        rank_k (int or None): Rank for low-rank weight generation. If None, full weight generation is used. Default: ``None``.
+        overparam_p (int or None): Over-parameterization dimension for low-rank decomposition. Default: ``None``.
+        generate_bias (bool): Whether to generate bias via the hypernetwork. Default: ``False``.
+        hypernet_config (dict): Configuration dict for the hypernetwork MLP. Default: ``{}``.
+    """
+    def __init__(self, input_dim, output_dim, condition_dim, bias=True, rank_k=None,
                  overparam_p=None, generate_bias=False, hypernet_config={}):
         super(APG_Linear, self).__init__()
         self.input_dim = input_dim
@@ -69,6 +81,14 @@ class APG_Linear(nn.Module):
             self.bias = None
 
     def generate_weight(self, condition_z):
+        """Generate weight and bias from condition vector.
+
+        Args:
+            condition_z: Condition vector tensor.
+
+        Returns:
+            tuple: (weight tensor, bias tensor or None).
+        """
         weight_S = self.hypernet(condition_z)
         bias = self.bias
         if self.generate_bias:
@@ -82,6 +102,15 @@ class APG_Linear(nn.Module):
         return weight_S, bias
 
     def forward(self, input_h, condition_z):
+        """Forward pass of APG_Linear.
+
+        Args:
+            input_h: Input tensor.
+            condition_z: Condition vector tensor.
+
+        Returns:
+            torch.Tensor: Linear transformation output.
+        """
         weight_S, bias = self.generate_weight(condition_z)
         if self.use_low_rank:
             if self.use_over_param:
@@ -98,14 +127,33 @@ class APG_Linear(nn.Module):
 
 
 class APG_MLP(nn.Module):
-    def __init__(self, 
+    """Adaptive Parameter Generation MLP block.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        hidden_units (list): List of hidden layer dimensions. Default: ``[]``.
+        hidden_activations (str): Activation functions for hidden layers. Default: ``"ReLU"``.
+        output_dim (int or None): Output dimension. If None, no output projection. Default: ``None``.
+        output_activation (str or None): Activation function for output layer. Default: ``None``.
+        dropout_rates (float or list): Dropout rates for each layer. Default: ``0.0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        bn_only_once (bool): If True, applies BN only once at the input for inference speed. Default: ``False``.
+        use_bias (bool): Whether to use bias in linear layers. Default: ``True``.
+        hypernet_config (dict): Configuration dict for hypernetwork MLPs. Default: ``{}``.
+        condition_dim (int or None): Dimension of condition vector. Default: ``None``.
+        condition_mode (str): Conditioning mode, one of ["self-wise", "group-wise", "mix-wise"]. Default: ``"self-wise"``.
+        rank_k (int or None): Rank for low-rank weight generation. Default: ``None``.
+        overparam_p (int or None): Over-parameterization dimension. Default: ``None``.
+        generate_bias (bool): Whether to generate bias via hypernetwork. Default: ``True``.
+    """
+    def __init__(self,
                  input_dim,
-                 hidden_units=[], 
+                 hidden_units=[],
                  hidden_activations="ReLU",
                  output_dim=None,
                  output_activation=None,
                  dropout_rates=0.0,
-                 batch_norm=False, 
+                 batch_norm=False,
                  bn_only_once=False, # Set True for inference speed up
                  use_bias=True,
                  hypernet_config={},
@@ -138,7 +186,7 @@ class APG_MLP(nn.Module):
             if self.condition_mode == "self-wise":
                 condition_dim = hidden_units[idx]
             self.dense_layers["linear_{}".format(idx + 1)] = APG_Linear(
-                hidden_units[idx], 
+                hidden_units[idx],
                 hidden_units[idx + 1],
                 condition_dim,
                 bias=use_bias,
@@ -156,8 +204,17 @@ class APG_MLP(nn.Module):
             self.dense_layers["out_proj"] = nn.Linear(hidden_units[-1], output_dim, bias=use_bias)
         if output_activation is not None:
             self.dense_layers["out_act"] = get_activation(output_activation)
-    
+
     def forward(self, x, condition_z=None):
+        """Forward pass of APG_MLP.
+
+        Args:
+            x: Input tensor.
+            condition_z: Optional condition vector tensor.
+
+        Returns:
+            torch.Tensor: MLP output tensor.
+        """
         if "bn_0" in self.dense_layers:
             x = self.dense_layers["bn_0"](x)
         for idx in range(self.hidden_layers):

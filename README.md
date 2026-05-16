@@ -165,5 +165,4 @@ If you use our code or benchmarks in your public research, please cite the follo
 
 ## 🙋 Contributing
 
-Contributions are welcome via issues or pull requests. Thanks to all contributors listed in [CONTRIBUTORS.md](./CONTRIBUTORS.md).
-
+We welcome contributions via issues or pull requests. All contributors are highly appreciated and will be recognized in the [contributors list](./CONTRIBUTORS.md).
