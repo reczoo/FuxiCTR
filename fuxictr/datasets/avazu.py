@@ -17,7 +17,6 @@
 
 
 from fuxictr.preprocess import FeatureProcessor
-from datetime import datetime, date
 import polars as pl
 
 
@@ -33,10 +32,13 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         Returns:
             pl.Expr: Polars expression that yields the weekday as an integer.
         """
-        def _convert_weekday(timestamp):
-            dt = date(int('20' + timestamp[0:2]), int(timestamp[2:4]), int(timestamp[4:6]))
-            return int(dt.strftime('%w'))
-        return pl.col("hour").map_elements(_convert_weekday, return_dtype=pl.Int32)
+        return (
+            pl.col("hour")
+            .str.slice(0, 6)
+            .str.to_date(format="%y%m%d")
+            .dt.weekday()
+            % 7
+        ).cast(pl.Int32)
 
     def convert_weekend(self, col_name=None):
         """Extract a weekend indicator (1 if Sat/Sun, else 0) from ``hour``.
@@ -47,10 +49,13 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         Returns:
             pl.Expr: Polars expression that yields 1 for weekend days, 0 otherwise.
         """
-        def _convert_weekend(timestamp):
-            dt = date(int('20' + timestamp[0:2]), int(timestamp[2:4]), int(timestamp[4:6]))
-            return 1 if dt.strftime('%w') in ['6', '0'] else 0
-        return pl.col("hour").map_elements(_convert_weekend, return_dtype=pl.Int32)
+        return (
+            pl.col("hour")
+            .str.slice(0, 6)
+            .str.to_date(format="%y%m%d")
+            .dt.weekday()
+            % 7
+        ).is_in([0, 6]).cast(pl.Int32)
 
     def convert_hour(self, col_name=None):
         """Extract the hour-of-day (0-23) from the ``hour`` timestamp column.
@@ -61,4 +66,4 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         Returns:
             pl.Expr: Polars expression that yields the hour as an integer.
         """
-        return pl.col("hour").map_elements(lambda x: int(x[6:8]), return_dtype=pl.Int32)
+        return pl.col("hour").str.slice(6, 2).cast(pl.Int32)
