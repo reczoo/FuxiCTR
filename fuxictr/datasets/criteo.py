@@ -36,10 +36,10 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         Returns:
             pl.Expr: Polars expression applying the bucket transform.
         """
-        def _convert_to_bucket(value):
-            if value > 2:
-                value = int(np.floor(np.log(value) ** 2))
-            else:
-                value = int(value)
-            return value
-        return pl.col(col_name).map_elements(_convert_to_bucket, return_dtype=pl.Int32)
+        return (
+            pl.when(pl.col(col_name) > 2)
+            .then(pl.col(col_name).log().pow(2).floor())
+            .otherwise(pl.col(col_name))
+            .cast(pl.Int32)
+        )
+

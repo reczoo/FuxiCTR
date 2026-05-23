@@ -32,8 +32,7 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         Returns:
             pl.Expr: Polars expression yielding the country code or an empty string.
         """
-        return pl.col(col_name).map_elements(lambda isrc: isrc[0:2] if not pl.is_null(isrc) else "",
-                                             return_dtype=pl.String)
+        return pl.col(col_name).str.slice(0, 2).fill_null("")
 
     def bucketize_age(self, col_name):
         """Bucketize a raw age value into one of seven string buckets.
@@ -44,25 +43,15 @@ class CustomizedFeatureProcessor(FeatureProcessor):
         Returns:
             pl.Expr: Polars expression yielding the bucket id as a string.
         """
-        def _bucketize(age):
-            if pl.is_null(age):
-                return ""
-            else:
-                age = float(age)
-                if age < 1 or age > 95:
-                    return ""
-                elif age <= 10:
-                    return "1"
-                elif age <=20:
-                    return "2"
-                elif age <=30:
-                    return "3"
-                elif age <=40:
-                    return "4"
-                elif age <=50:
-                    return "5"
-                elif age <=60:
-                    return "6"
-                else:
-                    return "7"
-        return pl.col(col_name).map_elements(_bucketize, return_dtype=pl.String)
+        age = pl.col(col_name).cast(pl.Float64)
+        in_range = age.is_between(1, 95, closed="both")
+        return (
+            pl.when(age.is_null() | ~in_range).then(pl.lit(""))
+            .when(age <= 10).then(pl.lit("1"))
+            .when(age <= 20).then(pl.lit("2"))
+            .when(age <= 30).then(pl.lit("3"))
+            .when(age <= 40).then(pl.lit("4"))
+            .when(age <= 50).then(pl.lit("5"))
+            .when(age <= 60).then(pl.lit("6"))
+            .otherwise(pl.lit("7"))
+        )
