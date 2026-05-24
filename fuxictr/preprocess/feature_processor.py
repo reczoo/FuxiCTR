@@ -160,7 +160,7 @@ class FeatureProcessor(object):
             if col.get("type") == "sequence" and isinstance(ddf.select(name).dtypes[0], pl.List):
                 # Convert list to "^" seperated string for unified preprocessing of parquet and csv formats
                 ddf = ddf.with_columns(
-                    pl.col(name).list.eval(pl.element().cast(pl.String)).list.join("^")
+                    pl.col(name).cast(pl.List(pl.String)).list.join("^")
                 )
         active_cols = [col["name"] for col in all_cols if col.get("active") != False]
         ddf = ddf.select(active_cols)

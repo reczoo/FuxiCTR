@@ -54,8 +54,9 @@ class CustomizedFeatureProcessor(FeatureProcessor):
             .str.slice(0, 6)
             .str.to_date(format="%y%m%d")
             .dt.weekday()
-            % 7
-        ).is_in([0, 6]).cast(pl.Int32)
+            .is_in([6, 7])
+            .cast(pl.Int32)
+        )
 
     def convert_hour(self, col_name=None):
         """Extract the hour-of-day (0-23) from the ``hour`` timestamp column.
