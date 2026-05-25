@@ -4,13 +4,41 @@
 format: jb-book
 root: index
 parts:
-- caption: TUTORIALS
+- caption: INTRODUCTION
   chapters:
-  - file: quickstart.md
-  - file: installation.md
+  - url: https://deepwiki.com/reczoo/FuxiCTR/1-overview
+    title: Overview
+  - url: https://deepwiki.com/reczoo/FuxiCTR/2-system-architecture
+    title: System Architecture
+  - url: https://deepwiki.com/reczoo/FuxiCTR/2.2-data-processing-pipeline
+    title: Data Processing
+  - url: https://deepwiki.com/reczoo/FuxiCTR/3-feature-processing
+    title: Feature Processing
+  - url: https://deepwiki.com/reczoo/FuxiCTR/2.1-base-model-framework
+    title: Base Model
+  - url: https://deepwiki.com/reczoo/FuxiCTR/4-model-zoo
+    title: Model Zoo
+  - url: https://deepwiki.com/reczoo/FuxiCTR/6-development-and-contributing
+    title: Development and Contributing
+
+- caption: GET STARTED
+  chapters:
+  - url: https://deepwiki.com/reczoo/FuxiCTR/1.1-installation
+    title: Installation
+  - url: https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7
+    title: Demos
+  - url: https://deepwiki.com/reczoo/FuxiCTR/5-running-experiments
+    title: Running Experiments
+  - url: https://deepwiki.com/reczoo/FuxiCTR/5.2-hyperparameter-tuning
+    title: Hyperparameter Tuning
+  - url: https://deepwiki.com/reczoo/FuxiCTR/5.3-evaluation-and-metrics
+    title: Evaluation and Metrics
+
+- caption: CONFIGURATION CHEETSHEETS
+  chapters:
   - file: configurations.md
   
-- caption: REFERENCES
+- caption: API REFERENCES
   chapters:
   - url: https://www.processon.com/view/link/63cfcfab4e30670eac4a81c7
     title: FuxiCTR APIs

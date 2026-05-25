@@ -22,6 +22,21 @@ from fuxictr.pytorch.layers import FeatureEmbedding
 
 
 class LogisticRegression(nn.Module):
+    """Logistic Regression layer that learns a linear weighted sum of input features.
+
+    ``LogisticRegression`` uses 1-dimensional embeddings as feature weights and sums them
+    with an optional bias term to produce a linear prediction.
+
+    Args:
+        feature_map (FeatureMap): A ``FeatureMap`` instance that provides feature metadata.
+        use_bias (bool, optional): Whether to include a learnable bias term. Default: ``True``.
+
+    Example::
+
+        lr = LogisticRegression(feature_map, use_bias=True)
+        output = lr(X)
+    """
+
     def __init__(self, feature_map, use_bias=True):
         super(LogisticRegression, self).__init__()
         self.bias = nn.Parameter(torch.zeros(1), requires_grad=True) if use_bias else None
@@ -29,6 +44,14 @@ class LogisticRegression(nn.Module):
         self.embedding_layer = FeatureEmbedding(feature_map, 1, use_pretrain=False, use_sharing=False)
 
     def forward(self, X):
+        """Compute the LR output.
+
+        Args:
+            X (dict): Raw feature inputs.
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, 1).
+        """
         embed_weights = self.embedding_layer(X)
         output = embed_weights.sum(dim=1)
         if self.bias is not None:

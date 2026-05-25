@@ -25,10 +25,37 @@ from fuxictr.utils import not_in_whitelist
 
 
 class SDIM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="SDIM", 
-                 gpu=-1, 
+    """Sparse Deep Interest Model (SDIM) with LSH-based attention.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"SDIM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        attention_dim (int): Dimension of the attention space. Default: ``64``.
+        use_qkvo (bool): Whether to use Q/K/V/O projections in attention. Default: ``True``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        use_scale (bool): Whether to scale attention scores. Default: ``True``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        reuse_hash (bool): Whether to reuse random hash rotations. Default: ``True``.
+        num_hashes (int): Number of LSH hash functions. Default: ``1``.
+        hash_bits (int): Number of bits for LSH hashing. Default: ``4``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        l2_norm (bool): Whether to apply L2 normalization on attention output. Default: ``False``.
+        short_seq_len (int): Length of the short sequence for attention. Default: ``50``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="SDIM",
+                 gpu=-1,
                  dnn_hidden_units=[512, 128, 64],
                  dnn_activations="ReLU",
                  attention_dim=64,
@@ -40,8 +67,8 @@ class SDIM(BaseModel):
                  num_hashes=1,
                  hash_bits=4,
                  learning_rate=1e-3,
-                 embedding_dim=10, 
-                 net_dropout=0, 
+                 embedding_dim=10,
+                 net_dropout=0,
                  batch_norm=False,
                  l2_norm=False,
                  short_seq_len=50,
@@ -93,6 +120,14 @@ class SDIM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of SDIM.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         batch_dict, item_dict, mask = self.get_inputs(inputs)
         emb_list = []
         if batch_dict: # not empty
@@ -117,11 +152,22 @@ class SDIM(BaseModel):
         return return_dict
 
     def lsh_attentioin(self, random_rotations, target_item, history_sequence, mask):
+        """Compute LSH-based attention over the long sequence.
+
+        Args:
+            random_rotations: Random rotation parameters for LSH.
+            target_item: Target item embedding.
+            history_sequence: History sequence embeddings.
+            mask: Sequence padding mask.
+
+        Returns:
+            Tensor: Aggregated attention output.
+        """
         if self.reuse_hash:
             random_rotations = random_rotations.repeat(target_item.size(0), 1, 1, 1)
         else:
             random_rotations = torch.randn(
-                target_item.size(0), target_item.size(1), self.num_hashes, 
+                target_item.size(0), target_item.size(1), self.num_hashes,
                 self.hash_bits, device=target_item.device
             )
         sequence_bucket = self.lsh_hash(history_sequence, random_rotations)
@@ -138,19 +184,25 @@ class SDIM(BaseModel):
         _, collide_index = torch.nonzero(collide_mask.flatten(start_dim=1), as_tuple=True)
         offsets = collide_mask.sum(dim=-1).flatten().cumsum(dim=0)
         offsets = torch.cat([torch.zeros(1, device=offsets.device), offsets]).long()
-        attn_out = F.embedding_bag(collide_index, history_sequence.reshape(-1, target_item.size(1)), 
+        attn_out = F.embedding_bag(collide_index, history_sequence.reshape(-1, target_item.size(1)),
                                    offsets, mode='sum', include_last_offset=True) # (num_hashes x B) x d
         if self.l2_norm:
             attn_out = F.normalize(attn_out, dim=-1)
         attn_out = attn_out.view(self.num_hashes, -1, target_item.size(1)).mean(dim=0) # B x d
         return attn_out
-        
+
     def lsh_hash(self, vecs, random_rotations):
-        """ See the tensorflow-lsh-functions for reference:
-            https://github.com/brc7/tensorflow-lsh-functions/blob/main/lsh_functions.py
-            
-            Input: vecs, with shape B x seq_len x d
-            Output: hash_bucket, with shape B x seq_len x num_hashes
+        """Compute LSH hash buckets for input vectors.
+
+        See the tensorflow-lsh-functions for reference:
+        https://github.com/brc7/tensorflow-lsh-functions/blob/main/lsh_functions.py
+
+        Args:
+            vecs: Input vectors of shape ``(B, seq_len, d)``.
+            random_rotations: Random rotation matrices.
+
+        Returns:
+            Tensor: Hash buckets of shape ``(B, seq_len, num_hashes)``.
         """
         # shape B x seq_len x num_hashes x hash_bits x 1
         rotated_vecs = torch.einsum("bld,bdht->blht", vecs, random_rotations).unsqueeze(-1)
@@ -160,6 +212,15 @@ class SDIM(BaseModel):
         return hash_bucket
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -182,11 +243,27 @@ class SDIM(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
 
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)

@@ -23,7 +23,32 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class MaskNet(BaseModel):
-    def __init__(self, 
+    """MaskNet model with serial or parallel masking blocks.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"MaskNet"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[64, 64, 64]``.
+        dnn_hidden_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        model_type (str): Model variant, ``"SerialMaskNet"`` or ``"ParallelMaskNet"``.
+            Default: ``"SerialMaskNet"``.
+        parallel_num_blocks (int): Number of parallel blocks for ParallelMaskNet.
+            Default: ``1``.
+        parallel_block_dim (int): Block dimension for ParallelMaskNet. Default: ``64``.
+        reduction_ratio (int): Reduction ratio for mask layer. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        net_dropout (float): Dropout rate. Default: ``0``.
+        emb_layernorm (bool): Whether to apply layer normalization on embeddings.
+            Default: ``True``.
+        net_layernorm (bool): Whether to apply layer normalization in mask blocks.
+            Default: ``True``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
                  model_id="MaskNet",
                  gpu=-1,
@@ -78,6 +103,14 @@ class MaskNet(BaseModel):
         self.model_to_device()
     
     def forward(self, inputs):
+        """Forward pass of MaskNet.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         if self.emb_norm is not None:
@@ -88,10 +121,22 @@ class MaskNet(BaseModel):
         y_pred = self.mask_net(feature_emb.flatten(start_dim=1), V_hidden.flatten(start_dim=1))
         return_dict = {"y_pred": y_pred}
         return return_dict
-        
+
 
 class SerialMaskNet(nn.Module):
-    def __init__(self, input_dim, output_dim=None, output_activation=None, hidden_units=[], 
+    """Serial MaskNet with stacked mask blocks.
+
+    Args:
+        input_dim (int): Input dimension.
+        output_dim (int): Output dimension. Default: ``None``.
+        output_activation (str): Output activation function. Default: ``None``.
+        hidden_units (list): Hidden units list. Default: ``[]``.
+        hidden_activations (str): Hidden activation functions. Default: ``"ReLU"``.
+        reduction_ratio (int): Reduction ratio for mask layer. Default: ``1``.
+        dropout_rates (float): Dropout rates. Default: ``0``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``True``.
+    """
+    def __init__(self, input_dim, output_dim=None, output_activation=None, hidden_units=[],
                  hidden_activations="ReLU", reduction_ratio=1, dropout_rates=0, layer_norm=True):
         super(SerialMaskNet, self).__init__()
         if not isinstance(dropout_rates, list):
@@ -101,11 +146,11 @@ class SerialMaskNet(nn.Module):
         self.hidden_units = [input_dim] + hidden_units
         self.mask_blocks = nn.ModuleList()
         for idx in range(len(self.hidden_units) - 1):
-            self.mask_blocks.append(MaskBlock(input_dim, 
-                                              self.hidden_units[idx], 
-                                              self.hidden_units[idx + 1], 
-                                              hidden_activations[idx], 
-                                              reduction_ratio, 
+            self.mask_blocks.append(MaskBlock(input_dim,
+                                              self.hidden_units[idx],
+                                              self.hidden_units[idx + 1],
+                                              hidden_activations[idx],
+                                              reduction_ratio,
                                               dropout_rates[idx],
                                               layer_norm))
         fc_layers = []
@@ -118,6 +163,15 @@ class SerialMaskNet(nn.Module):
             self.fc = nn.Sequential(*fc_layers)
 
     def forward(self, V_emb, V_hidden):
+        """Forward pass of SerialMaskNet.
+
+        Args:
+            V_emb: Embedding input for mask generation.
+            V_hidden: Hidden input to be masked.
+
+        Returns:
+            Tensor: Output tensor.
+        """
         v_out = V_hidden
         for idx in range(len(self.hidden_units) - 1):
             v_out = self.mask_blocks[idx](V_emb, v_out)
@@ -127,27 +181,50 @@ class SerialMaskNet(nn.Module):
 
 
 class ParallelMaskNet(nn.Module):
-    def __init__(self, input_dim, output_dim=None, output_activation=None, num_blocks=1, block_dim=64, 
-                 hidden_units=[], hidden_activations="ReLU", reduction_ratio=1, dropout_rates=0, 
+    """Parallel MaskNet with multiple parallel mask blocks.
+
+    Args:
+        input_dim (int): Input dimension.
+        output_dim (int): Output dimension. Default: ``None``.
+        output_activation (str): Output activation function. Default: ``None``.
+        num_blocks (int): Number of parallel blocks. Default: ``1``.
+        block_dim (int): Dimension of each block output. Default: ``64``.
+        hidden_units (list): Hidden units list. Default: ``[]``.
+        hidden_activations (str): Hidden activation functions. Default: ``"ReLU"``.
+        reduction_ratio (int): Reduction ratio for mask layer. Default: ``1``.
+        dropout_rates (float): Dropout rates. Default: ``0``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``True``.
+    """
+    def __init__(self, input_dim, output_dim=None, output_activation=None, num_blocks=1, block_dim=64,
+                 hidden_units=[], hidden_activations="ReLU", reduction_ratio=1, dropout_rates=0,
                  layer_norm=True):
         super(ParallelMaskNet, self).__init__()
         self.num_blocks = num_blocks
-        self.mask_blocks = nn.ModuleList([MaskBlock(input_dim, 
-                                                    input_dim, 
-                                                    block_dim, 
-                                                    hidden_activations, 
-                                                    reduction_ratio, 
+        self.mask_blocks = nn.ModuleList([MaskBlock(input_dim,
+                                                    input_dim,
+                                                    block_dim,
+                                                    hidden_activations,
+                                                    reduction_ratio,
                                                     dropout_rates,
                                                     layer_norm) for _ in range(num_blocks)])
 
         self.dnn = MLP_Block(input_dim=block_dim * num_blocks,
-                             output_dim=output_dim, 
+                             output_dim=output_dim,
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
                              output_activation=output_activation,
                              dropout_rates=dropout_rates)
 
     def forward(self, V_emb, V_hidden):
+        """Forward pass of ParallelMaskNet.
+
+        Args:
+            V_emb: Embedding input for mask generation.
+            V_hidden: Hidden input to be masked.
+
+        Returns:
+            Tensor: Output tensor.
+        """
         block_out = []
         for i in range(self.num_blocks):
             block_out.append(self.mask_blocks[i](V_emb, V_hidden))
@@ -157,7 +234,18 @@ class ParallelMaskNet(nn.Module):
 
 
 class MaskBlock(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, hidden_activation="ReLU", reduction_ratio=1, 
+    """Mask block that applies a learned mask to hidden representations.
+
+    Args:
+        input_dim (int): Input dimension for mask generation.
+        hidden_dim (int): Hidden dimension.
+        output_dim (int): Output dimension.
+        hidden_activation (str): Hidden activation function. Default: ``"ReLU"``.
+        reduction_ratio (int): Reduction ratio for mask layer. Default: ``1``.
+        dropout_rate (float): Dropout rate. Default: ``0``.
+        layer_norm (bool): Whether to apply layer normalization. Default: ``True``.
+    """
+    def __init__(self, input_dim, hidden_dim, output_dim, hidden_activation="ReLU", reduction_ratio=1,
                  dropout_rate=0, layer_norm=True):
         super(MaskBlock, self).__init__()
         self.mask_layer = nn.Sequential(nn.Linear(input_dim, int(hidden_dim * reduction_ratio)),
@@ -172,6 +260,15 @@ class MaskBlock(nn.Module):
         self.hidden_layer = nn.Sequential(*hidden_layers)
 
     def forward(self, V_emb, V_hidden):
+        """Forward pass of MaskBlock.
+
+        Args:
+            V_emb: Embedding input for mask generation.
+            V_hidden: Hidden input to be masked.
+
+        Returns:
+            Tensor: Masked output tensor.
+        """
         V_mask = self.mask_layer(V_emb)
         v_out = self.hidden_layer(V_mask * V_hidden)
         return v_out

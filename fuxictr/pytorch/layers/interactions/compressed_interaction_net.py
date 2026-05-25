@@ -21,6 +21,24 @@ from torch import nn
 
 
 class CompressedInteractionNet(nn.Module):
+    """Compressed Interaction Network (CIN) layer for explicit high-order feature interactions.
+
+    ``CompressedInteractionNet`` builds a network of compressed interaction layers where each layer
+    computes outer products between the base feature embeddings and the previous layer's output,
+    followed by 1D convolution to compress the interactions. The outputs are pooled and fed into
+    a final linear layer.
+
+    Args:
+        num_fields (int): Number of feature fields.
+        cin_hidden_units (list): List of hidden unit sizes for each CIN layer.
+        output_dim (int, optional): Dimension of the final output. Default: ``1``.
+
+    Example::
+
+        cin = CompressedInteractionNet(num_fields=10, cin_hidden_units=[64, 32], output_dim=1)
+        output = cin(feature_emb)
+    """
+
     def __init__(self, num_fields, cin_hidden_units, output_dim=1):
         super(CompressedInteractionNet, self).__init__()
         self.cin_hidden_units = cin_hidden_units
@@ -34,6 +52,15 @@ class CompressedInteractionNet(nn.Module):
                                                               kernel_size=1) # kernel output shape
 
     def forward(self, feature_emb):
+        """Compute the CIN output.
+
+        Args:
+            feature_emb (torch.Tensor): Feature embeddings of shape
+                (batch_size, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Output tensor of shape (batch_size, output_dim).
+        """
         pooling_outputs = []
         X_0 = feature_emb
         batch_size = X_0.shape[0]

@@ -24,10 +24,33 @@ from fuxictr.utils import not_in_whitelist
 
 
 class TWIN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="TWIN", 
-                 gpu=-1, 
+    """Two-stage Interest Network (TWIN) model.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"TWIN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        attention_dim (int): Dimension of the attention space. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        short_seq_len (int): Length of the short sequence for attention. Default: ``50``.
+        topk (int): Number of top-k items to retrieve. Default: ``50``.
+        Kc_cross_features (int): Number of cross features for long attention. Default: ``0``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="TWIN",
+                 gpu=-1,
                  dnn_hidden_units=[512, 128, 64],
                  dnn_activations="ReLU",
                  attention_dropout=0,
@@ -84,6 +107,14 @@ class TWIN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of TWIN.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         batch_dict, item_dict, mask = self.get_inputs(inputs)
         emb_list = []
         if batch_dict: # not empty
@@ -109,6 +140,15 @@ class TWIN(BaseModel):
         return return_dict
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -131,11 +171,27 @@ class TWIN(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
 
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)
@@ -149,6 +205,17 @@ class TWIN(BaseModel):
 
 
 class MultiHeadTopKAttention(nn.Module):
+    """Multi-head top-k attention module.
+
+    Args:
+        input_dim (int): Input feature dimension. Default: ``64``.
+        Kc (int): Number of cross features. Default: ``0``.
+        embedding_dim (int): Embedding dimension. Default: ``16``.
+        attention_dim (int): Attention dimension. Default: ``64``.
+        topk (int): Number of top-k positions to attend. Default: ``50``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        dropout_rate (float): Dropout rate. Default: ``0``.
+    """
     def __init__(self,
                  input_dim=64,
                  Kc=0,
@@ -177,22 +244,26 @@ class MultiHeadTopKAttention(nn.Module):
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
 
     def forward(self, target_item, item_sequence, mask=None):
-        """
-        target_item: b x emb
-        item_feat_seq: b x len x emb
-        cross_feat_seq: b x len x emb
-        mask: mask of history_sequence, 0 for masked positions
+        """Compute multi-head top-k attention.
+
+        Args:
+            target_item: Target item embedding of shape ``(batch, emb)``.
+            item_sequence: Item sequence embeddings of shape ``(batch, len, emb)``.
+            mask: Mask of history sequence, 0 for masked positions.
+
+        Returns:
+            Tensor: Attention output.
         """
         batch_size = target_item.size(0)
         if self.Kc > 0:
             item_feat_seq, cross_feat_seq = torch.split(item_sequence,
                                                         [self.Kh_dim, self.Kc_dim], dim=-1)
-            key_c = (cross_feat_seq.view(batch_size, self.Kc, -1).unsqueeze(1) 
+            key_c = (cross_feat_seq.view(batch_size, self.Kc, -1).unsqueeze(1)
                      * self.W_c.unsqueeze(0)).sum(-1) # b x h x Kc
             key_c_bias = self.beta(key_c) # b x h
         else:
             item_feat_seq = item_sequence
-        
+
         # linear projection
         query = self.W_q(target_item)
         key_h = self.W_h(item_feat_seq)
@@ -202,7 +273,7 @@ class MultiHeadTopKAttention(nn.Module):
         query = query.view(batch_size, 1, self.num_heads, self.head_dim).transpose(1, 2)
         key_h = key_h.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
         value = value.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        
+
         # attention
         scores = torch.matmul(query, key_h.transpose(-1, -2)) / self.scale # b x h x 1 x len
         if self.Kc > 0:
@@ -213,7 +284,7 @@ class MultiHeadTopKAttention(nn.Module):
         topk = min(self.topk, scores.shape[-1]) # make sure input seq_len >= topk
         topk_scores, topk_index = scores.topk(topk, dim=-1, largest=True, sorted=True)
         # topk_value: b x h x topk x head_dim
-        topk_value = torch.gather(value, 2, 
+        topk_value = torch.gather(value, 2,
                                   topk_index.transpose(-1, -2).expand(-1, -1, -1, value.shape[-1]))
         attention = topk_scores.softmax(dim=-1) # b x h x 1 x topk
         if self.dropout is not None:

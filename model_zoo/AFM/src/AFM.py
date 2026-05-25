@@ -22,22 +22,37 @@ from fuxictr.pytorch.layers import FeatureEmbedding, InnerProductInteraction, Lo
 
 
 class AFM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="AFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Attentional Factorization Machine (AFM) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"AFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        attention_dropout (list): Dropout rates for attention layers. Default: ``[0, 0]``.
+        attention_dim (int): Dimension of the attention network. Default: ``10``.
+        use_attention (bool): Whether to use attention mechanism. Default: ``True``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="AFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  attention_dropout=[0, 0],
                  attention_dim=10,
                  use_attention=True,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(AFM, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(AFM, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         self.use_attention = use_attention
@@ -56,6 +71,14 @@ class AFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of AFM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         elementwise_product = self.product_layer(feature_emb) # bs x f(f-1)/2 x dim

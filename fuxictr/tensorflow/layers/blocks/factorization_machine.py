@@ -23,12 +23,27 @@ from ..interactions import InnerProductInteraction
 
 
 class FactorizationMachine(Layer):
+    """Factorization Machine layer combining linear and second-order feature interactions.
+
+    Args:
+        feature_map (FeatureMap): Feature map object.
+        regularizer (optional): Optional regularizer for the logistic regression component. Default: ``None``.
+    """
     def __init__(self, feature_map, regularizer=None):
         super(FactorizationMachine, self).__init__()
         self.fm_layer = InnerProductInteraction(feature_map.num_fields, output="product_sum")
         self.lr_layer = LogisticRegression(feature_map, use_bias=True, regularizer=regularizer)
 
     def call(self, X, feature_emb):
+        """Compute the FM output.
+
+        Args:
+            X (dict): Input feature dictionary.
+            feature_emb (tf.Tensor): Feature embeddings of shape ``(batch_size, num_fields, emb_dim)``.
+
+        Returns:
+            tf.Tensor: FM output tensor of shape ``(batch_size, 1)``.
+        """
         lr_out = self.lr_layer(X)
         fm_out = self.fm_layer(feature_emb)
         output = fm_out + lr_out

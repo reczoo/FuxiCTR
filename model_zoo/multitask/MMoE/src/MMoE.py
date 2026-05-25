@@ -23,6 +23,18 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class MMoE_Layer(nn.Module):
+    """Multi-gate Mixture-of-Experts layer.
+
+    Args:
+        num_experts (int): Number of expert networks.
+        num_tasks (int): Number of tasks.
+        input_dim (int): Input feature dimension.
+        expert_hidden_units (list): Hidden units of expert MLPs.
+        gate_hidden_units (list): Hidden units of gate MLPs.
+        hidden_activations (str): Activation function for hidden layers.
+        net_dropout (float): Dropout rate.
+        batch_norm (bool): Whether to apply batch normalization.
+    """
     def __init__(self, num_experts, num_tasks, input_dim, expert_hidden_units, gate_hidden_units, hidden_activations,
                  net_dropout, batch_norm):
         super(MMoE_Layer, self).__init__()
@@ -44,6 +56,14 @@ class MMoE_Layer(nn.Module):
         self.gate_activation = get_activation('softmax')
 
     def forward(self, x):
+        """Forward pass of MMoE layer.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            list: List of task-specific outputs.
+        """
         experts_output = torch.stack([self.experts[i](x) for i in range(self.num_experts)],
                                      dim=1)  # (?, num_experts, dim)
         mmoe_output = []
@@ -56,6 +76,27 @@ class MMoE_Layer(nn.Module):
 
 
 class MMoE(MultiTaskModel):
+    """Multi-gate Mixture-of-Experts (MMoE) model.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        task (list): List of task types. Default: ``["binary_classification"]``.
+        num_tasks (int): Number of tasks. Default: ``1``.
+        model_id (str): Model identifier string. Default: ``"MMoE"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        num_experts (int): Number of expert networks. Default: ``4``.
+        expert_hidden_units (list): Hidden units of expert MLPs. Default: ``[512, 256, 128]``.
+        gate_hidden_units (list): Hidden units of gate MLPs. Default: ``[128, 64]``.
+        tower_hidden_units (list): Hidden units of task towers. Default: ``[128, 64]``.
+        hidden_activations (str): Activation function for hidden layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
     def __init__(self,
                  feature_map,
                  task=["binary_classification"],
@@ -104,6 +145,14 @@ class MMoE(MultiTaskModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of MMoE.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary with task predictions.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         expert_output = self.mmoe_layer(feature_emb.flatten(start_dim=1))

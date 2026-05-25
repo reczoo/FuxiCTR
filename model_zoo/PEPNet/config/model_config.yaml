@@ -13,7 +13,7 @@ Base:
 
 PPNet_test:
     model: PPNet
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: 'binary_crossentropy'
     metrics: ['logloss', 'AUC']
     task: binary_classification

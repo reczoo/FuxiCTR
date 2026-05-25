@@ -16,7 +16,7 @@ WideDeep_test:
     model: WideDeep
     dataset_id: tiny_tfrecord
     loss: 'binary_crossentropy'
-    metrics: ['logloss', 'AUC']
+    metrics: ['AUC', 'logloss']
     task: binary_classification
     wide_learning_rate: 1.e-4
     deep_learning_rate: 1.e-3
@@ -39,7 +39,7 @@ WideDeep_default: # This is a config template
     model: WideDeep
     dataset_id: TBD
     loss: 'binary_crossentropy'
-    metrics: ['logloss', 'AUC']
+    metrics: ['AUC', 'logloss']
     task: binary_classification
     deep_optimizer: adam
     wide_learning_rate: 1.e-4

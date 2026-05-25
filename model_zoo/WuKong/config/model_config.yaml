@@ -12,6 +12,35 @@ Base:
     feature_specs: null
     feature_config: null
 
+WuKong_test:
+    model: WuKong
+    dataset_id: tiny_parquet
+    loss: 'binary_crossentropy'
+    metrics: ['logloss', 'AUC']
+    task: binary_classification
+    optimizer: adam
+    learning_rate: 1.0e-3
+    embedding_regularizer: 0
+    net_regularizer: 0
+    batch_size: 32
+    embedding_dim: 64
+    num_wukong_layers: 3
+    lcb_features: 8
+    fmb_features: 8
+    fmb_mlp_units: [32, 32]
+    fmb_mlp_activations: "relu"
+    fmp_rank_k: 8
+    mlp_hidden_units: [32, 32]
+    mlp_hidden_activations: 'relu'
+    mlp_batch_norm: True
+    layer_norm: True
+    net_dropout: 0
+    epochs: 1
+    shuffle: True
+    seed: 2024
+    monitor: 'AUC'
+    monitor_mode: 'max'
+
 WuKong_default: # This is a config template
     model: WuKong
     dataset_id: TBD
@@ -24,41 +53,18 @@ WuKong_default: # This is a config template
     net_regularizer: 0
     batch_size: 10000
     embedding_dim: 64
-    num_layers: 8
-    compression_dim: 40
-    fmb_units: [200,200]
-    fmb_dim: 40
-    project_dim: 8
-    dropout_rate: 0.2
-    hidden_activations: relu
-    mlp_hidden_units: [32,32]
+    num_wukong_layers: 3
+    lcb_features: 40
+    fmb_features: 40
+    fmb_mlp_units: [512, 256]
+    fmb_mlp_activations: "relu"
+    fmp_rank_k: 8
+    mlp_hidden_units: [512, 256]
+    mlp_hidden_activations: 'relu'
+    mlp_batch_norm: True
+    layer_norm: True
+    net_dropout: 0
     epochs: 100
-    shuffle: True
-    seed: 2024
-    monitor: {'AUC': 1, 'logloss': -1}
-    monitor_mode: 'max'
-
-WuKong_test:
-    model: WuKong
-    dataset_id: tiny_npz
-    loss: 'binary_crossentropy'
-    metrics: ['logloss', 'AUC']
-    task: binary_classification
-    optimizer: adam
-    learning_rate: 1.0e-3
-    embedding_regularizer: 0
-    net_regularizer: 0
-    batch_size: 2048
-    embedding_dim: 64
-    num_layers: 4
-    compression_dim: 32
-    fmb_units: [128,128,128]
-    fmb_dim: 32
-    project_dim: 24
-    dropout_rate: 0.2
-    hidden_activations: relu
-    mlp_hidden_units: [64]
-    epochs: 1
     shuffle: True
     seed: 2024
     monitor: 'AUC'

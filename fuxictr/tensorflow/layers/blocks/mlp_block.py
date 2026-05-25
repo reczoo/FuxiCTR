@@ -22,14 +22,33 @@ from tensorflow.keras.layers import Layer, Dense, BatchNormalization, LayerNorma
 
 
 class MLP_Block(Layer):
-    def __init__(self, 
-                 input_dim, 
-                 hidden_units=[], 
+    """Multi-Layer Perceptron block with optional normalization and dropout.
+
+    Builds a stack of dense layers with configurable activation, batch/layer
+    normalization, and dropout.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        hidden_units (list, optional): List of hidden layer dimensions. Default: ``[]``.
+        hidden_activations (str or list, optional): Activation(s) for hidden layers. Default: ``"ReLU"``.
+        output_dim (int, optional): Output dimension; ``None`` omits the output layer. Default: ``None``.
+        output_activation (str, optional): Activation for the output layer. Default: ``None``.
+        dropout_rates (float or list, optional): Dropout rate(s) after each hidden layer. Default: ``0.0``.
+        batch_norm (bool, optional): Whether to apply batch normalization. Default: ``False``.
+        layer_norm (bool, optional): Whether to apply layer normalization. Default: ``False``.
+        norm_before_activation (bool, optional): If ``True``, normalize before activation. Default: ``True``.
+        use_bias (bool, optional): Whether dense layers use bias. Default: ``True``.
+        initializer (str, optional): Kernel initializer name. Default: ``"glorot_normal"``.
+        regularizer (optional): Optional kernel/bias regularizer. Default: ``None``.
+    """
+    def __init__(self,
+                 input_dim,
+                 hidden_units=[],
                  hidden_activations="ReLU",
                  output_dim=None,
-                 output_activation=None, 
+                 output_activation=None,
                  dropout_rates=0.0,
-                 batch_norm=False, 
+                 batch_norm=False,
                  layer_norm=False,
                  norm_before_activation=True,
                  use_bias=True,
@@ -44,8 +63,8 @@ class MLP_Block(Layer):
         hidden_activations = [get_activation(x) for x in hidden_activations]
         hidden_units = [input_dim] + hidden_units
         for idx in range(len(hidden_units) - 1):
-            self.mlp.add(Dense(hidden_units[idx + 1], use_bias=use_bias, 
-                               kernel_initializer=get_initializer(initializer), 
+            self.mlp.add(Dense(hidden_units[idx + 1], use_bias=use_bias,
+                               kernel_initializer=get_initializer(initializer),
                                kernel_regularizer=get_regularizer(regularizer),
                                bias_regularizer=get_regularizer(regularizer)))
             if norm_before_activation:
@@ -63,13 +82,22 @@ class MLP_Block(Layer):
             if dropout_rates[idx] > 0:
                 self.mlp.add(Dropout(p=dropout_rates[idx]))
         if output_dim is not None:
-            self.mlp.add(Dense(output_dim, use_bias=use_bias, 
-                               kernel_initializer=get_initializer(initializer), 
+            self.mlp.add(Dense(output_dim, use_bias=use_bias,
+                               kernel_initializer=get_initializer(initializer),
                                kernel_regularizer=get_regularizer(regularizer),
                                bias_regularizer=get_regularizer(regularizer)))
         if output_activation is not None:
             self.mlp.add(get_activation(output_activation))
-    
+
     def call(self, inputs, training=None):
+        """Forward pass through the MLP block.
+
+        Args:
+            inputs (tf.Tensor): Input tensor.
+            training (bool, optional): Training mode flag for dropout/normalization.
+
+        Returns:
+            tf.Tensor: Output tensor.
+        """
         return self.mlp(inputs, training=training)
 

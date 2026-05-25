@@ -1,9 +1,10 @@
-keras_preprocessing
-pandas
-PyYAML
-scikit-learn
+pyyaml>=6.0.3
+scikit-learn>=1.8.0
 numpy
+scipy
+pandas
 h5py
 tqdm
 pyarrow
-polars<=1.0.0
+polars>=1.40.1
+keras_preprocessing

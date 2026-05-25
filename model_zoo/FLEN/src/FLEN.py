@@ -22,17 +22,33 @@ from fuxictr.pytorch.layers import FeatureEmbeddingDict, MLP_Block, InnerProduct
 
 
 class FLEN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FLEN", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 dnn_hidden_units=[64, 64, 64], 
-                 dnn_activations="ReLU", 
+    """Field-wise Linear Embedding Network (FLEN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FLEN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[64, 64, 64]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="FLEN",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 dnn_hidden_units=[64, 64, 64],
+                 dnn_activations="ReLU",
                  net_dropout=0,
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(FLEN, self).__init__(feature_map, 
@@ -62,8 +78,13 @@ class FLEN(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of FLEN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
@@ -74,7 +95,7 @@ class FLEN(BaseModel):
         lr_out = self.lr_layer(X)
         field_emb = torch.stack([emb_user.sum(dim=1), emb_item.sum(dim=1), emb_context.sum(dim=1)], dim=1)
         h_MF = self.r_ij(self.mf_interaction(field_emb).transpose(1, 2))
-        h_FM = self.r_mm(torch.stack([self.fm_interaction(emb_user), self.fm_interaction(emb_item), 
+        h_FM = self.r_mm(torch.stack([self.fm_interaction(emb_user), self.fm_interaction(emb_item),
                                       self.fm_interaction(emb_context)], dim=1).transpose(1, 2))
         h_FwBI = self.w_FwBI(torch.cat([lr_out, (h_MF + h_FM).squeeze(-1)], dim=-1))
         h_L = self.dnn(feature_emb.flatten(start_dim=1))

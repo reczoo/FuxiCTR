@@ -21,18 +21,28 @@ from fuxictr.pytorch.layers import LogisticRegression
 
 
 class LR(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="LR", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 regularizer=None, 
+    """Logistic Regression model.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"LR"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        regularizer (str or None): Regularizer for both embeddings and network. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="LR",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 regularizer=None,
                  **kwargs):
-        super(LR, self).__init__(feature_map, 
-                                 model_id=model_id, 
-                                 gpu=gpu, 
-                                 embedding_regularizer=regularizer, 
-                                 net_regularizer=regularizer, 
+        super(LR, self).__init__(feature_map,
+                                 model_id=model_id,
+                                 gpu=gpu,
+                                 embedding_regularizer=regularizer,
+                                 net_regularizer=regularizer,
                                  **kwargs)
         self.lr_layer = LogisticRegression(feature_map, use_bias=True)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
@@ -40,8 +50,13 @@ class LR(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of LR.
+
+        Args:
+            inputs: Model inputs ``[X, y]``.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
         """
         X = self.get_inputs(inputs)
         y_pred = self.lr_layer(X)

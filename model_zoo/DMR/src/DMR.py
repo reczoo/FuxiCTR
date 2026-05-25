@@ -25,9 +25,39 @@ from fuxictr.pytorch.layers import FeatureEmbeddingDict, MLP_Block, \
 
 
 class DMR(BaseModel):
-    """ Implementation of DMR model based on the following reference code:
+    """Deep Match to Rank (DMR) model.
+
+    Implementation based on the following reference code:
         https://github.com/lvze92/DMR
         https://github.com/thinkall/Contrib/tree/master/DMR
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DMR"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``True``.
+        bn_only_once (bool): If True, applies BN only once at the input. Default: ``False``.
+        target_field (tuple or list): Target field(s) for DMR. Default: ``("item_id", "cate_id")``.
+        sequence_field (tuple or list): Sequence field(s) for DMR. Default: ``("click_history", "cate_history")``.
+        neg_seq_field (tuple or list): Negative sequence field(s) for auxiliary loss. Default: ``("neg_click_history", "neg_cate_history")``.
+        context_field (str or list): Context field name. Default: ``"btag"``.
+        enable_sum_pooling (bool): Whether to enable sum pooling. Default: ``False``.
+        enable_u2i_rel (bool): Whether to enable user-to-item relation. Default: ``True``.
+        enable_i2i_rel (bool): Whether to enable item-to-item relation. Default: ``False``.
+        attention_hidden_units (list): Hidden units for attention MLP. Default: ``[80, 40]``.
+        attention_activation (str): Activation function for attention. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention. Default: ``0``.
+        use_pos_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        pos_emb_dim (int): Dimension of positional embeddings. Default: ``8``.
+        aux_loss_beta (float): Weight for auxiliary loss. Default: ``0``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
     def __init__(self,
                  feature_map,
@@ -146,6 +176,14 @@ class DMR(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DMR.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` and ``aux_loss`` keys.
+        """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
         concat_emb = []
@@ -169,7 +207,7 @@ class DMR(BaseModel):
                 target_emb2 = self.get_out_embedding(self.target_field[i], self.target_field[i], X)
                 sequence_emb2 = self.get_out_embedding(self.sequence_field[i], self.target_field[i], X)
                 context_emb2 = self.get_context_embedding(self.context_field[i], X) if self.context_field else None
-                rel_u2i, aux_loss = self.u2i_net[i](target_emb2, sequence_emb, context_emb2, 
+                rel_u2i, aux_loss = self.u2i_net[i](target_emb2, sequence_emb, context_emb2,
                                                     sequence_emb2, neg_emb, mask=pad_mask)
                 aux_loss_sum += aux_loss
                 concat_emb.append(rel_u2i)
@@ -184,6 +222,15 @@ class DMR(BaseModel):
         return return_dict
 
     def add_loss(self, return_dict, y_true):
+        """Compute total loss including auxiliary loss.
+
+        Args:
+            return_dict: Dictionary returned by forward pass.
+            y_true: Ground truth labels.
+
+        Returns:
+            torch.Tensor: Total loss tensor.
+        """
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.aux_loss_beta > 0:
             # padding post required
@@ -191,6 +238,15 @@ class DMR(BaseModel):
         return loss
 
     def get_embedding(self, field, feature_emb_dict):
+        """Get embedding for a field or tuple of fields.
+
+        Args:
+            field: Field name or tuple of field names.
+            feature_emb_dict: Dictionary of feature embeddings.
+
+        Returns:
+            torch.Tensor: Concatenated embedding tensor.
+        """
         if type(field) == tuple:
             emb_list = [feature_emb_dict[f] for f in field]
             return torch.cat(emb_list, dim=-1)
@@ -198,6 +254,16 @@ class DMR(BaseModel):
             return feature_emb_dict[field]
 
     def get_out_embedding(self, field, target_field, X):
+        """Get output embedding for a field using the output vocab embedding layer.
+
+        Args:
+            field: Field name or tuple of field names.
+            target_field: Target field name or tuple for embedding lookup.
+            X: Input feature dict.
+
+        Returns:
+            torch.Tensor: Concatenated output embedding tensor.
+        """
         emb_list = []
         for input_name, emb_name in zip(flatten([field]), flatten([target_field])):
             emb = self.output_emb_layer[emb_name](X[input_name].long())
@@ -205,6 +271,15 @@ class DMR(BaseModel):
         return torch.cat(emb_list, dim=-1)
 
     def get_context_embedding(self, field, X):
+        """Get context embedding for a field.
+
+        Args:
+            field: Field name or tuple of field names.
+            X: Input feature dict.
+
+        Returns:
+            torch.Tensor: Concatenated context embedding tensor.
+        """
         emb_list = []
         for feature in zip(flatten([field])):
             emb = self.context_emb_layer[feature](X[feature].long())
@@ -213,11 +288,20 @@ class DMR(BaseModel):
 
 
 class User2ItemNet(nn.Module):
-    def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40], 
-                 attention_activation="ReLU", attention_dropout=0.0, pos_emb_dim=8, 
+    """User-to-Item network for computing user-item relations in DMR.
+
+    Args:
+        context_dim (int): Context feature dimension. Default: ``64``.
+        model_dim (int): Model dimension. Default: ``64``.
+        attention_hidden_units (list): Hidden units for attention MLP. Default: ``[80, 40]``.
+        attention_activation (str): Activation function for attention. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention. Default: ``0.0``.
+        pos_emb_dim (int): Dimension of positional embeddings. Default: ``8``.
+        max_seq_len (int): Maximum sequence length. Default: ``50``.
+    """
+    def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40],
+                 attention_activation="ReLU", attention_dropout=0.0, pos_emb_dim=8,
                  max_seq_len=50):
-        """ We follow the code from the authors for this implementation.
-        """
         super(User2ItemNet, self).__init__()
         self.model_dim = model_dim
         self.pos_emb = nn.Parameter(torch.zeros(max_seq_len, pos_emb_dim))
@@ -235,6 +319,19 @@ class User2ItemNet(nn.Module):
                                  nn.ReLU())
 
     def forward(self, target_emb, sequence_emb, context_emb, sequence_emb2, neg_emb=None, mask=None):
+        """Forward pass of User2ItemNet.
+
+        Args:
+            target_emb: Target embedding tensor of shape (B, D).
+            sequence_emb: Sequence embedding tensor of shape (B, L, D).
+            context_emb: Context embedding tensor of shape (B, L, D).
+            sequence_emb2: Output sequence embedding tensor of shape (B, L, D).
+            neg_emb: Negative embedding tensor of shape (B, L, D).
+            mask: Padding mask tensor.
+
+        Returns:
+            tuple: (rel_u2i, aux_loss) tensors.
+        """
         batch_size = target_emb.size(0)
         if context_emb is None:
             context_emb = self.pos_emb.unsqueeze(0).expand(batch_size, -1, -1)
@@ -243,7 +340,7 @@ class User2ItemNet(nn.Module):
                                      context_emb], dimi=-1)
         seq_len = sequence_emb.size(1)
         query = self.W_q(context_emb.reshape(-1, self.context_dim)).reshape(-1, seq_len, self.model_dim)
-        inp_concat = torch.cat([query, sequence_emb, query - sequence_emb, 
+        inp_concat = torch.cat([query, sequence_emb, query - sequence_emb,
                                 query * sequence_emb], dim=-1)
         attn_score = self.attn_mlp(inp_concat.view(-1, 4 * self.model_dim))
         attn_score = attn_score.view(-1, seq_len) # b x len
@@ -264,7 +361,13 @@ class User2ItemNet(nn.Module):
         return rel_u2i, aux_loss
 
     def get_mask(self, mask):
-        """ attn_mask: B x L, 0 for masked positions
+        """Compute causal attention mask.
+
+        Args:
+            mask: Padding mask tensor.
+
+        Returns:
+            torch.Tensor: Attention mask of shape (B, L, L) with 0 for masked positions.
         """
         seq_len = mask.size(1)
         attn_mask = mask.unsqueeze(1).repeat(1, seq_len, 1) # B x L x L
@@ -277,7 +380,19 @@ class User2ItemNet(nn.Module):
 
 
 class Item2ItemNet(nn.Module):
-    def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40], 
+    """Item-to-Item network for computing item-item relations in DMR.
+
+    Args:
+        context_dim (int): Context feature dimension. Default: ``64``.
+        model_dim (int): Model dimension. Default: ``64``.
+        attention_hidden_units (list): Hidden units for attention MLP. Default: ``[80, 40]``.
+        attention_activation (str): Activation function for attention. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention. Default: ``0.0``.
+        use_pos_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        pos_emb_dim (int): Dimension of positional embeddings. Default: ``8``.
+        max_seq_len (int): Maximum sequence length. Default: ``50``.
+    """
+    def __init__(self, context_dim=64, model_dim=64, attention_hidden_units=[80, 40],
                  attention_activation="ReLU", attention_dropout=0.0, use_pos_emb=True,
                  pos_emb_dim=8, max_seq_len=50):
         super(Item2ItemNet, self).__init__()
@@ -298,6 +413,17 @@ class Item2ItemNet(nn.Module):
                                   batch_norm=False)
 
     def forward(self, target_emb, sequence_emb, context_emb=None, mask=None):
+        """Forward pass of Item2ItemNet.
+
+        Args:
+            target_emb: Target embedding tensor of shape (B, D).
+            sequence_emb: Sequence embedding tensor of shape (B, L, D).
+            context_emb: Optional context embedding tensor.
+            mask: Optional padding mask.
+
+        Returns:
+            tuple: (attn_out, rel_i2i) tensors.
+        """
         seq_len = sequence_emb.size(1)
         if context_emb is None:
             context_emb = target_emb.unsqueeze(1).expand(-1, seq_len, -1)
@@ -306,10 +432,10 @@ class Item2ItemNet(nn.Module):
                                      context_emb], dimi=-1)
         if self.use_pos_emb:
             context_emb = torch.cat([context_emb,
-                                     self.pos_emb.unsqueeze(0).expand(context_emb.size(0), -1, -1)], 
+                                     self.pos_emb.unsqueeze(0).expand(context_emb.size(0), -1, -1)],
                                      dim=-1)
         query = self.W_q(context_emb.reshape(-1, self.context_dim)).view(-1, seq_len, self.model_dim)
-        inp_concat = torch.cat([query, sequence_emb, query - sequence_emb, 
+        inp_concat = torch.cat([query, sequence_emb, query - sequence_emb,
                                 query * sequence_emb], dim=-1)
         attn_score = self.attn_mlp(inp_concat.view(-1, 4 * self.model_dim))
         attn_score = attn_score.view(-1, seq_len) # b x len

@@ -24,6 +24,21 @@ import json
 
 
 class FeatureMap(object):
+    """Registry that stores feature schemas, metadata, and column indexing for a dataset.
+
+    ``FeatureMap`` maps each feature name to its specification (type, source, vocab size,
+    embedding dimension, etc.) and manages the flat column index used by data loaders.
+
+    Args:
+        dataset_id (str): Unique identifier for the dataset.
+        data_dir (str): Directory path where feature map and vocab files are stored.
+
+    Example::
+
+        feature_map = FeatureMap(dataset_id="criteo", data_dir="./data/criteo")
+        feature_map.load("feature_map.json", params={"embedding_dim": 16})
+    """
+
     def __init__(self, dataset_id, data_dir):
         self.data_dir = data_dir # must keep to be used in embedding layer for pretrained emb
         self.dataset_id = dataset_id
@@ -37,6 +52,13 @@ class FeatureMap(object):
         self.default_emb_dim = None
 
     def load(self, json_file, params):
+        """Load feature map from a JSON file.
+
+        Args:
+            json_file (str): Path to the JSON file.
+            params (dict): Runtime parameters such as ``group_id``, ``embedding_dim``,
+                ``use_features``, and ``feature_specs``.
+        """
         logging.info("Load feature_map from json: " + json_file)
         with io.open(json_file, "r", encoding="utf-8") as fd:
             feature_map = json.load(fd) #, object_pairs_hook=OrderedDict
@@ -56,6 +78,12 @@ class FeatureMap(object):
         self.set_column_index()
 
     def update_feature_specs(self, feature_specs):
+        """Update feature specifications with user-provided overrides.
+
+        Args:
+            feature_specs (list): List of dicts each containing a ``name`` key and
+                additional spec keys to merge into the existing feature map.
+        """
         for col in feature_specs:
             namelist = col["name"]
             if type(namelist) != list:
@@ -66,6 +94,11 @@ class FeatureMap(object):
                         self.features[name][k] = v
 
     def save(self, json_file):
+        """Persist the feature map to a JSON file.
+
+        Args:
+            json_file (str): Destination path for the JSON file.
+        """
         logging.info("Save feature_map to json: " + json_file)
         os.makedirs(os.path.dirname(json_file), exist_ok=True)
         feature_map = OrderedDict()
@@ -79,6 +112,15 @@ class FeatureMap(object):
             json.dump(feature_map, fd, indent=4)
 
     def get_num_fields(self, feature_source=[]):
+        """Count the number of feature fields, optionally filtered by source.
+
+        Args:
+            feature_source (list or str): Feature source(s) to include. Empty list
+                includes all sources.
+
+        Returns:
+            int: Number of matching feature fields.
+        """
         if type(feature_source) != list:
             feature_source = [feature_source]
         num_fields = 0
@@ -90,6 +132,15 @@ class FeatureMap(object):
         return num_fields
 
     def sum_emb_out_dim(self, feature_source=[]):
+        """Sum the total embedding output dimension for the given feature sources.
+
+        Args:
+            feature_source (list or str): Feature source(s) to include. Empty list
+                includes all sources.
+
+        Returns:
+            int: Total embedding output dimension.
+        """
         if type(feature_source) != list:
             feature_source = [feature_source]
         total_dim = 0
@@ -103,13 +154,23 @@ class FeatureMap(object):
         return total_dim
 
     def set_column_index(self):
+        """Assign a flat column index to each feature and label for tensor construction.
+
+        Sequence and embedding features receive multi-index ranges, while scalar
+        features receive a single index.
+        """
         logging.info("Set column index...")
         idx = 0
         for feature, feature_spec in self.features.items():
-            if "max_len" in feature_spec:
+            if feature_spec["type"] == "sequence":
                 col_indexes = [i + idx for i in range(feature_spec["max_len"])]
                 self.column_index[feature] = col_indexes
                 idx += feature_spec["max_len"]
+            elif feature_spec["type"] == "embedding":
+                emb_dim = feature_spec["pretrain_dim"]
+                col_indexes = [i + idx for i in range(emb_dim)]
+                self.column_index[feature] = col_indexes
+                idx += emb_dim
             else:
                 self.column_index[feature] = idx
                 idx += 1
@@ -119,6 +180,15 @@ class FeatureMap(object):
             idx += 1
 
     def get_column_index(self, feature):
+        """Retrieve the column index (or indices) assigned to a feature.
+
+        Args:
+            feature (str): Name of the feature.
+
+        Returns:
+            int or list: Column index for scalar features, or list of indices
+                for sequence/embedding features.
+        """
         if feature not in self.column_index:
             self.set_column_index()
         return self.column_index[feature]

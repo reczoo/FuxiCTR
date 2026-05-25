@@ -73,7 +73,7 @@ Click-through rate (CTR) prediction is a critical task for various industrial ap
 | 37  | SIGIR'23          | [FinalNet](./model_zoo/FinalNet)               | [FINAL: Factorized Interaction Layer for CTR Prediction](https://dl.acm.org/doi/10.1145/3539618.3591988) :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ranking/ctr/FinalNet)         | `torch`       |
 | 38  | SIGIR'23          | [EulerNet](./model_zoo/EulerNet)               | [EulerNet: Adaptive Feature Interaction Learning via Euler's Formula for CTR Prediction](https://dl.acm.org/doi/10.1145/3539618.3591681) :triangular_flag_on_post:**Huawei**                                                                                                               |     [:arrow_upper_right:](https://github.com/Ethan-TZ/EulerNet/tree/main/%23Code4FuxiCTR%23)         | `torch`       |
 | 39  | CIKM'23           | [GDCN](./model_zoo/GDCN)         | [Towards Deeper, Lighter and Interpretable Cross Network for CTR Prediction](https://dl.acm.org/doi/pdf/10.1145/3583780.3615089) :triangular_flag_on_post:**Microsoft**                                                                                                               |           | `torch`       |
-| 40  | ICML'24          | [WuKong](./model_zoo/WuKong)               | [Wukong: Towards a Scaling Law for Large-Scale Recommendation](https://arxiv.org/abs/2403.02545) :triangular_flag_on_post:**Meta**                                                        |       | `torch`       |
+| 40  | ICML'24          | [WuKong](./model_zoo/WuKong)               | [Wukong: Towards a Scaling Law for Large-Scale Recommendation](https://arxiv.org/abs/2403.02545) :triangular_flag_on_post:**Meta**                                                        |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ranking/ctr/WuKong)    | `torch`       |
 | 41  | KDD'25          | [QNN-α](./model_zoo/QNN)               | [Revisiting Feature Interactions from the Perspective of Quadratic Neural Networks for Click-through Rate Prediction](https://arxiv.org/abs/2505.17999) :triangular_flag_on_post:**Huawei**     |   [:arrow_upper_right:](https://github.com/salmon1802/QNN/tree/main/checkpoints)     | `torch`       |
 |<tr><th colspan=6 align="center">:open_file_folder: **Behavior Sequence Modeling**</th></tr>|
 | 42  | KDD'18            | [DIN](./model_zoo/DIN)                   | [Deep Interest Network for Click-Through Rate Prediction](https://www.kdd.org/kdd2018/accepted-papers/view/deep-interest-network-for-click-through-rate-prediction) :triangular_flag_on_post:**Alibaba**        |   [:arrow_upper_right:](https://github.com/reczoo/BARS/tree/main/ranking/ctr/DIN)       | `torch`       |
@@ -106,11 +106,11 @@ We have benchmarked FuxiCTR models on a set of open datasets as follows:
 
 ## Dependencies
 
-FuxiCTR has the following dependencies:
+The following dependencies are recommended:
 
-+ python 3.9+
-+ pytorch 1.10.0--2.1.2 (if using for torch models)
-+ tensorflow 2.1 (if using for tensorflow models)
++ python>=3.10
++ pytorch>=2.7.1 (if using for torch models)
++ tensorflow>=2.21.0 (if using for tensorflow models)
 
 Please install other required packages via `pip install -r requirements.txt`.
 
@@ -159,13 +159,11 @@ Please install other required packages via `pip install -r requirements.txt`.
 
 ## 🔥 Citation
 
-If you find our code or benchmarks helpful in your research, please cite the following papers.
+If you use our code or benchmarks in your public research, please cite the following two papers.
 
-+ Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
 + Jieming Zhu, Quanyu Dai, Liangcai Su, Rong Ma, Jinyang Liu, Guohao Cai, Xi Xiao, Rui Zhang. [BARS: Towards Open Benchmarking for Recommender Systems](https://arxiv.org/abs/2205.09626). *The 45th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR)*, 2022. [[Bibtex](https://dblp.org/rec/conf/sigir/ZhuDSMLCXZ22.html?view=bibtex)]
++ Jieming Zhu, Jinyang Liu, Shuai Yang, Qi Zhang, Xiuqiang He. [BARS-CTR: Open Benchmarking for Click-Through Rate Prediction](https://arxiv.org/abs/2009.05794). *The 30th ACM International Conference on Information and Knowledge Management (CIKM)*, 2021. [[Bibtex](https://dblp.org/rec/conf/cikm/ZhuLYZH21.html?view=bibtex)]
 
-## Discussion
+## 🙋 Contributing
 
-Welcome to join our WeChat group for any question and discussion. If you are interested in research and practice in recommender systems, please reach out via our WeChat group.
-
-![Scan QR code](https://openbenchmark.github.io/BARS/_images/wechat.jpg)
+We welcome contributions via issues or pull requests. All contributors are highly appreciated and will be recognized in the [contributors list](./CONTRIBUTORS.md).

@@ -21,13 +21,31 @@ from fuxictr.pytorch.layers import FeatureEmbedding
 
 
 class SAM(BaseModel):
-    def __init__(self, 
+    """Self-Attentive Model (SAM) for feature interactions.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"SAM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        interaction_type (str): Interaction type, one of ``"SAM2A"``, ``"SAM2E"``, ``"SAM3A"``, ``"SAM3E"``.
+            Default: ``"SAM2E"``.
+        aggregation (str): Aggregation method for SAM output. Default: ``"concat"``.
+        num_interaction_layers (int): Number of interaction layers. Default: ``3``.
+        use_residual (bool): Whether to use residual connections. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        net_dropout (float): Dropout rate. Default: ``0``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
                  model_id="SAM",
                  gpu=-1,
                  learning_rate=1e-3,
                  embedding_dim=10,
-                 interaction_type="SAM2E", # option in ["SAM2A", "SAM2E", "SAM3A", "SAM3E"]
+                 interaction_type="SAM2E",
                  aggregation="concat",
                  num_interaction_layers=3,
                  use_residual=False,
@@ -42,7 +60,7 @@ class SAM(BaseModel):
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
-        self.block = SAMBlock(num_interaction_layers, feature_map.num_fields, embedding_dim, use_residual, 
+        self.block = SAMBlock(num_interaction_layers, feature_map.num_fields, embedding_dim, use_residual,
                               interaction_type, aggregation, net_dropout)
         if aggregation == "concat":
             if interaction_type in ["SAM2A", "SAM2E"]:
@@ -54,8 +72,16 @@ class SAM(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-    
+
     def forward(self, inputs):
+        """Forward pass of SAM.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         interact_out = self.block(feature_emb)
@@ -63,10 +89,21 @@ class SAM(BaseModel):
         y_pred = self.output_activation(y_pred)
         return_dict = {"y_pred": y_pred}
         return return_dict
-        
+
 
 class SAMBlock(nn.Module):
-    def __init__(self, num_layers, num_fields, embedding_dim, use_residual=False, 
+    """SAM interaction block.
+
+    Args:
+        num_layers (int): Number of interaction layers.
+        num_fields (int): Number of feature fields.
+        embedding_dim (int): Embedding dimension.
+        use_residual (bool): Whether to use residual connections. Default: ``False``.
+        interaction_type (str): Interaction type. Default: ``"SAM2E"``.
+        aggregation (str): Aggregation method. Default: ``"concat"``.
+        dropout (float): Dropout rate. Default: ``0``.
+    """
+    def __init__(self, num_layers, num_fields, embedding_dim, use_residual=False,
                  interaction_type="SAM2E", aggregation="concat", dropout=0):
         super(SAMBlock, self).__init__()
         assert aggregation in ["concat", "weighted_pooling", "mean_pooling", "sum_pooling"]
@@ -89,6 +126,14 @@ class SAMBlock(nn.Module):
             raise ValueError("interaction_type={} not supported.".format(interaction_type))
 
     def forward(self, F):
+        """Forward pass of SAMBlock.
+
+        Args:
+            F: Input feature embeddings.
+
+        Returns:
+            Tensor: Aggregated interaction output.
+        """
         for layer in self.layers:
             F = layer(F)
         if self.aggregation == "concat":
@@ -103,12 +148,27 @@ class SAMBlock(nn.Module):
 
 
 class SAM2A(nn.Module):
+    """SAM2A interaction layer with attention weights.
+
+    Args:
+        num_fields (int): Number of feature fields.
+        embedding_dim (int): Embedding dimension.
+        dropout (float): Dropout rate. Default: ``0``.
+    """
     def __init__(self, num_fields, embedding_dim, dropout=0):
         super(SAM2A, self).__init__()
         self.W = nn.Parameter(torch.ones(num_fields, num_fields, embedding_dim)) # f x f x d
         self.dropout = nn.Dropout(p=dropout) if dropout > 0 else None
 
     def forward(self, F):
+        """Forward pass of SAM2A.
+
+        Args:
+            F: Input feature embeddings.
+
+        Returns:
+            Tensor: Interaction output.
+        """
         S = torch.bmm(F, F.transpose(1, 2)) # b x f x f
         out = S.unsqueeze(-1) * self.W # b x f x f x d
         if self.dropout:
@@ -117,11 +177,25 @@ class SAM2A(nn.Module):
 
 
 class SAM2E(nn.Module):
+    """SAM2E interaction layer with element-wise product.
+
+    Args:
+        embedding_dim (int): Embedding dimension.
+        dropout (float): Dropout rate. Default: ``0``.
+    """
     def __init__(self, embedding_dim, dropout=0):
         super(SAM2E, self).__init__()
         self.dropout = nn.Dropout(p=dropout) if dropout > 0 else None
 
     def forward(self, F):
+        """Forward pass of SAM2E.
+
+        Args:
+            F: Input feature embeddings.
+
+        Returns:
+            Tensor: Interaction output.
+        """
         S = torch.bmm(F, F.transpose(1, 2)) # b x f x f
         U = torch.einsum("bnd,bmd->bnmd", F, F) # b x f x f x d
         out = S.unsqueeze(-1) * U # b x f x f x d
@@ -131,6 +205,14 @@ class SAM2E(nn.Module):
 
 
 class SAM3A(nn.Module):
+    """SAM3A interaction layer with attention weights and residual.
+
+    Args:
+        num_fields (int): Number of feature fields.
+        embedding_dim (int): Embedding dimension.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        dropout (float): Dropout rate. Default: ``0``.
+    """
     def __init__(self, num_fields, embedding_dim, use_residual=True, dropout=0):
         super(SAM3A, self).__init__()
         self.W = nn.Parameter(torch.ones(num_fields, num_fields, embedding_dim)) # f x f x d
@@ -141,6 +223,14 @@ class SAM3A(nn.Module):
         self.dropout = nn.Dropout(p=dropout) if dropout > 0 else None
 
     def forward(self, F):
+        """Forward pass of SAM3A.
+
+        Args:
+            F: Input feature embeddings.
+
+        Returns:
+            Tensor: Interaction output.
+        """
         S = torch.bmm(F, self.K(F).transpose(1, 2)) # b x f x f
         out = (S.unsqueeze(-1) * self.W).sum(dim=2) # b x f x d
         if self.use_residual:
@@ -151,6 +241,13 @@ class SAM3A(nn.Module):
 
 
 class SAM3E(nn.Module):
+    """SAM3E interaction layer with element-wise product and residual.
+
+    Args:
+        embedding_dim (int): Embedding dimension.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        dropout (float): Dropout rate. Default: ``0``.
+    """
     def __init__(self, embedding_dim, use_residual=True, dropout=0):
         super(SAM3E, self).__init__()
         self.K = nn.Linear(embedding_dim, embedding_dim, bias=False)
@@ -160,6 +257,14 @@ class SAM3E(nn.Module):
         self.dropout = nn.Dropout(p=dropout) if dropout > 0 else None
 
     def forward(self, F):
+        """Forward pass of SAM3E.
+
+        Args:
+            F: Input feature embeddings.
+
+        Returns:
+            Tensor: Interaction output.
+        """
         S = torch.bmm(F, self.K(F).transpose(1, 2)) # b x f x f
         U = torch.einsum("bnd,bmd->bnmd", F, F) # b x f x f x d
         out = (S.unsqueeze(-1) * U).sum(dim=2) # b x f x d

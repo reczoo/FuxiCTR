@@ -22,7 +22,24 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class GDCNP(BaseModel):
-    def __init__(self, 
+    """Gated Deep Cross Network Parallel (GDCNP) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"GDCNP"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        num_cross_layers (int): Number of cross layers. Default: ``3``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
                  model_id="GDCNP",
                  gpu=-1,
@@ -36,10 +53,10 @@ class GDCNP(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(GDCNP, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(GDCNP, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -48,7 +65,7 @@ class GDCNP(BaseModel):
                              output_dim=None, # output hidden layer
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
-                             output_activation=None, 
+                             output_activation=None,
                              dropout_rates=net_dropout,
                              batch_norm=batch_norm) \
                    if dnn_hidden_units else None # in case of only crossing net used
@@ -58,8 +75,16 @@ class GDCNP(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-    
+
     def forward(self, inputs):
+        """Forward pass of GDCNP.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)
         cross_cn = self.cross_net(feature_emb)
@@ -71,7 +96,24 @@ class GDCNP(BaseModel):
 
 
 class GDCN(BaseModel):
-    def __init__(self, 
+    """Gated Deep Cross Network (GDCN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"GDCN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        num_cross_layers (int): Number of cross layers. Default: ``3``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
                  model_id="GDCN",
                  gpu=-1,
@@ -85,10 +127,10 @@ class GDCN(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(GDCN, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(GDCN, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -97,7 +139,7 @@ class GDCN(BaseModel):
                              output_dim=1, # output hidden layer
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
-                             output_activation=None, 
+                             output_activation=None,
                              dropout_rates=net_dropout,
                              batch_norm=batch_norm) \
                    if dnn_hidden_units else None # in case of only crossing net used
@@ -106,8 +148,16 @@ class GDCN(BaseModel):
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-    
+
     def forward(self, inputs):
+        """Forward pass of GDCN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)
         cross_cn = self.cross_net(feature_emb)
@@ -118,7 +168,12 @@ class GDCN(BaseModel):
 
 
 class GateCorssLayer(nn.Module):
-    #  The core structure： gated corss layer.
+    """Gated cross layer for GDCN.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        cn_layers (int): Number of cross layers. Default: ``3``.
+    """
     def __init__(self, input_dim, cn_layers=3):
         super().__init__()
 
@@ -140,6 +195,14 @@ class GateCorssLayer(nn.Module):
         self.activation = nn.Sigmoid()
 
     def forward(self, x):
+        """Forward pass of GateCorssLayer.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after gated cross layers.
+        """
         x0 = x
         for i in range(self.cn_layers):
             xw = self.w[i](x) # Feature Crossing

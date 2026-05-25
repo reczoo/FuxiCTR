@@ -23,33 +23,50 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, CompressedIntera
 
 
 class xDeepFM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="xDeepFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 dnn_hidden_units=[64, 64, 64], 
+    """xDeepFM model with Compressed Interaction Network (CIN) and DNN.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"xDeepFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[64, 64, 64]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        cin_hidden_units (list): Hidden units of the CIN. Default: ``[16, 16, 16]``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="xDeepFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 dnn_hidden_units=[64, 64, 64],
                  dnn_activations="ReLU",
-                 cin_hidden_units=[16, 16, 16], 
-                 net_dropout=0, 
-                 batch_norm=False, 
-                 embedding_regularizer=None, 
-                 net_regularizer=None, 
+                 cin_hidden_units=[16, 16, 16],
+                 net_dropout=0,
+                 batch_norm=False,
+                 embedding_regularizer=None,
+                 net_regularizer=None,
                  **kwargs):
-        super(xDeepFM, self).__init__(feature_map, 
-                                      model_id=model_id, 
-                                      gpu=gpu, 
-                                      embedding_regularizer=embedding_regularizer, 
+        super(xDeepFM, self).__init__(feature_map,
+                                      model_id=model_id,
+                                      gpu=gpu,
+                                      embedding_regularizer=embedding_regularizer,
                                       net_regularizer=net_regularizer,
-                                      **kwargs)     
+                                      **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
         self.dnn = MLP_Block(input_dim=feature_map.sum_emb_out_dim(),
-                             output_dim=1, 
+                             output_dim=1,
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
-                             output_activation=None, 
-                             dropout_rates=net_dropout, 
+                             output_activation=None,
+                             dropout_rates=net_dropout,
                              batch_norm=batch_norm) \
                    if dnn_hidden_units else None # in case of only CIN used
         self.lr_layer = LogisticRegression(feature_map, use_bias=False)
@@ -59,6 +76,14 @@ class xDeepFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of xDeepFM.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X) # list of b x embedding_dim
         lr_logit = self.lr_layer(X)

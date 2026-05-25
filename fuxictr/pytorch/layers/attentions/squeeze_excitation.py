@@ -21,6 +21,19 @@ from torch import nn
 
 
 class SqueezeExcitation(nn.Module):
+    """Squeeze-and-Excitation layer for feature-wise recalibration.
+
+    ``SqueezeExcitation`` computes a global statistic (mean) across the embedding
+    dimension, passes it through a bottleneck MLP, and rescales each feature field.
+
+    Args:
+        num_fields (int): Number of feature fields.
+        reduction_ratio (int, optional): Reduction ratio for the bottleneck layer.
+            Default: ``3``.
+        excitation_activation (str, optional): Activation at the output of the
+            excitation network, either ``"ReLU"`` or ``"Sigmoid"``. Default: ``"ReLU"``.
+    """
+
     def __init__(self, num_fields, reduction_ratio=3, excitation_activation="ReLU"):
         super(SqueezeExcitation, self).__init__()
         reduced_size = max(1, int(num_fields / reduction_ratio))
@@ -36,6 +49,15 @@ class SqueezeExcitation(nn.Module):
         self.excitation = nn.Sequential(*excitation)
 
     def forward(self, feature_emb):
+        """Apply squeeze-and-excitation to feature embeddings.
+
+        Args:
+            feature_emb (torch.Tensor): Feature embeddings of shape
+                ``(batch_size, num_fields, embedding_dim)``.
+
+        Returns:
+            torch.Tensor: Recalibrated embeddings of the same shape as ``feature_emb``.
+        """
         Z = torch.mean(feature_emb, dim=-1, out=None)
         A = self.excitation(Z)
         V = feature_emb * A.unsqueeze(-1)

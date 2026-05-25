@@ -20,16 +20,39 @@ from .APG import APG_MLP
 
 
 class APG_DeepFM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="APG_DeepFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 hidden_units=[64, 64, 64], 
-                 hidden_activations="ReLU", 
-                 net_dropout=0, 
-                 batch_norm=False, 
+    """Adaptive Parameter Generation DeepFM model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"APG_DeepFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        hidden_units (list): Hidden units for the MLP. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation functions for hidden layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        hypernet_config (dict): Configuration dict for the hypernetwork. Default: ``{}``.
+        condition_features (list): List of condition feature names. Default: ``[]``.
+        condition_mode (str): Conditioning mode, one of ["self-wise", "group-wise", "mix-wise"]. Default: ``"self-wise"``.
+        new_condition_emb (bool): Whether to use a separate embedding layer for condition features. Default: ``False``.
+        rank_k (int): Rank for low-rank weight generation. Default: ``32``.
+        overparam_p (int): Over-parameterization dimension. Default: ``1024``.
+        generate_bias (bool): Whether to generate bias via hypernetwork. Default: ``True``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="APG_DeepFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 hidden_units=[64, 64, 64],
+                 hidden_activations="ReLU",
+                 net_dropout=0,
+                 batch_norm=False,
                  embedding_regularizer=None,
                  net_regularizer=None,
                  hypernet_config={},
@@ -40,10 +63,10 @@ class APG_DeepFM(BaseModel):
                  overparam_p=1024,
                  generate_bias=True,
                  **kwargs):
-        super(APG_DeepFM, self).__init__(feature_map, 
-                                         model_id=model_id, 
+        super(APG_DeepFM, self).__init__(feature_map,
+                                         model_id=model_id,
                                          gpu=gpu,
-                                         embedding_regularizer=embedding_regularizer, 
+                                         embedding_regularizer=embedding_regularizer,
                                          net_regularizer=net_regularizer,
                                          **kwargs)
         self.embedding_layer = FeatureEmbeddingDict(feature_map, embedding_dim)
@@ -78,8 +101,13 @@ class APG_DeepFM(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of APG_DeepFM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
@@ -93,12 +121,21 @@ class APG_DeepFM(BaseModel):
         return return_dict
 
     def get_condition_z(self, X, feature_emb_dict):
+        """Get condition vector from input features.
+
+        Args:
+            X: Input feature dict.
+            feature_emb_dict: Feature embedding dict.
+
+        Returns:
+            torch.Tensor or None: Condition vector or None if self-wise mode.
+        """
         condition_z = None
         if self.condition_mode != "self-wise":
             if self.condition_emb_layer is not None:
                 condition_z = self.condition_emb_layer(X, flatten_emb=True)
             else:
-                condition_z = self.embedding_layer.dict2tensor(feature_emb_dict, 
+                condition_z = self.embedding_layer.dict2tensor(feature_emb_dict,
                                                                feature_list=self.condition_features,
                                                                flatten_emb=True)
         return condition_z

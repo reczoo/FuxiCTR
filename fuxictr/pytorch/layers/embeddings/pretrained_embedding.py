@@ -28,6 +28,39 @@ from fuxictr.preprocess.tokenizer import load_pretrain_emb
 
 
 class PretrainedEmbedding(nn.Module):
+    """Embedding layer that fuses pretrained embeddings with learnable ID embeddings.
+
+    ``PretrainedEmbedding`` supports three fusion modes: ``init`` (use pretrained as initialization),
+    ``sum`` (add pretrained and ID embeddings), and ``concat`` (concatenate then project).
+    It loads pretrained embeddings from a file and optionally projects them to the target dimension.
+
+    Args:
+        feature_name (str): Name of the feature.
+        feature_spec (dict): Feature specification containing ``vocab_size``, ``oov_idx``,
+            ``freeze_emb``, and optionally ``padding_idx``.
+        pretrain_path (str): Path to the pretrained embedding file.
+        vocab_path (str): Path to the feature vocabulary JSON file.
+        embedding_dim (int): Target embedding dimension.
+        pretrain_dim (int): Dimension of the pretrained embeddings.
+        pretrain_usage (str, optional): Fusion mode, one of ``"init"``, ``"sum"``, ``"concat"``.
+            Default: ``"init"``.
+        embedding_initializer (str, optional): Initializer for the ID embedding. Default:
+            ``"partial(nn.init.normal_, std=1e-4)"``.
+
+    Example::
+
+        pretrained_emb = PretrainedEmbedding(
+            feature_name="item_id",
+            feature_spec={"vocab_size": 10000, "oov_idx": 0, "freeze_emb": False},
+            pretrain_path="./pretrain.npy",
+            vocab_path="./vocab.json",
+            embedding_dim=64,
+            pretrain_dim=64,
+            pretrain_usage="sum"
+        )
+        emb = pretrained_emb(inputs)
+    """
+
     def __init__(self,
                  feature_name,
                  feature_spec,
@@ -37,10 +70,6 @@ class PretrainedEmbedding(nn.Module):
                  pretrain_dim,
                  pretrain_usage="init",
                  embedding_initializer="partial(nn.init.normal_, std=1e-4)"):
-        """
-        Fusion pretrained embedding with ID embedding
-        :param: fusion_type: init/sum/concat
-        """
         super().__init__()
         assert pretrain_usage in ["init", "sum", "concat"]
         self.pretrain_usage = pretrain_usage
@@ -66,11 +95,25 @@ class PretrainedEmbedding(nn.Module):
             self.proj = nn.Linear(pretrain_dim + embedding_dim, embedding_dim, bias=False)
 
     def init_weights(self):
+        """Initialize the ID embedding weights for ``sum`` and ``concat`` modes.
+
+        Sets OOV token embeddings to zeros and initializes in-vocabulary tokens with
+        the configured initializer.
+        """
         if self.pretrain_usage in ["sum", "concat"]:
             nn.init.zeros_(self.id_embedding.weight) # set oov token embeddings to zeros
             self.embedding_initializer(self.id_embedding.weight[1:self.oov_idx, :])
 
     def load_feature_vocab(self, vocab_path, feature_name):
+        """Load the vocabulary for a specific feature from a JSON file.
+
+        Args:
+            vocab_path (str): Path to the vocabulary JSON file.
+            feature_name (str): Name of the feature to extract.
+
+        Returns:
+            tuple: A tuple of (feature_vocab, vocab_key_dtype).
+        """
         with io.open(vocab_path, "r", encoding="utf-8") as fd:
             vocab = json.load(fd)
             vocab_type = type(list(vocab.items())[1][0]) # get key dtype
@@ -78,6 +121,20 @@ class PretrainedEmbedding(nn.Module):
 
     def load_pretrained_embedding(self, vocab_size, pretrain_dim, pretrain_path, vocab_path,
                                   feature_name, freeze=False, padding_idx=None):
+        """Load pretrained embeddings from a file and map them to the feature vocabulary.
+
+        Args:
+            vocab_size (int): Size of the feature vocabulary.
+            pretrain_dim (int): Dimension of the pretrained embeddings.
+            pretrain_path (str): Path to the pretrained embedding file.
+            vocab_path (str): Path to the feature vocabulary JSON file.
+            feature_name (str): Name of the feature.
+            freeze (bool, optional): Whether to freeze the pretrained embeddings. Default: ``False``.
+            padding_idx (int, optional): Index of the padding token. Default: ``None``.
+
+        Returns:
+            nn.Embedding: An embedding layer initialized with the pretrained weights.
+        """
         embedding_layer = nn.Embedding(vocab_size,
                                        pretrain_dim,
                                        padding_idx=padding_idx)
@@ -101,6 +158,14 @@ class PretrainedEmbedding(nn.Module):
         return embedding_layer
 
     def forward(self, inputs):
+        """Forward pass to compute the fused feature embeddings.
+
+        Args:
+            inputs (torch.Tensor): Input token indices of shape (batch_size, ...).
+
+        Returns:
+            torch.Tensor: Fused feature embeddings of shape (batch_size, ..., embedding_dim).
+        """
         mask = (inputs <= self.oov_idx).float()
         pretrain_emb = self.pretrain_embedding(inputs)
         if not self.freeze_emb:

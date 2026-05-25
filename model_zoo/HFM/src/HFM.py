@@ -23,12 +23,30 @@ from itertools import combinations
 
 
 class HFM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="HFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Holographic Factorization Machine (HFM) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"HFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        interaction_type (str): Holographic interaction type. Default: ``"circular_convolution"``.
+        use_dnn (bool): Whether to use a DNN tower. Default: ``True``.
+        hidden_units (list): Hidden units for the DNN tower. Default: ``[64, 64]``.
+        hidden_activations (list): Activation functions for DNN. Default: ``["relu", "relu"]``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="HFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  interaction_type="circular_convolution",
                  use_dnn=True,
                  hidden_units=[64, 64],
@@ -38,10 +56,10 @@ class HFM(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(HFM, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(HFM, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -51,21 +69,26 @@ class HFM(BaseModel):
         if self.use_dnn:
             input_dim = int(feature_map.num_fields * (feature_map.num_fields - 1) / 2) * embedding_dim
             self.dnn = MLP_Block(input_dim=input_dim,
-                                 output_dim=1, 
+                                 output_dim=1,
                                  hidden_units=hidden_units,
                                  hidden_activations=hidden_activations,
                                  output_activation=None,
-                                 dropout_rates=net_dropout, 
+                                 dropout_rates=net_dropout,
                                  batch_norm=batch_norm)
         else:
             self.proj_h = nn.Linear(embedding_dim, 1, bias=False)
         self.compile(kwargs["optimizer"], kwargs["loss"], learning_rate)
         self.reset_parameters()
         self.model_to_device()
-            
+
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of HFM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)

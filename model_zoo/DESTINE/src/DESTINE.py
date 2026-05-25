@@ -35,31 +35,55 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, LogisticRegressi
 
 
 class DESTINE(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DESTINE", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Disentangled Self-Attentive Neural Network (DESTINE) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DESTINE"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        attention_dim (int): Dimension of attention vectors. Default: ``16``.
+        num_heads (int): Number of attention heads. Default: ``2``.
+        attention_layers (int): Number of self-attention layers. Default: ``2``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0.1``.
+        att_dropout (float): Dropout rate for attention layers. Default: ``0.1``.
+        relu_before_att (bool): Whether to apply ReLU before attention. Default: ``False``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        use_scale (bool): Whether to scale attention scores. Default: ``False``.
+        use_wide (bool): Whether to use a wide (linear) component. Default: ``True``.
+        residual_mode (str): Residual mode, one of ['last_layer', 'each_layer', None]. Default: ``"each_layer"``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DESTINE",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  attention_dim=16,
                  num_heads=2,
                  attention_layers=2,
-                 dnn_hidden_units=[], 
+                 dnn_hidden_units=[],
                  dnn_activations="ReLU",
                  net_dropout=0.1,
                  att_dropout=0.1,
                  relu_before_att=False,
-                 batch_norm=False, 
+                 batch_norm=False,
                  use_scale=False,
                  use_wide=True,
                  residual_mode="each_layer", # ['last_layer', 'each_layer', None]
-                 embedding_regularizer=None, 
-                 net_regularizer=None, 
+                 embedding_regularizer=None,
+                 net_regularizer=None,
                  **kwargs):
-        super(DESTINE, self).__init__(feature_map, 
-                                      model_id=model_id, 
-                                      gpu=gpu, 
-                                      embedding_regularizer=embedding_regularizer, 
+        super(DESTINE, self).__init__(feature_map,
+                                      model_id=model_id,
+                                      gpu=gpu,
+                                      embedding_regularizer=embedding_regularizer,
                                       net_regularizer=net_regularizer,
                                       **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -91,6 +115,14 @@ class DESTINE(BaseModel):
         self.model_to_device()
     
     def forward(self, inputs):
+        """Forward pass of DESTINE.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         cross_X = feature_emb
@@ -107,12 +139,22 @@ class DESTINE(BaseModel):
         return_dict = {"y_pred": y_pred}
         return return_dict
 
-        
+
 class DisentangledSelfAttention(nn.Module):
-    """ Disentangle self-attention for DESTINE. 
-        Reference:
+    """Disentangled self-attention for DESTINE.
+
+    Reference:
         - The implementation totally follows the original code:
           https://github.com/CRIPAC-DIG/DESTINE/blob/c68e182aa220b444df73286e5e928e8a072ba75e/layers/activation.py#L90
+
+    Args:
+        embedding_dim (int): Dimension of feature embeddings.
+        attention_dim (int): Dimension of attention vectors. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        dropout_rate (float): Dropout rate for attention weights. Default: ``0.1``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        use_scale (bool): Whether to scale attention scores. Default: ``False``.
+        relu_before_att (bool): Whether to apply ReLU before attention. Default: ``False``.
     """
     def __init__(self, embedding_dim, attention_dim=64, num_heads=1, dropout_rate=0.1,
                  use_residual=True, use_scale=False, relu_before_att=False):
@@ -133,8 +175,18 @@ class DisentangledSelfAttention(nn.Module):
         else:
             self.W_res = None
         self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0 else None
-        
+
     def forward(self, query, key, value):
+        """Forward pass of disentangled self-attention.
+
+        Args:
+            query: Query tensor.
+            key: Key tensor.
+            value: Value tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after disentangled self-attention.
+        """
         residual = query
         unary = self.W_unary(key) # [batch, num_fields, num_heads]
         query = self.W_q(query)
@@ -163,7 +215,7 @@ class DisentangledSelfAttention(nn.Module):
         unary_weights = F.softmax(unary, dim=1)
         unary_weights = unary_weights.view(batch_size * self.num_heads, -1, 1)
         unary_weights = unary_weights.transpose(1, 2) # [num_heads * batch, 1, num_fields]
-        
+
         attn_weights = pair_weights + unary_weights
         if self.dropout is not None:
             attn_weights = self.dropout(attn_weights)

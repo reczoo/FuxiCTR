@@ -71,7 +71,7 @@ FinalMLP_default: # This is a config template
 
 DualMLP_test:
     model: DualMLP
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification
@@ -97,7 +97,7 @@ DualMLP_test:
 
 FinalMLP_test:
     model: FinalMLP
-    dataset_id: tiny_npz
+    dataset_id: tiny_parquet
     loss: binary_crossentropy
     metrics: ['logloss', 'AUC']
     task: binary_classification

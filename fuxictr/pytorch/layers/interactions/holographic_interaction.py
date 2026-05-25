@@ -22,6 +22,24 @@ from itertools import combinations
 
 
 class HolographicInteraction(nn.Module):
+    """Holographic interaction layer that models pairwise feature interactions via FFT-based operations.
+
+    ``HolographicInteraction`` supports three interaction types: ``hadamard_product`` (element-wise),
+    ``circular_convolution`` (FFT-based convolution), and ``circular_correlation`` (FFT-based
+    correlation with complex conjugate).
+
+    Args:
+        num_fields (int): Number of feature fields.
+        interaction_type (str, optional): Type of interaction, one of ``"hadamard_product"``,
+            ``"circular_convolution"``, or ``"circular_correlation"``. Default:
+            ``"circular_convolution"``.
+
+    Example::
+
+        holographic = HolographicInteraction(num_fields=10, interaction_type="circular_convolution")
+        interact_out = holographic(feature_emb)
+    """
+
     def __init__(self, num_fields, interaction_type="circular_convolution"):
         super(HolographicInteraction, self).__init__()
         self.interaction_type = interaction_type
@@ -30,6 +48,18 @@ class HolographicInteraction(nn.Module):
         self.triu_index = nn.Parameter(torch.triu_indices(num_fields, num_fields, offset=1), requires_grad=False)
 
     def forward(self, feature_emb):
+        """Compute holographic interactions between feature embeddings.
+
+        Args:
+            feature_emb (torch.Tensor): Feature embeddings of shape
+                (batch_size, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Interaction output of shape (batch_size, interact_dim, embedding_dim).
+
+        Raises:
+            ValueError: If the interaction type is not supported.
+        """
         emb1 =  torch.index_select(feature_emb, 1, self.triu_index[0])
         emb2 = torch.index_select(feature_emb, 1, self.triu_index[1])
         if self.interaction_type == "hadamard_product":
@@ -37,16 +67,16 @@ class HolographicInteraction(nn.Module):
         elif self.interaction_type == "circular_convolution":
             fft1 = torch.view_as_real(torch.fft.fft(emb1))
             fft2 = torch.view_as_real(torch.fft.fft(emb2))
-            fft_product = torch.stack([fft1[..., 0] * fft2[..., 0] - fft1[..., 1] * fft2[..., 1], 
-                                       fft1[..., 0] * fft2[..., 1] + fft1[..., 1] * fft2[..., 0]], 
+            fft_product = torch.stack([fft1[..., 0] * fft2[..., 0] - fft1[..., 1] * fft2[..., 1],
+                                       fft1[..., 0] * fft2[..., 1] + fft1[..., 1] * fft2[..., 0]],
                                        dim=-1)
             interact_tensor = torch.view_as_real(torch.fft.ifft(torch.view_as_complex(fft_product)))[..., 0]
         elif self.interaction_type == "circular_correlation":
             fft1_emb = torch.view_as_real(torch.fft.fft(emb1))
             fft1 = fft1_emb * self.conj_sign.expand_as(fft1_emb)
             fft2 = torch.view_as_real(torch.fft.fft(emb2))
-            fft_product = torch.stack([fft1[..., 0] * fft2[..., 0] - fft1[..., 1] * fft2[..., 1], 
-                                       fft1[..., 0] * fft2[..., 1] + fft1[..., 1] * fft2[..., 0]], 
+            fft_product = torch.stack([fft1[..., 0] * fft2[..., 0] - fft1[..., 1] * fft2[..., 1],
+                                       fft1[..., 0] * fft2[..., 1] + fft1[..., 1] * fft2[..., 0]],
                                        dim=-1)
             interact_tensor = torch.view_as_real(torch.fft.ifft(torch.view_as_complex(fft_product)))[..., 0]
         else:

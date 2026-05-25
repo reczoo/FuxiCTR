@@ -24,22 +24,50 @@ import os
 
 
 class NpzIterDataPipe(IterDataPipe):
+    """Iterable data pipe that yields individual rows from a list of NPZ data blocks.
+
+    Args:
+        data_blocks (list[str]): List of paths to NPZ data blocks.
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+    """
+
     def __init__(self, data_blocks, feature_map):
         self.feature_map = feature_map
         self.data_blocks = data_blocks
-        
+
     def load_data(self, data_path):
+        """Load data from an NPZ file and stack columns into a 2-D array.
+
+        Args:
+            data_path (str): Path to the NPZ file.
+
+        Returns:
+            np.ndarray: Stacked array of shape (num_samples, num_columns).
+        """
         data_dict = np.load(data_path)
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
         data_arrays = [data_dict[col] for col in all_cols]
         return np.column_stack(data_arrays)
 
     def read_block(self, data_block):
+        """Yield individual rows from a single data block.
+
+        Args:
+            data_block (str): Path to the data block.
+
+        Yields:
+            np.ndarray: A single row from the data block.
+        """
         darray = self.load_data(data_block)
         for idx in range(darray.shape[0]):
             yield darray[idx, :]
 
     def __iter__(self):
+        """Iterate over all data blocks with optional multi-worker sharding.
+
+        Yields:
+            np.ndarray: A single row from the dataset.
+        """
         worker_info = get_worker_info()
         if worker_info is None: # single-process data loading
             block_list = self.data_blocks
@@ -53,6 +81,21 @@ class NpzIterDataPipe(IterDataPipe):
 
 
 class NpzBlockDataLoader(DataLoader):
+    """DataLoader for NPZ data blocks with optional shuffling and multi-worker support.
+
+    Args:
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+        data_path (str): Path to a single NPZ file or a directory of NPZ files.
+        split (str, optional): Data split, one of ``"train"`` or ``"test"``.
+            Default: ``"train"``.
+        batch_size (int, optional): Number of samples per batch. Default: ``32``.
+        shuffle (bool, optional): Whether to shuffle the data. Default: ``False``.
+        num_workers (int, optional): Number of worker processes. Default: ``1``.
+        buffer_size (int, optional): Shuffle buffer size when ``shuffle=True``.
+            Default: ``100000``.
+        **kwargs: Additional arguments passed to ``DataLoader``.
+    """
+
     def __init__(self, feature_map, data_path, split="train", batch_size=32, shuffle=False,
                  num_workers=1, buffer_size=100000, **kwargs):
         if not data_path.endswith("npz"):
@@ -75,9 +118,19 @@ class NpzBlockDataLoader(DataLoader):
                          collate_fn=BatchCollator(feature_map))
 
     def __len__(self):
+        """Return the number of batches per epoch.
+
+        Returns:
+            int: Number of batches.
+        """
         return self.num_batches
 
     def count_batches_and_samples(self):
+        """Count total samples and derive the number of batches.
+
+        Returns:
+            tuple: ``(num_batches, num_samples)``.
+        """
         num_samples = 0
         for block_path in self.data_blocks:
             block_size = np.load(block_path)[self.feature_map.labels[0]].shape[0]
@@ -87,10 +140,24 @@ class NpzBlockDataLoader(DataLoader):
 
 
 class BatchCollator(object):
+    """Collate a batch of rows into a dictionary of column tensors.
+
+    Args:
+        feature_map (FeatureMap): Feature map that defines columns and labels.
+    """
+
     def __init__(self, feature_map):
         self.feature_map = feature_map
 
     def __call__(self, batch):
+        """Collate a list of rows into a batched dictionary.
+
+        Args:
+            batch (list[np.ndarray]): List of rows.
+
+        Returns:
+            dict[str, torch.Tensor]: Mapping from column name to batched tensor.
+        """
         batch_tensor = default_collate(batch)
         all_cols = list(self.feature_map.features.keys()) + self.feature_map.labels
         batch_dict = dict()

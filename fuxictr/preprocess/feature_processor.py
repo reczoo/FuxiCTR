@@ -35,10 +35,24 @@ from .normalizer import Normalizer
 
 
 class FeatureProcessor(object):
+    """Orchestrates data reading, preprocessing, fitting, and transformation for CTR datasets.
+
+    ``FeatureProcessor`` manages feature columns (numeric, categorical, sequence,
+    embedding, meta) and builds a ``FeatureMap`` together with fitted preprocessors
+    such as tokenizers and normalizers.
+
+    Args:
+        feature_cols (list): List of feature column specification dicts. Default: ``[]``.
+        label_col (list or dict): Label column specification(s). Default: ``[]``.
+        dataset_id (str, optional): Unique dataset identifier. Default: ``None``.
+        data_root (str): Root directory under which dataset folders are created. Default: ``"../data/"``.
+        **kwargs: Additional keyword arguments (e.g. ``group_id``).
+    """
+
     def __init__(self,
                  feature_cols=[],
                  label_col=[],
-                 dataset_id=None, 
+                 dataset_id=None,
                  data_root="../data/",
                  **kwargs):
         logging.info("Set up feature processor...")
@@ -71,6 +85,18 @@ class FeatureProcessor(object):
         return full_feature_cols
 
     def read_data(self, data_path, data_format="csv", sep=",", n_rows=None, **kwargs):
+        """Read raw data files lazily using Polars.
+
+        Args:
+            data_path (str): Path to a file or directory pattern.
+            data_format (str): File format, either ``"csv"`` or ``"parquet"``.
+            sep (str): Separator for CSV files.
+            n_rows (int, optional): Maximum rows to read per file.
+            **kwargs: Extra arguments forwarded to the reader.
+
+        Returns:
+            pl.LazyFrame: Concatenated lazy frame over all matched files.
+        """
         if not data_path.endswith(data_format):
             data_path = os.path.join(data_path, f"*.{data_format}")
         logging.info("Reading files: " + data_path)
@@ -89,23 +115,33 @@ class FeatureProcessor(object):
                 for file_name in file_names
             ]
             ddf = pl.concat(dfs)
-            seq_cols = [x for x in ddf.columns if isinstance(ddf.select(x).dtypes[0], pl.List)]
-            for col in seq_cols:
-                # Convert list to "^" seperated string for the same preprocessing as csv format
-                ddf = ddf.with_columns(pl.col(col).apply(lambda x: "^".join(map(str, x))))
         else:
             NotImplementedError(f"data_format={data_format} not supported.")
         return ddf
 
     def preprocess(self, ddf):
+        """Apply null-filling and custom preprocess functions to feature columns.
+
+        Args:
+            ddf (pl.LazyFrame): Input lazy frame.
+
+        Returns:
+            pl.LazyFrame: Lazy frame with preprocessed columns.
+        """
         logging.info("Preprocess feature columns...")
         all_cols = self.label_cols + self.feature_cols[::-1]
+        col_names = ddf.columns
         for col in all_cols:
             name = col["name"]
-            fill_na = col.get("fill_na", 
-                              "" if col["dtype"] in ["str", str] else 0)
-            col_exist = name in ddf.columns
-            if col_exist:
+            fill_na = None
+            if col["dtype"] in ["str", str]:
+                fill_na = col.get("fill_na", "")
+            elif col["dtype"] in ["int", int]:
+                fill_na = col.get("fill_na", 0)
+            elif col["dtype"] in ["float", float]:
+                fill_na = col.get("fill_na", 0.0)
+            col_exist = name in col_names
+            if (fill_na is not None) and col_exist:
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
             if col.get("preprocess"):
                 preprocess_args = re.split(r"\(|\)", col["preprocess"])
@@ -119,13 +155,27 @@ class FeatureProcessor(object):
                     .alias(name)
                     .cast(self.dtype_dict[name])
                 )
-            if not col_exist:
+            if (fill_na is not None) and (not col_exist):
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
+            if col.get("type") == "sequence" and isinstance(ddf.select(name).dtypes[0], pl.List):
+                # Convert list to "^" seperated string for unified preprocessing of parquet and csv formats
+                ddf = ddf.with_columns(
+                    pl.col(name).cast(pl.List(pl.String)).list.join("^")
+                )
         active_cols = [col["name"] for col in all_cols if col.get("active") != False]
         ddf = ddf.select(active_cols)
         return ddf
 
     def fit(self, train_ddf, min_categr_count=1, num_buckets=10, rebuild_dataset=True, **kwargs):
+        """Fit preprocessors (tokenizers, normalizers, etc.) on the training data.
+
+        Args:
+            train_ddf (pl.LazyFrame): Training data lazy frame.
+            min_categr_count (int): Minimum frequency for categorical tokens.
+            num_buckets (int): Number of buckets for quantile or hash bucketing.
+            rebuild_dataset (bool): Whether to collect data for fitting.
+            **kwargs: Additional keyword arguments.
+        """
         logging.info("Fit feature processor...")
         self.rebuild_dataset = rebuild_dataset
         for col in self.feature_cols:
@@ -196,6 +246,11 @@ class FeatureProcessor(object):
         logging.info("Set feature processor done.")
 
     def fit_meta_col(self, col):
+        """Fit a meta column (e.g. group_id) by registering its tokenizer.
+
+        Args:
+            col (dict): Column specification dict.
+        """
         name = col["name"]
         feature_type = col["type"]
         self.feature_map.features[name] = {"type": feature_type}
@@ -205,6 +260,13 @@ class FeatureProcessor(object):
             self.processor_dict[name + "::tokenizer"] = tokenizer
 
     def fit_numeric_col(self, col, col_series):
+        """Fit a numeric column, optionally registering a normalizer.
+
+        Args:
+            col (dict): Column specification dict.
+            col_series (pd.Series or None): Column data series, or None if
+                ``rebuild_dataset`` is False.
+        """
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -221,6 +283,11 @@ class FeatureProcessor(object):
             self.processor_dict[name + "::normalizer"] = normalizer
 
     def fit_embedding_col(self, col):
+        """Fit an embedding column by recording its pretrain dimensions.
+
+        Args:
+            col (dict): Column specification dict.
+        """
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -230,8 +297,18 @@ class FeatureProcessor(object):
             self.feature_map.features[name]["feature_encoder"] = col["feature_encoder"]
         if "embedding_dim" in col:
             self.feature_map.features[name]["embedding_dim"] = col["embedding_dim"]
+        if "pretrain_dim" in col:
+            self.feature_map.features[name]["pretrain_dim"] = col["pretrain_dim"]
 
     def fit_categorical_col(self, col, col_series, min_categr_count=1, num_buckets=10):
+        """Fit a categorical column, building or loading its tokenizer vocab.
+
+        Args:
+            col (dict): Column specification dict.
+            col_series (pd.Series or None): Column data series.
+            min_categr_count (int): Minimum token frequency.
+            num_buckets (int): Number of buckets for quantile/hash processors.
+        """
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -286,6 +363,13 @@ class FeatureProcessor(object):
                 raise NotImplementedError("category_processor={} not supported.".format(category_processor))
 
     def fit_sequence_col(self, col, col_series, min_categr_count=1):
+        """Fit a sequence column, building its tokenizer with splitting and padding.
+
+        Args:
+            col (dict): Column specification dict.
+            col_series (pd.Series or None): Column data series.
+            min_categr_count (int): Minimum token frequency.
+        """
         name = col["name"]
         feature_type = col["type"]
         feature_source = col.get("source", "")
@@ -328,6 +412,14 @@ class FeatureProcessor(object):
                                                 "vocab_size": tokenizer.vocab_size()})
 
     def transform(self, ddf):
+        """Transform raw feature values into numeric IDs or normalized values.
+
+        Args:
+            ddf (pl.DataFrame or pl.LazyFrame): Input data frame.
+
+        Returns:
+            pl.DataFrame or pl.LazyFrame: Transformed data frame.
+        """
         logging.info("Transform feature columns to IDs...")
         for feature, feature_spec in self.feature_map.features.items():
             if feature in ddf.columns:
@@ -357,6 +449,10 @@ class FeatureProcessor(object):
                 elif feature_type == "sequence":
                     ddf[feature] = (self.processor_dict.get(feature + "::tokenizer")
                                     .encode_sequence(col_series))
+                elif feature_type == "embedding":
+                    continue
+                else:
+                    raise NotImplementedError
         return ddf
 
     def load_pickle(self, pickle_file=None):
@@ -371,10 +467,20 @@ class FeatureProcessor(object):
         raise IOError("pickle_file={} not valid.".format(pickle_file))
 
     def save_pickle(self, pickle_file):
+        """Serialize the feature processor to a pickle file.
+
+        Args:
+            pickle_file (str): Destination pickle path.
+        """
         logging.info("Pickle feature_encode: " + pickle_file)
         pickle.dump(self, open(pickle_file, "wb"))
 
     def save_vocab(self, vocab_file):
+        """Save categorical and sequence vocabularies to a JSON file.
+
+        Args:
+            vocab_file (str): Destination JSON path.
+        """
         logging.info("Save feature_vocab to json: " + vocab_file)
         vocab = dict()
         for feature, spec in self.feature_map.features.items():
@@ -385,4 +491,12 @@ class FeatureProcessor(object):
             fd.write(json.dumps(vocab, indent=4))
 
     def copy_from(self, src_col):
+        """Return a Polars expression that copies another column verbatim.
+
+        Args:
+            src_col (str): Name of the source column to copy.
+
+        Returns:
+            pl.Expr: Polars column expression.
+        """
         return pl.col(src_col)

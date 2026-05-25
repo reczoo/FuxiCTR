@@ -23,17 +23,28 @@ from fuxictr.pytorch.layers import FeatureEmbedding, LogisticRegression
 
 
 class FmFM(BaseModel):
-    """ The FmFM model
-        Reference:
+    """Field-matrixed Factorization Machine (FmFM) model.
+
+    Reference:
         - FM2: Field-matrixed Factorization Machines for Recommender Systems, WWW'2021.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FmFM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        regularizer (str or None): Regularizer for embeddings and network parameters. Default: ``None``.
+        field_interaction_type (str): Interaction type, one of ["vectorized", "matrixed"]. Default: ``"matrixed"``.
+        **kwargs: Additional keyword arguments.
     """
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FmFM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 regularizer=None, 
+    def __init__(self,
+                 feature_map,
+                 model_id="FmFM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 regularizer=None,
                  field_interaction_type="matrixed",
                  **kwargs):
         super(FmFM, self).__init__(feature_map, 
@@ -60,8 +71,13 @@ class FmFM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of FmFM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)

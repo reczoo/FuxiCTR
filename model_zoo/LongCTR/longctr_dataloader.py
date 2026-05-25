@@ -24,17 +24,43 @@ import torch
 
 
 class ParquetDataset(Dataset):
+    """Dataset for loading Parquet files with mixed scalar and sequence columns.
+
+    Args:
+        data_path (str): Path to the Parquet file.
+    """
     def __init__(self, data_path):
         self.column_index = dict()
         self.darray = self.load_data(data_path)
-        
+
     def __getitem__(self, index):
+        """Get a single sample by index.
+
+        Args:
+            index: Sample index.
+
+        Returns:
+            ndarray: The sample at the given index.
+        """
         return self.darray[index, :]
-    
+
     def __len__(self):
+        """Get the number of samples.
+
+        Returns:
+            int: Dataset size.
+        """
         return self.darray.shape[0]
 
     def load_data(self, data_path):
+        """Load data from a Parquet file.
+
+        Args:
+            data_path: Path to the Parquet file.
+
+        Returns:
+            ndarray: Stacked data array.
+        """
         df = pd.read_parquet(data_path)
         data_arrays = []
         idx = 0
@@ -53,6 +79,20 @@ class ParquetDataset(Dataset):
 
 
 class LongCTRDataLoader(DataLoader):
+    """DataLoader for long sequence CTR data.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance.
+        data_path (str): Path to the data Parquet file.
+        user_info (str): Path to the user info Parquet file.
+        item_info (str): Path to the item info Parquet file.
+        batch_size (int): Batch size. Default: ``32``.
+        shuffle (bool): Whether to shuffle the data. Default: ``False``.
+        num_workers (int): Number of worker processes. Default: ``1``.
+        max_len (int): Maximum sequence length. Default: ``50``.
+        padding (str): Padding strategy, ``"pre"`` or ``"post"``. Default: ``"pre"``.
+        **kwargs: Additional keyword arguments.
+    """
     def __init__(self, feature_map, data_path, user_info, item_info, batch_size=32, shuffle=False,
                  num_workers=1, max_len=50, padding="pre", **kwargs):
         if not data_path.endswith(".parquet"):
@@ -72,10 +112,25 @@ class LongCTRDataLoader(DataLoader):
         self.num_batches = int(np.ceil(self.num_samples / self.batch_size))
 
     def __len__(self):
+        """Get the number of batches.
+
+        Returns:
+            int: Number of batches.
+        """
         return self.num_batches
 
 
 class BatchCollator(object):
+    """Collator for batching long sequence CTR data.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance.
+        max_len (int): Maximum sequence length.
+        column_index (dict): Mapping from column names to indices.
+        user_info (str): Path to the user info Parquet file.
+        item_info (str): Path to the item info Parquet file.
+        padding (str): Padding strategy. Default: ``"pre"``.
+    """
     def __init__(self, feature_map, max_len, column_index, user_info, item_info, padding="pre"):
         self.feature_map = feature_map
         self.user_info = pd.read_parquet(user_info)["full_item_seq"].values
@@ -85,6 +140,14 @@ class BatchCollator(object):
         self.padding = padding
 
     def __call__(self, batch):
+        """Collate a batch of samples.
+
+        Args:
+            batch: List of samples.
+
+        Returns:
+            tuple: ``(batch_dict, item_dict, mask)``.
+        """
         batch_tensor = default_collate(batch)
         all_cols = set(list(self.feature_map.features.keys()) + self.feature_map.labels)
         batch_dict = dict()
@@ -104,8 +167,17 @@ class BatchCollator(object):
             if col in all_cols:
                 item_dict[col] = torch.from_numpy(np.array(item_info[col].to_list()))
         return batch_dict, item_dict, mask
-    
+
     def padding_seqs(self, user_seqs, seq_lens):
+        """Pad user sequences to the same length.
+
+        Args:
+            user_seqs: List of user sequences.
+            seq_lens: List of sequence lengths.
+
+        Returns:
+            ndarray: Padded sequences.
+        """
         batch_seqs = []
         for seq, l in zip(user_seqs, seq_lens):
             batch_seqs.append(seq[:l])

@@ -23,22 +23,37 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class CCPM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="CCPM", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+    """Convolutional Click Prediction Model (CCPM).
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"CCPM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        channels (list): List of output channels for each conv layer. Default: ``[4, 4, 2]``.
+        kernel_heights (list): List of kernel heights for each conv layer. Default: ``[6, 5, 3]``.
+        activation (str): Activation function name. Default: ``"Tanh"``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="CCPM",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  channels=[4, 4, 2],
                  kernel_heights=[6, 5, 3],
                  activation="Tanh",
-                 embedding_regularizer=None, 
-                 net_regularizer=None, 
+                 embedding_regularizer=None,
+                 net_regularizer=None,
                  **kwargs):
-        super(CCPM, self).__init__(feature_map, 
-                                   model_id=model_id, 
-                                   gpu=gpu, 
-                                   embedding_regularizer=embedding_regularizer, 
+        super(CCPM, self).__init__(feature_map,
+                                   model_id=model_id,
+                                   gpu=gpu,
+                                   embedding_regularizer=embedding_regularizer,
                                    net_regularizer=net_regularizer,
                                    **kwargs) 
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -53,8 +68,13 @@ class CCPM(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of CCPM.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
@@ -68,8 +88,15 @@ class CCPM(BaseModel):
 
 
 class CCPM_ConvLayer(nn.Module):
-    """
+    """Convolutional layer for CCPM.
+
     Input X: tensor of shape (batch_size, 1, num_fields, embedding_dim)
+
+    Args:
+        num_fields (int): Number of input fields.
+        channels (list): List of output channels for each conv layer. Default: ``[3]``.
+        kernel_heights (list): List of kernel heights for each conv layer. Default: ``[3]``.
+        activation (str): Activation function name. Default: ``"Tanh"``.
     """
     def __init__(self, num_fields, channels=[3], kernel_heights=[3], activation="Tanh"):
         super(CCPM_ConvLayer, self).__init__()
@@ -96,6 +123,14 @@ class CCPM_ConvLayer(nn.Module):
         self.conv_layer = nn.Sequential(*module_list)
 
     def forward(self, X):
+        """Forward pass of CCPM_ConvLayer.
+
+        Args:
+            X: Input tensor of shape (batch_size, 1, num_fields, embedding_dim).
+
+        Returns:
+            torch.Tensor: Output after convolutional layers.
+        """
         return self.conv_layer(X)
 
 

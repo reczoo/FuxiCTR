@@ -22,14 +22,42 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class MLP_Block(nn.Module):
-    def __init__(self, 
-                 input_dim, 
-                 hidden_units=[], 
+    """Multi-Layer Perceptron block with configurable hidden layers, activations, dropout, and batch normalization.
+
+    ``MLP_Block`` constructs a feed-forward neural network by stacking ``Linear`` layers
+    with optional batch normalization, activation functions, and dropout.
+
+    Args:
+        input_dim (int): Dimension of the input features.
+        hidden_units (list, optional): List of hidden layer dimensions. Default: ``[]``.
+        hidden_activations (str or list, optional): Activation function(s) for hidden layers.
+            Can be a single string or a list of strings matching the length of ``hidden_units``.
+            Default: ``"ReLU"``.
+        output_dim (int, optional): Dimension of the output layer. If None, no output layer is added.
+            Default: ``None``.
+        output_activation (str, optional): Activation function for the output layer. Default: ``None``.
+        dropout_rates (float or list, optional): Dropout rate(s) after each hidden layer.
+            Can be a single float or a list matching the length of ``hidden_units``. Default: ``0.0``.
+        batch_norm (bool, optional): Whether to apply batch normalization. Default: ``False``.
+        bn_only_once (bool, optional): If True, applies batch normalization only once at the input
+            for inference speedup. Default: ``False``.
+        use_bias (bool, optional): Whether to use bias in linear layers. Default: ``True``.
+
+    Example::
+
+        mlp = MLP_Block(input_dim=128, hidden_units=[64, 32], hidden_activations="ReLU",
+                        dropout_rates=0.2, batch_norm=True)
+        output = mlp(inputs)
+    """
+
+    def __init__(self,
+                 input_dim,
+                 hidden_units=[],
                  hidden_activations="ReLU",
                  output_dim=None,
-                 output_activation=None, 
+                 output_activation=None,
                  dropout_rates=0.0,
-                 batch_norm=False, 
+                 batch_norm=False,
                  bn_only_once=False, # Set True for inference speed up
                  use_bias=True):
         super(MLP_Block, self).__init__()
@@ -55,8 +83,16 @@ class MLP_Block(nn.Module):
         if output_activation is not None:
             dense_layers.append(get_activation(output_activation))
         self.mlp = nn.Sequential(*dense_layers) # * used to unpack list
-    
+
     def forward(self, inputs):
+        """Forward pass through the MLP block.
+
+        Args:
+            inputs (torch.Tensor): Input tensor of shape (batch_size, input_dim).
+
+        Returns:
+            torch.Tensor: Output tensor.
+        """
         return self.mlp(inputs)
 
 

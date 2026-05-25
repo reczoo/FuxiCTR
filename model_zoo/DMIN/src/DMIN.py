@@ -26,8 +26,40 @@ from torch.nn import MultiheadAttention
 
 
 class DMIN(BaseModel):
-    """ Implementation of DMIN model based on the reference code:
+    """Deep Multi-Interest Network (DMIN) model.
+
+    Implementation based on the reference code:
         https://github.com/mengxiaozhibo/DMIN
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DMIN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"Dice"``.
+        aux_hidden_units (list): Hidden units for auxiliary loss network. Default: ``[100, 50]``.
+        aux_activation (str): Activation function for auxiliary network. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        target_field (tuple or list): Target field(s) for DMIN. Default: ``("item_id", "cate_id")``.
+        sequence_field (tuple or list): Sequence field(s) for DMIN. Default: ``("click_history", "cate_history")``.
+        neg_seq_field (tuple or list): Negative sequence field(s) for auxiliary loss. Default: ``("neg_click_history", "neg_cate_history")``.
+        num_heads (int): Number of attention heads. Default: ``4``.
+        enable_sum_pooling (bool): Whether to enable sum pooling. Default: ``False``.
+        attention_hidden_units (list): Hidden units for attention MLP. Default: ``[80, 40]``.
+        attention_activation (str): Activation function for attention. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention. Default: ``0``.
+        use_pos_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        pos_emb_dim (int): Dimension of positional embeddings. Default: ``8``.
+        use_behavior_refiner (bool): Whether to use behavior refiner layer. Default: ``True``.
+        aux_loss_lambda (float): Weight for auxiliary loss. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``True``.
+        bn_only_once (bool): If True, applies BN only once at the input. Default: ``False``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
     def __init__(self,
                  feature_map,
@@ -138,6 +170,15 @@ class DMIN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DMIN.
+
+        Args:
+            inputs: Input batch containing feature tensors.
+
+        Returns:
+            dict: Dictionary with ``y_pred``, ``head_emb``, ``pos_emb``,
+            ``neg_emb``, and ``pad_mask``.
+        """
         X = self.get_inputs(inputs)
         feature_emb_dict = self.embedding_layer(X)
         concat_emb = []
@@ -175,10 +216,14 @@ class DMIN(BaseModel):
         return return_dict
 
     def get_mask(self, x):
-        """ 
+        """Compute padding and attention masks.
+
+        Args:
+            x: Input sequence tensor.
+
         Returns:
-            padding_mask: 0 for masked positions
-            attn_mask: 0 for masked positions
+            tuple: (padding_mask, attn_mask) where padding_mask has 0 for masked positions
+                and attn_mask has 0 for masked positions.
         """
         padding_mask = (x == 0) # 1 for masked positions
         seq_len = padding_mask.size(1)
@@ -195,6 +240,15 @@ class DMIN(BaseModel):
         return padding_mask, attn_mask
 
     def add_loss(self, return_dict, y_true):
+        """Compute total loss including auxiliary loss.
+
+        Args:
+            return_dict: Dictionary returned by forward pass.
+            y_true: Ground truth labels.
+
+        Returns:
+            torch.Tensor: Total loss tensor.
+        """
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.aux_loss_lambda > 0:
             for i in range(len(self.target_field)):
@@ -203,9 +257,9 @@ class DMIN(BaseModel):
                                                        return_dict["pos_emb"][i], \
                                                        return_dict["neg_emb"][i], \
                                                        return_dict["pad_mask"][i]
-                pos_prob = self.aux_net[i](torch.cat([head_emb[:, :-1, :], pos_emb[:, 1:, :]], 
+                pos_prob = self.aux_net[i](torch.cat([head_emb[:, :-1, :], pos_emb[:, 1:, :]],
                                            dim=-1).view(-1, self.model_dim * 2))
-                neg_prob = self.aux_net[i](torch.cat([head_emb[:, :-1, :], neg_emb[:, 1:, :]], 
+                neg_prob = self.aux_net[i](torch.cat([head_emb[:, :-1, :], neg_emb[:, 1:, :]],
                                            dim=-1).view(-1, self.model_dim * 2))
                 aux_prob = torch.cat([pos_prob, neg_prob], dim=0).view(-1, 1)
                 aux_label = torch.cat([torch.ones_like(pos_prob, device=aux_prob.device),
@@ -217,6 +271,15 @@ class DMIN(BaseModel):
         return loss
 
     def get_embedding(self, field, feature_emb_dict):
+        """Get embedding for a field or tuple of fields.
+
+        Args:
+            field: Field name or tuple of field names.
+            feature_emb_dict: Dictionary of feature embeddings.
+
+        Returns:
+            torch.Tensor: Concatenated embedding tensor.
+        """
         if type(field) == tuple:
             emb_list = [feature_emb_dict[f] for f in field]
             return torch.cat(emb_list, dim=-1)
@@ -225,11 +288,22 @@ class DMIN(BaseModel):
 
 
 class BehaviorRefinerLayer(nn.Module):
+    """Behavior Refiner Layer for DMIN.
+
+    Args:
+        model_dim (int): Model dimension. Default: ``64``.
+        ffn_dim (int): Feed-forward network dimension. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``4``.
+        attn_dropout (float): Dropout rate for attention. Default: ``0.0``.
+        net_dropout (float): Dropout rate for the network. Default: ``0.0``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+    """
     def __init__(self, model_dim=64, ffn_dim=64, num_heads=4, attn_dropout=0.0, net_dropout=0.0,
                  layer_norm=True, use_residual=True):
         super(BehaviorRefinerLayer, self).__init__()
         self.attention = MultiheadAttention(model_dim,
-                                            num_heads=num_heads, 
+                                            num_heads=num_heads,
                                             dropout=attn_dropout,
                                             batch_first=True)
         self.ffn = nn.Sequential(nn.Linear(model_dim, ffn_dim),
@@ -240,6 +314,15 @@ class BehaviorRefinerLayer(nn.Module):
         self.layer_norm = nn.LayerNorm(model_dim) if layer_norm else None
 
     def forward(self, x, attn_mask=None):
+        """Forward pass of BehaviorRefinerLayer.
+
+        Args:
+            x: Input tensor.
+            attn_mask: Optional attention mask.
+
+        Returns:
+            torch.Tensor: Refined behavior tensor.
+        """
         attn_mask = 1 - attn_mask.float() # 1 for masked positions in nn.MultiheadAttention
         attn, _ = self.attention(x, x, x, attn_mask=attn_mask)
         s = self.dropout(attn)
@@ -254,6 +337,22 @@ class BehaviorRefinerLayer(nn.Module):
 
 
 class MultiInterestExtractorLayer(nn.Module):
+    """Multi-Interest Extractor Layer for DMIN.
+
+    Args:
+        model_dim (int): Model dimension. Default: ``64``.
+        ffn_dim (int): Feed-forward network dimension. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``4``.
+        attn_dropout (float): Dropout rate for attention. Default: ``0.0``.
+        net_dropout (float): Dropout rate for the network. Default: ``0.0``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``True``.
+        use_residual (bool): Whether to use residual connections. Default: ``True``.
+        attn_hidden_units (list): Hidden units for target attention MLP. Default: ``[80, 40]``.
+        attn_activation (str): Activation function for target attention. Default: ``"ReLU"``.
+        use_pos_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        pos_emb_dim (int): Dimension of positional embeddings. Default: ``8``.
+        max_seq_len (int): Maximum sequence length. Default: ``10``.
+    """
     def __init__(self, model_dim=64, ffn_dim=64, num_heads=4, attn_dropout=0.0, net_dropout=0.0,
                  layer_norm=True, use_residual=True, attn_hidden_units=[80, 40], attn_activation="ReLU",
                  use_pos_emb=True, pos_emb_dim=8, max_seq_len=10):
@@ -285,9 +384,20 @@ class MultiInterestExtractorLayer(nn.Module):
                                                for _ in range(num_heads)])
 
     def forward(self, sequence_emb, target_emb, attn_mask=None, pad_mask=None):
+        """Forward pass of MultiInterestExtractorLayer.
+
+        Args:
+            sequence_emb: Sequence embedding tensor.
+            target_emb: Target embedding tensor.
+            attn_mask: Optional attention mask.
+            pad_mask: Optional padding mask.
+
+        Returns:
+            list: List of interest embedding tensors.
+        """
         # linear projection
         query, key, value = torch.chunk(self.W_qkv(sequence_emb), chunks=3, dim=-1)
-        
+
         # split by heads
         batch_size = query.size(0)
         query = query.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
@@ -316,9 +426,20 @@ class MultiInterestExtractorLayer(nn.Module):
 
 
 class TargetAttention(nn.Module):
-    def __init__(self, 
+    """Target Attention module for DMIN.
+
+    Args:
+        model_dim (int): Model dimension. Default: ``64``.
+        attention_hidden_units (list): Hidden units for attention MLP. Default: ``[80, 40]``.
+        attention_activation (str): Activation function for attention. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention. Default: ``0``.
+        use_pos_emb (bool): Whether to use positional embeddings. Default: ``True``.
+        pos_emb_dim (int): Dimension of positional embeddings. Default: ``8``.
+        max_seq_len (int): Maximum sequence length. Default: ``10``.
+    """
+    def __init__(self,
                  model_dim=64,
-                 attention_hidden_units=[80, 40], 
+                 attention_hidden_units=[80, 40],
                  attention_activation="ReLU",
                  attention_dropout=0,
                  use_pos_emb=True,
@@ -334,22 +455,27 @@ class TargetAttention(nn.Module):
                                   output_dim=1,
                                   hidden_units=attention_hidden_units,
                                   hidden_activations=attention_activation,
-                                  output_activation=None, 
+                                  output_activation=None,
                                   dropout_rates=attention_dropout,
                                   batch_norm=False)
 
     def forward(self, sequence_emb, target_emb, mask=None):
-        """
-        target_item: b x emd
-        history_sequence: b x len x emb
-        mask: mask of history_sequence, 0 for masked positions
+        """Forward pass of TargetAttention.
+
+        Args:
+            sequence_emb: Sequence embedding tensor of shape (B, L, D).
+            target_emb: Target embedding tensor of shape (B, D).
+            mask: Optional padding mask, 0 for masked positions.
+
+        Returns:
+            torch.Tensor: Attention-weighted sum of sequence embeddings.
         """
         seq_len = sequence_emb.size(1)
         target_emb = target_emb.unsqueeze(1).expand(-1, seq_len, -1)
         if self.use_pos_emb:
             target_emb = torch.cat([target_emb, self.pos_emb.expand(target_emb.size(0), -1, -1)], dim=-1)
             target_emb = self.W_proj(target_emb)
-        din_concat = torch.cat([target_emb, sequence_emb, target_emb - sequence_emb, 
+        din_concat = torch.cat([target_emb, sequence_emb, target_emb - sequence_emb,
                                 target_emb * sequence_emb], dim=-1)
         attn_score = self.attn_mlp(din_concat.view(-1, 4 * target_emb.size(-1)))
         attn_score = attn_score.view(-1, seq_len) # b x len

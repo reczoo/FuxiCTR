@@ -22,17 +22,33 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class DNN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DNN", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 hidden_units=[64, 64, 64], 
-                 hidden_activations="ReLU", 
-                 net_dropout=0, 
-                 batch_norm=False, 
-                 embedding_regularizer=None, 
+    """Deep Neural Network (DNN) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DNN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        hidden_units (list): Hidden units for the MLP tower. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation functions for MLP. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DNN",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 hidden_units=[64, 64, 64],
+                 hidden_activations="ReLU",
+                 net_dropout=0,
+                 batch_norm=False,
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(DNN, self).__init__(feature_map, 
@@ -54,8 +70,13 @@ class DNN(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of DNN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)

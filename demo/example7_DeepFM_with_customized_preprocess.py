@@ -18,7 +18,6 @@ import sys
 sys.path.append('../')
 import os
 import logging
-from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json
 from fuxictr.features import FeatureMap
 from fuxictr.pytorch.torch_utils import seed_everything
@@ -26,7 +25,6 @@ from fuxictr.pytorch.dataloaders import RankDataLoader
 from fuxictr.preprocess import FeatureProcessor, build_dataset
 from model_zoo import DeepFM
 import polars as pl
-from datetime import datetime
 
 
 class CustomizedFeatureProcessor(FeatureProcessor):
@@ -42,16 +40,36 @@ class CustomizedFeatureProcessor(FeatureProcessor):
     """
 
     def convert_weekday(self, col_name=None):
-        def _convert_weekday(timestamp):
-            dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
-            return int(dt.strftime('%w'))
-        return pl.col("time_stamp").apply(_convert_weekday)
+        """Extract the weekday (0-6) from the ``time_stamp`` column.
+
+        Args:
+            col_name (str, optional): Unused; kept for API compatibility.
+
+        Returns:
+            pl.Expr: Polars expression that yields the weekday as an integer.
+        """
+        return (
+            pl.col("time_stamp")
+            .str.to_datetime(format="%Y-%m-%d %H:%M:%S")
+            .dt.weekday()
+            % 7
+        ).cast(pl.Int64)
 
     def convert_hour(self, col_name=None):
-        def _convert_hour(timestamp):
-            dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
-            return int(dt.hour)
-        return pl.col("time_stamp").apply(_convert_hour)
+        """Extract the hour-of-day (0-23) from the ``time_stamp`` column.
+
+        Args:
+            col_name (str, optional): Unused; kept for API compatibility.
+
+        Returns:
+            pl.Expr: Polars expression that yields the hour as an integer.
+        """
+        return (
+            pl.col("time_stamp")
+            .str.to_datetime(format="%Y-%m-%d %H:%M:%S")
+            .dt.hour()
+            .cast(pl.Int64)
+        )
 
 if __name__ == '__main__':
     # Load params from config files

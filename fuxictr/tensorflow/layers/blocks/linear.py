@@ -21,8 +21,16 @@ from tensorflow.keras.layers import Layer, Dense
 
 
 class Linear(Layer):
-    def __init__(self, 
-                 output_dim, 
+    """Simple dense linear layer wrapping ``tf.keras.layers.Dense``.
+
+    Args:
+        output_dim (int): Output dimension.
+        use_bias (bool): Whether to use a bias vector. Default: ``True``.
+        initializer (str): Kernel initializer name. Default: ``"glorot_normal"``.
+        regularizer (optional): Optional kernel/bias regularizer. Default: ``None``.
+    """
+    def __init__(self,
+                 output_dim,
                  use_bias=True,
                  initializer="glorot_normal",
                  regularizer=None):
@@ -31,6 +39,14 @@ class Linear(Layer):
                             kernel_initializer=get_initializer(initializer),
                             kernel_regularizer=get_regularizer(regularizer),
                             bias_regularizer=get_regularizer(regularizer))
-    
+
     def call(self, inputs):
+        """Apply the linear transformation.
+
+        Args:
+            inputs (tf.Tensor): Input tensor.
+
+        Returns:
+            tf.Tensor: Transformed tensor.
+        """
         return self.linear(inputs)

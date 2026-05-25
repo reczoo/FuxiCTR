@@ -24,8 +24,30 @@ from fuxictr.pytorch.torch_utils import get_activation
 
 
 class FinalNet(BaseModel):
-    def __init__(self, 
-                 feature_map, 
+    """FinalNet model with factorized interaction blocks.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FinalNet"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        block_type (str): Block type, one of ["1B", "2B"]. Default: ``"2B"``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``True``.
+        use_feature_gating (bool): Whether to use feature gating. Default: ``False``.
+        block1_hidden_units (list): Hidden units for the first block. Default: ``[64, 64, 64]``.
+        block1_hidden_activations (str or None): Activation functions for the first block. Default: ``None``.
+        block1_dropout (float): Dropout rate for the first block. Default: ``0``.
+        block2_hidden_units (list): Hidden units for the second block. Default: ``[64, 64, 64]``.
+        block2_hidden_activations (str or None): Activation functions for the second block. Default: ``None``.
+        block2_dropout (float): Dropout rate for the second block. Default: ``0``.
+        residual_type (str): Residual type, one of ["concat", "sum"]. Default: ``"concat"``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
                  model_id="FinalNet",
                  gpu=-1,
                  learning_rate=1e-3,
@@ -78,6 +100,14 @@ class FinalNet(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
+        """Forward pass of FinalNet.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred``, ``y1``, and ``y2`` keys.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         y_pred, y1, y2 = None, None, None
@@ -92,6 +122,14 @@ class FinalNet(BaseModel):
         return return_dict
 
     def forward1(self, X):
+        """Forward pass of the first block.
+
+        Args:
+            X: Feature embedding tensor.
+
+        Returns:
+            torch.Tensor: Prediction logits from the first block.
+        """
         if self.use_feature_gating:
             X = self.feature_gating(X)
         block1_out = self.block1(X.flatten(start_dim=1))
@@ -99,11 +137,28 @@ class FinalNet(BaseModel):
         return y_pred
 
     def forward2(self, X):
+        """Forward pass of the second block.
+
+        Args:
+            X: Feature embedding tensor.
+
+        Returns:
+            torch.Tensor: Prediction logits from the second block.
+        """
         block2_out = self.block2(X.flatten(start_dim=1))
         y_pred = self.fc2(block2_out)
         return y_pred
 
     def add_loss(self, return_dict, y_true):
+        """Compute total loss including consistency losses for 2B mode.
+
+        Args:
+            return_dict: Dictionary returned by forward pass.
+            y_true: Ground truth labels.
+
+        Returns:
+            torch.Tensor: Total loss tensor.
+        """
         loss = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         if self.block_type == "2B":
             y1 = self.output_activation(return_dict["y1"])
@@ -115,6 +170,12 @@ class FinalNet(BaseModel):
 
 
 class FeatureGating(nn.Module):
+    """Feature gating module for FinalNet.
+
+    Args:
+        num_fields (int): Number of input fields.
+        gate_residual (str): Residual mode, one of ["concat", "sum"]. Default: ``"concat"``.
+    """
     def __init__(self, num_fields, gate_residual="concat"):
         super(FeatureGating, self).__init__()
         self.linear = nn.Linear(num_fields, num_fields)
@@ -122,10 +183,19 @@ class FeatureGating(nn.Module):
         self.gate_residual = gate_residual
 
     def init_weights(self):
+        """Initialize gating weights."""
         nn.init.zeros_(self.linear.weight)
         nn.init.ones_(self.linear.bias)
 
     def forward(self, feature_emb):
+        """Forward pass of FeatureGating.
+
+        Args:
+            feature_emb: Feature embedding tensor of shape (B, F, D).
+
+        Returns:
+            torch.Tensor: Gated feature embeddings.
+        """
         gates = self.linear(feature_emb.transpose(1, 2)).transpose(1, 2)
         if self.gate_residual == "concat":
             out = torch.cat([feature_emb, feature_emb * gates], dim=1) # b x 2f x d
@@ -135,7 +205,17 @@ class FeatureGating(nn.Module):
 
 
 class FinalBlock(nn.Module):
-    def __init__(self, input_dim, hidden_units=[], hidden_activations=None, 
+    """Final block with factorized interaction layers.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        hidden_units (list): List of hidden layer dimensions. Default: ``[]``.
+        hidden_activations (str or None): Activation functions for hidden layers. Default: ``None``.
+        dropout_rates (float or list): Dropout rates for each layer. Default: ``[]``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``True``.
+        residual_type (str): Residual type, one of ["sum", "concat"]. Default: ``"sum"``.
+    """
+    def __init__(self, input_dim, hidden_units=[], hidden_activations=None,
                  dropout_rates=[], batch_norm=True, residual_type="sum"):
         # Factorized Interaction Block: Replacement of MLP block
         super(FinalBlock, self).__init__()
@@ -159,6 +239,14 @@ class FinalBlock(nn.Module):
             self.activation.append(get_activation(hidden_activations[idx]))
 
     def forward(self, X):
+        """Forward pass of FinalBlock.
+
+        Args:
+            X: Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor after final block.
+        """
         X_i = X
         for i in range(len(self.layer)):
             X_i = self.layer[i](X_i)
@@ -172,12 +260,15 @@ class FinalBlock(nn.Module):
 
 
 class FactorizedInteraction(nn.Module):
+    """Factorized interaction layer capturing quadratic feature interactions.
+
+    Args:
+        input_dim (int): Input feature dimension.
+        output_dim (int): Output feature dimension.
+        bias (bool): Whether to use bias. Default: ``True``.
+        residual_type (str): Residual type, one of ["sum", "concat"]. Default: ``"sum"``.
+    """
     def __init__(self, input_dim, output_dim, bias=True, residual_type="sum"):
-        """ FactorizedInteraction layer is an improvement of nn.Linear to capture quadratic 
-            interactions between features.
-            Setting `residual_type="concat"` keeps the same number of parameters as nn.Linear
-            while `residual_type="sum"` doubles the number of parameters.
-        """
         super(FactorizedInteraction, self).__init__()
         self.residual_type = residual_type
         if residual_type == "sum":
@@ -187,6 +278,14 @@ class FactorizedInteraction(nn.Module):
         self.linear = nn.Linear(input_dim, output_dim, bias=bias)
 
     def forward(self, x):
+        """Forward pass of FactorizedInteraction.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor with factorized interactions.
+        """
         h = self.linear(x)
         h2, h1 = torch.chunk(h, chunks=2, dim=-1)
         if self.residual_type == "concat":

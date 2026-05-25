@@ -1,4 +1,4 @@
-Base: 
+DeepFM_test_csv:
     model_root: './checkpoints/'
     num_workers: 3
     verbose: 1
@@ -11,8 +11,6 @@ Base:
     use_features: null
     feature_specs: null
     feature_config: null
-
-DeepFM_test_csv:
     model: DeepFM
     dataset_id: tiny_example7
     loss: 'binary_crossentropy'

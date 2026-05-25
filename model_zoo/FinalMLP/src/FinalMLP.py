@@ -21,8 +21,33 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block
 
 
 class FinalMLP(BaseModel):
-    def __init__(self, 
-                 feature_map, 
+    """FinalMLP model with feature selection and interaction aggregation.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FinalMLP"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        mlp1_hidden_units (list): Hidden units for the first MLP tower. Default: ``[64, 64, 64]``.
+        mlp1_hidden_activations (str): Activation functions for the first MLP. Default: ``"ReLU"``.
+        mlp1_dropout (float): Dropout rate for the first MLP. Default: ``0``.
+        mlp1_batch_norm (bool): Whether to use batch normalization in the first MLP. Default: ``False``.
+        mlp2_hidden_units (list): Hidden units for the second MLP tower. Default: ``[64, 64, 64]``.
+        mlp2_hidden_activations (str): Activation functions for the second MLP. Default: ``"ReLU"``.
+        mlp2_dropout (float): Dropout rate for the second MLP. Default: ``0``.
+        mlp2_batch_norm (bool): Whether to use batch normalization in the second MLP. Default: ``False``.
+        use_fs (bool): Whether to use feature selection. Default: ``True``.
+        fs_hidden_units (list): Hidden units for feature selection gates. Default: ``[64]``.
+        fs1_context (list): Context features for the first feature selection gate. Default: ``[]``.
+        fs2_context (list): Context features for the second feature selection gate. Default: ``[]``.
+        num_heads (int): Number of attention heads for interaction aggregation. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
                  model_id="FinalMLP",
                  gpu=-1,
                  learning_rate=1e-3,
@@ -82,8 +107,13 @@ class FinalMLP(BaseModel):
         self.model_to_device()
             
     def forward(self, inputs):
-        """
-        Inputs: [X,y]
+        """Forward pass of FinalMLP.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         flat_emb = self.embedding_layer(X).flatten(start_dim=1)
@@ -98,7 +128,17 @@ class FinalMLP(BaseModel):
 
 
 class FeatureSelection(nn.Module):
-    def __init__(self, feature_map, feature_dim, embedding_dim, fs_hidden_units=[], 
+    """Feature selection module for FinalMLP.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        feature_dim (int): Total feature dimension.
+        embedding_dim (int): Dimension of feature embeddings.
+        fs_hidden_units (list): Hidden units for feature selection gates. Default: ``[]``.
+        fs1_context (list): Context features for the first gate. Default: ``[]``.
+        fs2_context (list): Context features for the second gate. Default: ``[]``.
+    """
+    def __init__(self, feature_map, feature_dim, embedding_dim, fs_hidden_units=[],
                  fs1_context=[], fs2_context=[]):
         super(FeatureSelection, self).__init__()
         self.fs1_context = fs1_context
@@ -127,6 +167,15 @@ class FeatureSelection(nn.Module):
                                   batch_norm=False)
 
     def forward(self, X, flat_emb):
+        """Forward pass of FeatureSelection.
+
+        Args:
+            X: Input feature dict.
+            flat_emb: Flattened embedding tensor.
+
+        Returns:
+            tuple: Two feature-selected tensors.
+        """
         if len(self.fs1_context) == 0:
             fs1_input = self.fs1_ctx_bias.repeat(flat_emb.size(0), 1)
         else:
@@ -143,6 +192,14 @@ class FeatureSelection(nn.Module):
 
 
 class InteractionAggregation(nn.Module):
+    """Interaction aggregation module for fusing two MLP outputs.
+
+    Args:
+        x_dim (int): Dimension of the first input.
+        y_dim (int): Dimension of the second input.
+        output_dim (int): Output dimension. Default: ``1``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+    """
     def __init__(self, x_dim, y_dim, output_dim=1, num_heads=1):
         super(InteractionAggregation, self).__init__()
         assert x_dim % num_heads == 0 and y_dim % num_heads == 0, \
@@ -153,15 +210,24 @@ class InteractionAggregation(nn.Module):
         self.head_y_dim = y_dim // num_heads
         self.w_x = nn.Linear(x_dim, output_dim)
         self.w_y = nn.Linear(y_dim, output_dim)
-        self.w_xy = nn.Parameter(torch.Tensor(num_heads * self.head_x_dim * self.head_y_dim, 
+        self.w_xy = nn.Parameter(torch.Tensor(num_heads * self.head_x_dim * self.head_y_dim,
                                               output_dim))
         nn.init.xavier_normal_(self.w_xy)
 
     def forward(self, x, y):
+        """Forward pass of InteractionAggregation.
+
+        Args:
+            x: First input tensor.
+            y: Second input tensor.
+
+        Returns:
+            torch.Tensor: Aggregated output tensor.
+        """
         output = self.w_x(x) + self.w_y(y)
         head_x = x.view(-1, self.num_heads, self.head_x_dim)
         head_y = y.view(-1, self.num_heads, self.head_y_dim)
-        xy = torch.matmul(torch.matmul(head_x.unsqueeze(2), 
+        xy = torch.matmul(torch.matmul(head_x.unsqueeze(2),
                                        self.w_xy.view(self.num_heads, self.head_x_dim, -1)) \
                                .view(-1, self.num_heads, self.output_dim, self.head_y_dim),
                           head_y.unsqueeze(-1)).squeeze(-1)

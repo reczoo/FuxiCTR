@@ -24,23 +24,45 @@ from fuxictr.utils import not_in_whitelist
 
 
 class DIN(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="DIN", 
-                 gpu=-1, 
+    """Deep Interest Network (DIN) model.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"DIN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        attention_hidden_units (list): Hidden units of the attention MLP. Default: ``[64]``.
+        attention_hidden_activations (str): Activation for attention MLP. Default: ``"Dice"``.
+        attention_output_activation (str or None): Output activation for attention MLP. Default: ``None``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        din_use_softmax (bool): Whether to use softmax in DIN attention. Default: ``False``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="DIN",
+                 gpu=-1,
                  dnn_hidden_units=[512, 128, 64],
                  dnn_activations="ReLU",
                  attention_hidden_units=[64],
                  attention_hidden_activations="Dice",
                  attention_output_activation=None,
                  attention_dropout=0,
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
-                 net_dropout=0, 
-                 batch_norm=False, 
+                 learning_rate=1e-3,
+                 embedding_dim=10,
+                 net_dropout=0,
+                 batch_norm=False,
                  din_use_softmax=False,
                  accumulation_steps=1,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(DIN, self).__init__(feature_map,
@@ -80,6 +102,14 @@ class DIN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DIN.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         batch_dict, item_dict, mask = self.get_inputs(inputs)
         emb_list = []
         if batch_dict: # not empty
@@ -98,6 +128,15 @@ class DIN(BaseModel):
         return return_dict
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -120,11 +159,27 @@ class DIN(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
 
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)

@@ -23,60 +23,113 @@ from tensorflow.keras import optimizers
 
 
 class WideDeep(BaseModel):
-    def __init__(self, 
+    """Wide and Deep learning model (TensorFlow version).
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"WideDeep"``.
+        wide_learning_rate (float): Learning rate for the wide (linear) part. Default: ``1e-3``.
+        deep_learning_rate (float): Learning rate for the deep part. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        hidden_units (list): Hidden units of the deep network. Default: ``[64, 64, 64]``.
+        hidden_activations (str): Activation function for deep network layers. Default: ``"ReLU"``.
+        net_dropout (float): Dropout rate for deep network. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
-                 model_id="WideDeep", 
-                 wide_learning_rate=1e-3, 
-                 deep_learning_rate=1e-3, 
+                 model_id="WideDeep",
+                 wide_learning_rate=1e-3,
+                 deep_learning_rate=1e-3,
                  embedding_dim=10,
                  hidden_units=[64, 64, 64],
                  hidden_activations="ReLU",
                  net_dropout=0,
                  batch_norm=False,
-                 embedding_regularizer=None, 
+                 embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
         super(WideDeep, self).__init__(feature_map, model_id=model_id, **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim,
                                                 embedding_regularizer=embedding_regularizer)
-        self.lr_layer = LogisticRegression(feature_map, use_bias=True, 
+        self.lr_layer = LogisticRegression(feature_map, use_bias=True,
                                            regularizer=embedding_regularizer)
         self.emb_out_dim = feature_map.sum_emb_out_dim()
         self.mlp = MLP_Block(input_dim=self.emb_out_dim,
-                             output_dim=1, 
+                             output_dim=1,
                              hidden_units=hidden_units,
                              hidden_activations=hidden_activations,
-                             output_activation=None, 
-                             dropout_rates=net_dropout, 
+                             output_activation=None,
+                             dropout_rates=net_dropout,
                              batch_norm=batch_norm,
                              regularizer=net_regularizer)
         self.compile(kwargs["loss"], wide_learning_rate, deep_learning_rate, kwargs["deep_optimizer"])
 
     def compile(self, loss="bce", wide_lr=1.e-4, deep_lr=1.e-3, deep_optimizer="adam"):
-        super(BaseModel, self).compile(optimizer=[optimizers.Ftrl(learning_rate=wide_lr, l1_regularization_strength=0.1),
-                                                  get_optimizer(deep_optimizer, deep_lr)],
-                                       loss=get_loss(loss))
+        """Compile the model with separate optimizers for wide and deep parts.
+
+        Args:
+            loss: Loss function name.
+            wide_lr: Learning rate for the wide part.
+            deep_lr: Learning rate for the deep part.
+            deep_optimizer: Optimizer name for the deep part.
+        """
+        self.optimizer_wide = optimizers.Ftrl(learning_rate=wide_lr, l1_regularization_strength=0.1)
+        self.optimizer_deep = get_optimizer(deep_optimizer, deep_lr)
+        self.loss_fn = get_loss(loss)
+        super(BaseModel, self).compile(optimizer=self.optimizer_deep,
+                                       loss=self.loss_fn)
 
     def lr_decay(self, factor=0.1, min_lr=1e-6):
-        self.optimizer[1].learning_rate = max(self.optimizer[1].learning_rate * factor, min_lr)
-        return self.optimizer[1].lr.numpy()
+        """Decay the deep optimizer learning rate.
+
+        Args:
+            factor: Decay factor.
+            min_lr: Minimum learning rate.
+
+        Returns:
+            float: Updated learning rate.
+        """
+        self.optimizer_deep.learning_rate = max(self.optimizer_deep.learning_rate * factor, min_lr)
+        return self.optimizer_deep.learning_rate.numpy()
 
     @tf.function
     def train_step(self, batch_data):
+        """Perform a single training step with separate wide/deep gradients.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         with tf.GradientTape(persistent=True) as tape:
-            loss = self.get_total_loss(batch_data)
-            wide_prefix = "logistic"
+            loss = self.compute_loss(batch_data)
+            wide_prefix = "lr_"
             wide_variables = [var for var in self.trainable_variables if wide_prefix in var.name]
-            wide_grads = tape.gradient(loss, wide_variables)
-            wide_grads, _ = tf.clip_by_global_norm(wide_grads, self._max_gradient_norm)
-            self.optimizer[0].apply_gradients(zip(wide_grads, wide_variables))
+            if wide_variables:
+                wide_grads = tape.gradient(loss, wide_variables)
+                wide_grads, _ = tf.clip_by_global_norm(wide_grads, self._max_gradient_norm)
+                self.optimizer_wide.apply_gradients(zip(wide_grads, wide_variables))
             deep_variables = [var for var in self.trainable_variables if wide_prefix not in var.name]
             deep_grads = tape.gradient(loss, deep_variables)
             deep_grads, _ = tf.clip_by_global_norm(deep_grads, self._max_gradient_norm)
-            self.optimizer[1].apply_gradients(zip(deep_grads, deep_variables))
+            self.optimizer_deep.apply_gradients(zip(deep_grads, deep_variables))
         return loss
 
     def call(self, inputs, training=False):
+        """Forward pass of WideDeep.
+
+        Args:
+            inputs: Model inputs.
+            training: Whether in training mode.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         X = self.get_inputs(inputs)
         y_pred = self.lr_layer(X)
         feature_emb = self.embedding_layer(X)

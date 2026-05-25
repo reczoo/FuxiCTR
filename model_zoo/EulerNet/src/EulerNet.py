@@ -20,18 +20,34 @@ from fuxictr.pytorch.models import BaseModel
 from fuxictr.pytorch.layers import FeatureEmbedding
 
 class EulerNet(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="EulerNet", 
+    """EulerNet model using complex-valued feature interactions.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"EulerNet"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        shape (list): List of neuron counts for each interaction layer. Default: ``[3]``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        net_ex_dropout (float): Dropout rate for exponential part. Default: ``0``.
+        net_im_dropout (float): Dropout rate for imaginary part. Default: ``0``.
+        layer_norm (bool): Whether to use layer normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="EulerNet",
                  gpu=-1,
-                 shape= [3],
-                 learning_rate=1e-3, 
-                 embedding_dim=10, 
+                 shape=[3],
+                 learning_rate=1e-3,
+                 embedding_dim=10,
                  net_ex_dropout=0,
                  net_im_dropout=0,
-                 layer_norm=False, 
+                 layer_norm=False,
                  embedding_regularizer=None,
-                 net_regularizer=None, 
+                 net_regularizer=None,
                  **kwargs):
         super(EulerNet, self).__init__(feature_map, 
                                     model_id=model_id, 
@@ -61,6 +77,14 @@ class EulerNet(BaseModel):
 
 
     def forward(self, inputs):
+        """Forward pass of EulerNet.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X)
         r, p =  self.mu * torch.cos(feature_emb), self.mu *  torch.sin(feature_emb)
@@ -74,6 +98,16 @@ class EulerNet(BaseModel):
         return return_dict
 
 class EulerInteractionLayer(nn.Module):
+    """Euler interaction layer for complex-valued feature interactions.
+
+    Args:
+        inshape (int): Input shape dimension.
+        outshape (int): Output shape dimension.
+        embedding_dim (int): Dimension of feature embeddings.
+        apply_norm (bool): Whether to apply layer normalization.
+        net_ex_dropout (float): Dropout rate for exponential part.
+        net_im_dropout (float): Dropout rate for imaginary part.
+    """
     def __init__(self, inshape, outshape, embedding_dim, apply_norm, net_ex_dropout, net_im_dropout):
         super().__init__()
         self.inshape, self.outshape = int(inshape), int(outshape)
@@ -103,6 +137,14 @@ class EulerInteractionLayer(nn.Module):
         self.norm_p = nn.LayerNorm([self.feature_dim])
 
     def forward(self, complex_features):
+        """Forward pass of EulerInteractionLayer.
+
+        Args:
+            complex_features: Tuple of (real, imaginary) tensors.
+
+        Returns:
+            tuple: Output (real, imaginary) tensors.
+        """
         r, p = complex_features
         lam = r ** 2 + p ** 2 + 1e-8
         theta = torch.atan2(p, r)
@@ -119,7 +161,7 @@ class EulerInteractionLayer(nn.Module):
         r, p = self.im(r), self.im(p)
         r, p = torch.relu(r), torch.relu(p)
         r, p = r.reshape(r.shape[0], -1, self.feature_dim), p.reshape(p.shape[0], -1, self.feature_dim)
-        
+
         o_r, o_p =  r + lam * torch.cos(theta), p + lam * torch.sin(theta)
         o_r, o_p = o_r.reshape(o_r.shape[0], -1, self.feature_dim), o_p.reshape(o_p.shape[0], -1, self.feature_dim)
         if self.apply_norm:

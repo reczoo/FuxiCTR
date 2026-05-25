@@ -24,10 +24,36 @@ from fuxictr.utils import not_in_whitelist
 
 
 class SIM(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="SIM", 
-                 gpu=-1, 
+    """Search-based Interest Model (SIM) with two-stage attention.
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"SIM"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        attention_dim (int): Dimension of the attention space. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        gsu_type (str): Type of general search unit, currently only ``"soft"`` is supported.
+            Default: ``"soft"``.
+        short_seq_len (int): Length of the short sequence for attention. Default: ``50``.
+        topk (int): Number of top-k items to retrieve. Default: ``50``.
+        alpha (float): Weight for the auxiliary GSU loss. Default: ``1``.
+        beta (float): Weight for the main ESU loss. Default: ``1``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="SIM",
+                 gpu=-1,
                  dnn_hidden_units=[512, 128, 64],
                  dnn_activations="ReLU",
                  attention_dropout=0,
@@ -96,6 +122,14 @@ class SIM(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of SIM.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred`` and ``y_aux``.
+        """
         batch_dict, item_dict, mask = self.get_inputs(inputs)
         emb_list = []
         if batch_dict: # not empty
@@ -121,7 +155,7 @@ class SIM(BaseModel):
         y_aux = self.dnn_aux(torch.cat(emb_list, dim=-1))
         topk = min(self.topk, qk.shape[1]) # make sure input seq_len >= topk
         topk_index = qk.topk(topk, dim=1, largest=True, sorted=True)[1]
-        topk_emb = torch.gather(long_seq_emb, 1, 
+        topk_emb = torch.gather(long_seq_emb, 1,
                                 topk_index.unsqueeze(-1).expand(-1, -1, long_seq_emb.shape[-1]))
         topk_mask = torch.gather(mask, 1, topk_index)
 
@@ -134,11 +168,29 @@ class SIM(BaseModel):
         return return_dict
 
     def add_loss(self, return_dict, y_true):
+        """Compute combined GSU and ESU loss.
+
+        Args:
+            return_dict: Dictionary with model outputs.
+            y_true: Ground truth labels.
+
+        Returns:
+            Tensor: Combined loss value.
+        """
         loss_gsu = self.loss_fn(return_dict["y_aux"], y_true, reduction='mean')
         loss_esu = self.loss_fn(return_dict["y_pred"], y_true, reduction='mean')
         return self.alpha * loss_gsu + self.beta * loss_esu
-    
+
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -161,11 +213,27 @@ class SIM(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
 
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)

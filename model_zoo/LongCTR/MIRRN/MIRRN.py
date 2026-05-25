@@ -31,8 +31,33 @@ from fuxictr.utils import not_in_whitelist
 
 
 class MIRRN(BaseModel):
-    """
+    """Multi-Interest Retrieval and Ranking Network (MIRRN) model.
+
     Ref: https://github.com/USTC-StarTeam/MIRRN
+
+    Args:
+        feature_map (FeatureMap): A FeatureMap instance used to store feature specs.
+        model_id (str): Model identifier string. Default: ``"MIRRN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        dnn_hidden_units (list): Hidden units of the DNN. Default: ``[512, 128, 64]``.
+        dnn_activations (str): Activation function for DNN layers. Default: ``"ReLU"``.
+        attention_dim (int): Dimension of the attention space. Default: ``64``.
+        num_heads (int): Number of attention heads. Default: ``1``.
+        use_scale (bool): Whether to scale attention scores. Default: ``True``.
+        attention_dropout (float): Dropout rate for attention layers. Default: ``0``.
+        reuse_hash (bool): Whether to reuse random hash rotations. Default: ``True``.
+        hash_bits (int): Number of bits for LSH hashing. Default: ``32``.
+        topk (int): Number of top-k items to retrieve. Default: ``50``.
+        max_len (int): Maximum sequence length. Default: ``1000``.
+        learning_rate (float): Learning rate for training. Default: ``1e-3``.
+        embedding_dim (int): Embedding dimension of features. Default: ``10``.
+        net_dropout (float): Dropout rate for DNN. Default: ``0``.
+        batch_norm (bool): Whether to apply batch normalization. Default: ``False``.
+        short_seq_len (int): Length of the short sequence for attention. Default: ``50``.
+        accumulation_steps (int): Gradient accumulation steps. Default: ``1``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network weights. Default: ``None``.
+        **kwargs: Additional keyword arguments.
     """
     def __init__(self,
                  feature_map,
@@ -104,6 +129,14 @@ class MIRRN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of MIRRN.
+
+        Args:
+            inputs: Model inputs.
+
+        Returns:
+            dict: Dictionary containing ``y_pred``.
+        """
         batch_dict, item_dict, mask = self.get_inputs(inputs)
         emb_list = []
         if batch_dict: # not empty
@@ -166,14 +199,36 @@ class MIRRN(BaseModel):
         y_pred = self.dnn(feature_emb)
         return_dict = {"y_pred": y_pred}
         return return_dict
-    
+
     def masked_mean(self, tensor, mask, dim=1):
+        """Compute masked mean along a dimension.
+
+        Args:
+            tensor: Input tensor.
+            mask: Mask tensor.
+            dim: Dimension to reduce.
+
+        Returns:
+            Tensor: Masked mean.
+        """
         mask = mask.unsqueeze(-1)
         masked_sum = (tensor * mask).sum(dim)
         masked_count = mask.sum(dim)
         return masked_sum / (masked_count + 1e-9)
 
     def topk_retrieval(self, random_rotations, target_item, history_sequence, mask, topk=5):
+        """Retrieve top-k similar items using LSH hashing.
+
+        Args:
+            random_rotations: Random rotation parameters for LSH.
+            target_item: Target item embedding.
+            history_sequence: History sequence embeddings.
+            mask: Sequence padding mask.
+            topk: Number of top items to retrieve.
+
+        Returns:
+            tuple: ``(topk_emb, topk_mask, topk_index)``.
+        """
         if not self.reuse_hash:
             random_rotations = torch.randn(target_item.size(1), self.hash_bits, device=target_item.device)
         target_hash = self.lsh_hash(target_item.unsqueeze(1), random_rotations)
@@ -189,16 +244,32 @@ class MIRRN(BaseModel):
         return topk_emb, topk_mask, topk_index
 
     def lsh_hash(self, vecs, random_rotations):
-        """ See the tensorflow-lsh-functions for reference:
-            https://github.com/brc7/tensorflow-lsh-functions/blob/main/lsh_functions.py
+        """Compute LSH hash codes for input vectors.
 
-            Input: vecs, with hape B x seq_len x d
+        See the tensorflow-lsh-functions for reference:
+        https://github.com/brc7/tensorflow-lsh-functions/blob/main/lsh_functions.py
+
+        Args:
+            vecs: Input vectors of shape ``(B, seq_len, d)``.
+            random_rotations: Random rotation matrices.
+
+        Returns:
+            Tensor: Hash codes.
         """
         rotated_vecs = torch.matmul(vecs, random_rotations)  # B x seq_len x num_hashes
         hash_code = torch.relu(torch.sign(rotated_vecs))
         return hash_code
 
     def get_inputs(self, inputs, feature_source=None):
+        """Extract input tensors from the data batch.
+
+        Args:
+            inputs: Raw input batch.
+            feature_source: Optional feature source filter.
+
+        Returns:
+            tuple: ``(X_dict, item_dict, mask)`` tensors moved to the model device.
+        """
         batch_dict, item_dict, mask = inputs
         X_dict = dict()
         for feature, value in batch_dict.items():
@@ -221,11 +292,27 @@ class MIRRN(BaseModel):
         batch_dict = inputs[0]
         y = batch_dict[labels[0]].to(self.device)
         return y.float().view(-1, 1)
-                
+
     def get_group_id(self, inputs):
+        """Get group IDs from the input batch.
+
+        Args:
+            inputs: Input batch.
+
+        Returns:
+            Tensor: Group ID tensor.
+        """
         return inputs[0][self.feature_map.group_id]
 
     def train_step(self, batch_data):
+        """Perform a single training step.
+
+        Args:
+            batch_data: A batch of training data.
+
+        Returns:
+            Tensor: The computed loss value.
+        """
         return_dict = self.forward(batch_data)
         y_true = self.get_labels(batch_data)
         loss = self.compute_loss(return_dict, y_true)
@@ -239,10 +326,18 @@ class MIRRN(BaseModel):
 
 
 class FilterLayer2(nn.Module):
+    """Filter layer using FFT-based frequency domain filtering.
+
+    Args:
+        max_length (int): Maximum sequence length.
+        hidden_size (int): Hidden dimension.
+        hidden_dropout_prob (float): Dropout probability.
+        n_block (int): Number of frequency blocks.
+    """
     def __init__(self, max_length, hidden_size, hidden_dropout_prob, n_block):
         super(FilterLayer2, self).__init__()
         self.complex_weight = nn.Parameter(
-            torch.randn(n_block, hidden_size // n_block, 
+            torch.randn(n_block, hidden_size // n_block,
                         hidden_size // n_block, 2, dtype=torch.float32) * 0.02
         )
         self.out_dropout = nn.Dropout(hidden_dropout_prob)
@@ -250,6 +345,14 @@ class FilterLayer2(nn.Module):
         self.n = n_block
 
     def forward(self, input_tensor):
+        """Apply FFT-based filtering.
+
+        Args:
+            input_tensor: Input tensor of shape ``(batch, seq_len, hidden)``.
+
+        Returns:
+            Tensor: Filtered tensor.
+        """
         # [batch, seq_len, hidden]
         batch, seq_len, hidden = input_tensor.shape
         A = torch.fft.rfft(input_tensor, dim=1, norm='ortho')
@@ -264,15 +367,27 @@ class FilterLayer2(nn.Module):
 
 
 class LayerNorm(nn.Module):
+    """Layer normalization module in the TF style.
+
+    Args:
+        hidden_size (int): Hidden dimension.
+        eps (float): Epsilon for numerical stability. Default: ``1e-12``.
+    """
     def __init__(self, hidden_size, eps=1e-12):
-        """ Construct a layernorm module in the TF style (epsilon inside the square root).
-        """
         super(LayerNorm, self).__init__()
         self.weight = nn.Parameter(torch.ones(hidden_size))
         self.bias = nn.Parameter(torch.zeros(hidden_size))
         self.variance_epsilon = eps
 
     def forward(self, x):
+        """Apply layer normalization.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            Tensor: Normalized tensor.
+        """
         u = x.mean(-1, keepdim=True)
         s = (x - u).pow(2).mean(-1, keepdim=True)
         x = (x - u) / torch.sqrt(s + self.variance_epsilon)

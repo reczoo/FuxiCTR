@@ -22,13 +22,24 @@ from fuxictr.pytorch.layers import FeatureEmbedding, LogisticRegression
 
 
 class FFMv2(BaseModel):
-    def __init__(self, 
-                 feature_map, 
-                 model_id="FFMv2", 
-                 gpu=-1, 
-                 learning_rate=1e-3, 
-                 embedding_dim=2, 
-                 regularizer=None, 
+    """Field-aware Factorization Machine v2 (FFMv2) model.
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"FFMv2"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``2``.
+        regularizer (str or None): Regularizer for embeddings and network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
+                 feature_map,
+                 model_id="FFMv2",
+                 gpu=-1,
+                 learning_rate=1e-3,
+                 embedding_dim=2,
+                 regularizer=None,
                  **kwargs):
         super(FFMv2, self).__init__(feature_map, 
                                     model_id=model_id, 
@@ -47,8 +58,13 @@ class FFMv2(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
-        """
-        Inputs: [X, y]
+        """Forward pass of FFMv2.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
         """
         X = self.get_inputs(inputs)
         lr_out = self.lr_layer(X)
@@ -60,6 +76,14 @@ class FFMv2(BaseModel):
         return return_dict
 
     def ffm_interaction(self, field_wise_emb):
+        """Compute FFMv2 field-aware interactions.
+
+        Args:
+            field_wise_emb: Field-wise embedding tensor.
+
+        Returns:
+            torch.Tensor: Interaction output tensor.
+        """
         batch_size = field_wise_emb.shape[0]
         upper_tensor = torch.masked_select(field_wise_emb, self.triu_mask.unsqueeze(-1))
         lower_tensor = torch.masked_select(field_wise_emb.transpose(1, 2), self.tril_mask.t().unsqueeze(-1))

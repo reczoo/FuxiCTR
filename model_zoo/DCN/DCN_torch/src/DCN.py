@@ -22,7 +22,24 @@ from fuxictr.pytorch.layers import FeatureEmbedding, MLP_Block, CrossNet
 
 
 class DCN(BaseModel):
-    def __init__(self, 
+    """Deep & Cross Network (DCN) model (PyTorch implementation).
+
+    Args:
+        feature_map (FeatureMap): FeatureMap object containing feature specifications.
+        model_id (str): Model identifier string. Default: ``"DCN"``.
+        gpu (int): GPU device index, ``-1`` for CPU. Default: ``-1``.
+        learning_rate (float): Learning rate for optimization. Default: ``1e-3``.
+        embedding_dim (int): Dimension of feature embeddings. Default: ``10``.
+        dnn_hidden_units (list): Hidden units for the DNN tower. Default: ``[]``.
+        dnn_activations (str): Activation functions for DNN. Default: ``"ReLU"``.
+        num_cross_layers (int): Number of cross layers. Default: ``3``.
+        net_dropout (float): Dropout rate for the network. Default: ``0``.
+        batch_norm (bool): Whether to use batch normalization. Default: ``False``.
+        embedding_regularizer (str or None): Regularizer for embeddings. Default: ``None``.
+        net_regularizer (str or None): Regularizer for network parameters. Default: ``None``.
+        **kwargs: Additional keyword arguments.
+    """
+    def __init__(self,
                  feature_map,
                  model_id="DCN",
                  gpu=-1,
@@ -36,10 +53,10 @@ class DCN(BaseModel):
                  embedding_regularizer=None,
                  net_regularizer=None,
                  **kwargs):
-        super(DCN, self).__init__(feature_map, 
-                                  model_id=model_id, 
-                                  gpu=gpu, 
-                                  embedding_regularizer=embedding_regularizer, 
+        super(DCN, self).__init__(feature_map,
+                                  model_id=model_id,
+                                  gpu=gpu,
+                                  embedding_regularizer=embedding_regularizer,
                                   net_regularizer=net_regularizer,
                                   **kwargs)
         self.embedding_layer = FeatureEmbedding(feature_map, embedding_dim)
@@ -48,7 +65,7 @@ class DCN(BaseModel):
                              output_dim=None, # output hidden layer
                              hidden_units=dnn_hidden_units,
                              hidden_activations=dnn_activations,
-                             output_activation=None, 
+                             output_activation=None,
                              dropout_rates=net_dropout,
                              batch_norm=batch_norm) \
                    if dnn_hidden_units else None # in case of only crossing net used
@@ -62,6 +79,14 @@ class DCN(BaseModel):
         self.model_to_device()
 
     def forward(self, inputs):
+        """Forward pass of DCN.
+
+        Args:
+            inputs: Input data containing features.
+
+        Returns:
+            dict: Dictionary with ``y_pred`` key containing the prediction tensor.
+        """
         X = self.get_inputs(inputs)
         feature_emb = self.embedding_layer(X, flatten_emb=True)
         cross_out = self.crossnet(feature_emb)

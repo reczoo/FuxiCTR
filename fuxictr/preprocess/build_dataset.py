@@ -24,8 +24,25 @@ import multiprocessing as mp
 import polars as pl
 
 
-def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0, 
+def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0,
                      test_size=0, split_type="sequential"):
+    """Split a training DataFrame into train/validation/test sets.
+
+    Supports sequential (by index) or random splitting.
+
+    Args:
+        train_ddf (pd.DataFrame): Full training data.
+        valid_ddf (pd.DataFrame, optional): Pre-existing validation data.
+        test_ddf (pd.DataFrame, optional): Pre-existing test data.
+        valid_size (int or float): Validation set size. If ``< 1``, treated as
+            a fraction. Default: ``0``.
+        test_size (int or float): Test set size. If ``< 1``, treated as a
+            fraction. Default: ``0``.
+        split_type (str): ``"sequential"`` or ``"random"``. Default: ``"sequential"``.
+
+    Returns:
+        tuple: ``(train_ddf, valid_ddf, test_ddf)``.
+    """
     num_samples = len(train_ddf)
     train_size = num_samples
     instance_IDs = np.arange(num_samples)
@@ -49,6 +66,13 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
 
 
 def transform_block(feature_encoder, df_block, filename):
+    """Transform a single data block and save to parquet.
+
+    Args:
+        feature_encoder (FeatureProcessor): Fitted feature processor.
+        df_block (pd.DataFrame): Data block to transform.
+        filename (str): Output filename relative to ``data_dir``.
+    """
     df_block = feature_encoder.transform(df_block)
     data_path = os.path.join(feature_encoder.data_dir, filename)
     logging.info("Saving data to parquet: " + data_path)
@@ -57,6 +81,15 @@ def transform_block(feature_encoder, df_block, filename):
 
 
 def transform(feature_encoder, ddf, filename, block_size=0):
+    """Transform data and optionally write in parallel blocks.
+
+    Args:
+        feature_encoder (FeatureProcessor): Fitted feature processor.
+        ddf (polars.LazyFrame): Input LazyFrame.
+        filename (str): Output file or directory prefix.
+        block_size (int): Rows per block for parallel writing. ``0`` disables
+            blocking. Default: ``0``.
+    """
     ddf = ddf.collect().to_pandas()
     if block_size > 0:
         pool = mp.Pool(mp.cpu_count() // 2)
