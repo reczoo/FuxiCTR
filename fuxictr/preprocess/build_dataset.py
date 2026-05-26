@@ -31,9 +31,9 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     Supports sequential (by index) or random splitting.
 
     Args:
-        train_ddf (pd.DataFrame): Full training data.
-        valid_ddf (pd.DataFrame, optional): Pre-existing validation data.
-        test_ddf (pd.DataFrame, optional): Pre-existing test data.
+        train_ddf (pl.DataFrame or pl.LazyFrame): Full training data.
+        valid_ddf (pl.DataFrame or pl.LazyFrame, optional): Pre-existing validation data.
+        test_ddf (pl.DataFrame or pl.LazyFrame, optional): Pre-existing test data.
         valid_size (int or float): Validation set size. If ``< 1``, treated as
             a fraction. Default: ``0``.
         test_size (int or float): Test set size. If ``< 1``, treated as a
@@ -43,7 +43,10 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     Returns:
         tuple: ``(train_ddf, valid_ddf, test_ddf)``.
     """
-    num_samples = len(train_ddf)
+    if isinstance(train_ddf, pl.LazyFrame):
+        train_ddf = train_ddf.collect()
+
+    num_samples = train_ddf.height
     train_size = num_samples
     instance_IDs = np.arange(num_samples)
     if split_type == "random":
@@ -52,16 +55,16 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
         if test_size < 1:
             test_size = int(num_samples * test_size)
         train_size = train_size - test_size
-        test_ddf = train_ddf.loc[instance_IDs[train_size:], :].reset_index()
+        test_ddf = train_ddf.select(pl.all().gather(instance_IDs[train_size:]))
         instance_IDs = instance_IDs[0:train_size]
     if valid_size > 0:
         if valid_size < 1:
             valid_size = int(num_samples * valid_size)
         train_size = train_size - valid_size
-        valid_ddf = train_ddf.loc[instance_IDs[train_size:], :].reset_index()
+        valid_ddf = train_ddf.select(pl.all().gather(instance_IDs[train_size:]))
         instance_IDs = instance_IDs[0:train_size]
     if valid_size > 0 or test_size > 0:
-        train_ddf = train_ddf.loc[instance_IDs, :].reset_index()
+        train_ddf = train_ddf.select(pl.all().gather(instance_IDs))
     return train_ddf, valid_ddf, test_ddf
 
 
@@ -70,14 +73,14 @@ def transform_block(feature_encoder, df_block, filename):
 
     Args:
         feature_encoder (FeatureProcessor): Fitted feature processor.
-        df_block (pd.DataFrame): Data block to transform.
+        df_block (pl.DataFrame): Data block to transform.
         filename (str): Output filename relative to ``data_dir``.
     """
     df_block = feature_encoder.transform(df_block)
     data_path = os.path.join(feature_encoder.data_dir, filename)
     logging.info("Saving data to parquet: " + data_path)
     os.makedirs(os.path.dirname(data_path), exist_ok=True)
-    df_block.to_parquet(data_path, index=False, engine="pyarrow")
+    df_block.write_parquet(data_path)
 
 
 def transform(feature_encoder, ddf, filename, block_size=0):
@@ -90,18 +93,15 @@ def transform(feature_encoder, ddf, filename, block_size=0):
         block_size (int): Rows per block for parallel writing. ``0`` disables
             blocking. Default: ``0``.
     """
-    ddf = ddf.collect().to_pandas()
+    ddf = ddf.collect()
     if block_size > 0:
         pool = mp.Pool(mp.cpu_count() // 2)
-        block_id = 0
-        for idx in range(0, len(ddf), block_size):
-            df_block = ddf.iloc[idx:(idx + block_size)]
+        for block_id,df_block in enumerate(ddf.iter_slices(block_size)):
             pool.apply_async(
                 transform_block,
                 args=(feature_encoder, df_block,
                       '{}/part_{:05d}.parquet'.format(filename, block_id))
             )
-            block_id += 1
         pool.close()
         pool.join()
     else:
