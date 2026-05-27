@@ -153,30 +153,33 @@ class Tokenizer(object):
         """Encode a meta column series to integer indices.
 
         Args:
-            series (pandas.Series): Raw meta values.
+            series (polars.Series): Raw meta values.
 
         Returns:
-            numpy.ndarray: Encoded integer values.
+            polars.Series: Encoded integer values.
         """
         word_counts = dict(series.value_counts())
         if len(self.vocab) == 0:
             self.build_vocab(word_counts)
         else: # for considering meta data in test data
             self.update_vocab(word_counts.keys())
-        series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
-        return series.values
+
+        series = self.encode_category(series)
+        return series
 
     def encode_category(self, series):
         """Encode a categorical series to integer indices.
 
         Args:
-            series (pandas.Series): Raw categorical values.
+            series (polars.Series): Raw categorical values.
 
         Returns:
-            numpy.ndarray: Encoded integer values.
+            polars.Series: Encoded integer values.
         """
-        series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
-        return series.values
+        vocab = {key: self.vocab[key] for key in set(series.unique()) & set(self.vocab.keys())}
+        # polars complains if vocab keys are of different type than series (ie "__PAD__" and numeric series)
+        series = series.replace_strict(vocab, default=self.vocab["__OOV__"])
+        return series
 
     def encode_sequence(self, series):
         """Encode a sequence series to padded integer arrays.
