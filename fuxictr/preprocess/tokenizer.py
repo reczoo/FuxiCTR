@@ -16,11 +16,11 @@
 # =========================================================================
 
 from collections import Counter
+from typing import Iterable
 import numpy as np
 import h5py
 from tqdm import tqdm
 import polars as pl
-from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 
@@ -69,7 +69,7 @@ class Tokenizer(object):
             chunk_size = 1000000
             tasks = []
             for idx in range(0, len(series), chunk_size):
-                data_chunk = series.iloc[idx: (idx + chunk_size)]
+                data_chunk = series.slice(idx, chunk_size)
                 tasks.append(executor.submit(count_tokens, data_chunk, self._splitter))
             for future in tqdm(as_completed(tasks), total=len(tasks)):
                 chunk_word_counts, chunk_max_len = future.result()
@@ -185,19 +185,23 @@ class Tokenizer(object):
         """Encode a sequence series to padded integer arrays.
 
         Args:
-            series (pandas.Series): Raw sequence strings.
+            series (polars.Series): Raw sequence strings.
 
         Returns:
-            list: List of padded integer sequences.
+            series (polars.Series): padded integer sequences.
         """
-        series = series.map(
-            lambda text: [self.vocab.get(x, self.vocab["__OOV__"]) if x != self._na_value \
-            else self.vocab["__PAD__"] for x in text.split(self._splitter)]
+        
+        series = (
+            series.str.split(self._splitter)
+            .list.eval(
+                pl.when(pl.element()!=self._na_value)
+                .then(pl.element().replace_strict(self.vocab,default=self.vocab["__OOV__"]))
+                .otherwise(self.vocab["__PAD__"]))
         )
         seqs = pad_sequences(series.to_list(), maxlen=self.max_len,
-                             value=self.vocab["__PAD__"],
-                             padding=self.padding, truncating=self.padding)
-        return seqs.tolist()
+                              value=self.vocab["__PAD__"],
+                              padding=self.padding, truncating=self.padding)
+        return seqs
 
     def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
         """Load pretrained embedding keys and optionally expand vocabulary.
@@ -220,11 +224,39 @@ class Tokenizer(object):
                     vocab_size += 1
 
 
+def pad_sequences(sequences: Iterable[Iterable[int]], maxlen=None,
+                  padding='pre', truncating='pre', value=0.):
+    if not isinstance(sequences,pl.Series):
+        sequences = pl.Series(sequences)
+    sequence_lengths = sequences.list.len()
+    if maxlen is None:
+        maxlen = sequence_lengths.max()
+    sequence_lengths = sequence_lengths.clip(upper_bound=maxlen)
+    if truncating == 'pre':
+        sequences = sequences.list.slice(0, maxlen)
+    elif truncating == 'post': 
+        sequences = sequences.list.slice(-maxlen)
+    else:
+        raise ValueError(f'Truncating type "{truncating}" not understood')
+    padder = pl.select(pl.repeat(value,len(sequences)).repeat_by(maxlen - sequence_lengths).alias("sequence")).to_series()
+    # convert to type
+    # test for 0 repeat
+    # sample_shape?
+    if padding == 'pre':
+        sequences = padder.list.concat(sequences)
+    elif padding == 'post':
+        sequences = sequences.list.concat(padder)
+    else: 
+        raise ValueError(f'Padding type "{padding}" not understood')
+    sequences = sequences.list.to_array(maxlen) # can be converted to 2d numpy array by .to_numpy()
+    return sequences
+    
+
 def count_tokens(series, splitter=None):
     """Count token frequencies and max sequence length in a series.
 
     Args:
-        series (pandas.Series): Text data series.
+        series (polars.Series): Text data series.
         splitter (str, optional): Delimiter for splitting sequences.
 
     Returns:
@@ -233,12 +265,12 @@ def count_tokens(series, splitter=None):
     """
     max_len = 0
     if splitter is not None: # for sequence
-        series = series.map(lambda text: text.split(splitter))
-        max_len = series.str.len().max()
-        word_counts = series.explode().value_counts()
+        series = series.str.split(splitter)
+        max_len = series.list.len().max()
+        word_counts = series.list.explode().value_counts()
     else:
         word_counts = series.value_counts()
-    return dict(word_counts), max_len
+    return dict(word_counts.iter_rows()), max_len
 
 
 def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
@@ -251,7 +283,7 @@ def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
         keys (list): Keys to read from the file. Default: ``["key", "value"]``.
 
     Returns:
-        numpy.ndarray or tuple: Loaded embedding data.
+        numpy.ndarray if single embedding else list[numpy.ndarray]: Loaded embedding data.
 
     Raises:
         ValueError: If the file format is not supported.
@@ -265,8 +297,8 @@ def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
         npz = np.load(pretrain_path)
         values = [npz[k] for k in keys]
     elif pretrain_path.endswith("parquet"):
-        df = pd.read_parquet(pretrain_path)
-        values = [df[k].values for k in keys]
+        df = pl.read_parquet(pretrain_path)
+        values = [df.get_column(k).to_numpy() for k in keys]
     else:
         raise ValueError(f"Embedding format not supported: {pretrain_path}")
     return values[0] if len(values) == 1 else values

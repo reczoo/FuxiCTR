@@ -18,7 +18,7 @@
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
-from keras_preprocessing.sequence import pad_sequences
+from  fuxictr.preprocess.tokenizer import pad_sequences
 import pandas as pd
 import torch
 
@@ -183,5 +183,5 @@ class BatchCollator(object):
             batch_seqs.append(seq[:l])
         max_len = min(max(seq_lens), self.max_len)
         batch_seqs = pad_sequences(batch_seqs, maxlen=max_len,
-                                   value=0, padding=self.padding, truncating=self.padding)
+                                   value=0, padding=self.padding, truncating=self.padding).to_numpy()
         return batch_seqs
