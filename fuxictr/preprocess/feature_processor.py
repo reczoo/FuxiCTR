@@ -183,7 +183,7 @@ class FeatureProcessor(object):
             if col["active"]:
                 logging.info("Processing column: {}".format(col))
                 col_series = (
-                    train_ddf.select(name).collect().to_series().to_pandas() if self.rebuild_dataset
+                    train_ddf.select(name).collect().to_series() if self.rebuild_dataset
                     else None
                 )
                 if col["type"] == "meta": # e.g. set group_id in gAUC
@@ -279,7 +279,7 @@ class FeatureProcessor(object):
         if "normalizer" in col:
             normalizer = Normalizer(col["normalizer"])
             if self.rebuild_dataset:
-                normalizer.fit(col_series.dropna().values)
+                normalizer.fit(col_series.drop_na())
             self.processor_dict[name + "::normalizer"] = normalizer
 
     def fit_embedding_col(self, col):
@@ -351,7 +351,7 @@ class FeatureProcessor(object):
                 num_buckets = col.get("num_buckets", num_buckets)
                 qtf = sklearn_preprocess.QuantileTransformer(n_quantiles=num_buckets + 1)
                 if self.rebuild_dataset:
-                    qtf.fit(col_series.values)
+                    qtf.fit(col_series)
                     boundaries = qtf.quantiles_[1:-1]
                     self.processor_dict[name + "::boundaries"] = boundaries
                 self.feature_map.features[name]["vocab_size"] = num_buckets
