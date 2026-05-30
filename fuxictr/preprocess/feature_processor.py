@@ -434,7 +434,7 @@ class FeatureProcessor(object):
                 elif feature_type == "numeric":
                     normalizer = self.processor_dict.get(feature + "::normalizer")
                     if normalizer:
-                        feature_data = normalizer.transform(col_series.values)
+                        feature_data = normalizer.transform(col_series)
                 elif feature_type == "categorical":
                     category_processor = feature_spec.get("category_processor")
                     if category_processor is None:
