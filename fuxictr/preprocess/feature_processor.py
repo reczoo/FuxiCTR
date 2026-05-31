@@ -183,7 +183,7 @@ class FeatureProcessor(object):
             if col["active"]:
                 logging.info("Processing column: {}".format(col))
                 col_series = (
-                    train_ddf.select(name).collect().to_series().to_pandas() if self.rebuild_dataset
+                    train_ddf.select(name).collect().to_series() if self.rebuild_dataset
                     else None
                 )
                 if col["type"] == "meta": # e.g. set group_id in gAUC
@@ -279,7 +279,7 @@ class FeatureProcessor(object):
         if "normalizer" in col:
             normalizer = Normalizer(col["normalizer"])
             if self.rebuild_dataset:
-                normalizer.fit(col_series.dropna().values)
+                normalizer.fit(col_series.drop_na())
             self.processor_dict[name + "::normalizer"] = normalizer
 
     def fit_embedding_col(self, col):
@@ -351,7 +351,7 @@ class FeatureProcessor(object):
                 num_buckets = col.get("num_buckets", num_buckets)
                 qtf = sklearn_preprocess.QuantileTransformer(n_quantiles=num_buckets + 1)
                 if self.rebuild_dataset:
-                    qtf.fit(col_series.values)
+                    qtf.fit(col_series)
                     boundaries = qtf.quantiles_[1:-1]
                     self.processor_dict[name + "::boundaries"] = boundaries
                 self.feature_map.features[name]["vocab_size"] = num_buckets
@@ -424,35 +424,34 @@ class FeatureProcessor(object):
         for feature, feature_spec in self.feature_map.features.items():
             if feature in ddf.columns:
                 feature_type = feature_spec["type"]
-                col_series = ddf[feature]
+                col_series = ddf.get_column(feature)
                 if feature_type == "meta":
                     if feature + "::tokenizer" in self.processor_dict:
                         tokenizer = self.processor_dict[feature + "::tokenizer"]
-                        ddf[feature] = tokenizer.encode_meta(col_series)
+                        feature_data = tokenizer.encode_meta(col_series)
                         # Update vocab in tokenizer
                         self.processor_dict[feature + "::tokenizer"] = tokenizer
                 elif feature_type == "numeric":
                     normalizer = self.processor_dict.get(feature + "::normalizer")
                     if normalizer:
-                        ddf[feature] = normalizer.transform(col_series.values)
+                        feature_data = normalizer.transform(col_series)
                 elif feature_type == "categorical":
                     category_processor = feature_spec.get("category_processor")
                     if category_processor is None:
-                        ddf[feature] = (
-                            self.processor_dict.get(feature + "::tokenizer")
-                            .encode_category(col_series)
-                        )
+                        feature_data = (self.processor_dict.get(feature + "::tokenizer")
+                                        .encode_category(col_series))
                     elif category_processor == "numeric_bucket":
                         raise NotImplementedError
                     elif category_processor == "hash_bucket":
                         raise NotImplementedError
                 elif feature_type == "sequence":
-                    ddf[feature] = (self.processor_dict.get(feature + "::tokenizer")
+                    feature_data = (self.processor_dict.get(feature + "::tokenizer")
                                     .encode_sequence(col_series))
                 elif feature_type == "embedding":
                     continue
                 else:
                     raise NotImplementedError
+                ddf = ddf.with_columns(feature_data.alias(feature))
         return ddf
 
     def load_pickle(self, pickle_file=None):

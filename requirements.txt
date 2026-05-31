@@ -7,4 +7,4 @@ h5py
 tqdm
 pyarrow
 polars>=1.40.1
-keras_preprocessing
+pytest
