@@ -18,7 +18,7 @@ setuptools.setup(
     include_package_data=True,
     python_requires=">=3.10",
     install_requires=["pandas", "PyYAML>=6.0.1", "scikit-learn",
-                      "numpy", "h5py", "tqdm", "pyarrow", "polars"],
+                      "numpy", "h5py", "tqdm", "pyarrow", "polars", "pytest"],
     classifiers=(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
