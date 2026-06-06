@@ -1,0 +1,31 @@
+# 1. 全局默认策略：
+# 让 Git 自动识别文本文件，并强制统一使用 LF 作为换行符
+* text=auto eol=lf
+
+# 2. 针对常见文本/代码文件明确指定 LF（防止 Git 误判）
+*.py text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.toml text eol=lf
+*.csv text eol=lf
+
+# 3. 针对 Windows 特有脚本强制使用 CRLF（如果项目中包含此类文件）
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# 4. 明确标记二进制文件，防止 Git 错误转换导致文件损坏
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.tar.gz binary
+*.pkl binary
+*.bin binary
