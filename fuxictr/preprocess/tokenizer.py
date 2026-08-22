@@ -142,9 +142,11 @@ class Tokenizer(object):
             word_list (iterable): Words to add.
         """
         new_words = 0
-        for word in word_list:
+        next_id = max(vocab.values()) + 1 if (vocab := self.vocab) else 1
+        # sort to guarantee the determinism of index order for new words
+        for word in sorted(word_list):
             if word not in self.vocab:
-                self.vocab[word] = self.vocab.get("__OOV__", 0) + new_words
+                self.vocab[word] = next_id + new_words
                 new_words += 1
         if new_words > 0:
             self.vocab["__OOV__"] = self.vocab_size()
@@ -160,7 +162,7 @@ class Tokenizer(object):
         """
         word_counts = dict(series.value_counts())
         if len(self.vocab) == 0:
-            self.build_vocab(word_counts)
+            self.build_vocab(Counter(word_counts))
         else: # for considering meta data in test data
             self.update_vocab(word_counts.keys())
         series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
