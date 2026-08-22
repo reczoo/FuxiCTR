@@ -108,6 +108,34 @@ def transform(feature_encoder, ddf, filename, block_size=0):
         transform_block(feature_encoder, ddf, filename + ".parquet")
 
 
+def merge_meta_ddf(feature_encoder, train_ddf, valid_ddf=None, test_ddf=None):
+    """Build a lazy frame of meta columns from all splits (train/valid/test).
+
+    Meta features (e.g. ``group_id``) serve as unique keys for grouped metrics
+    such as NDCG/gAUC, so their vocabulary must cover every split to avoid
+    OOV collisions. Other feature types only fit on the train split.
+
+    Args:
+        feature_encoder (FeatureProcessor): Fitted feature processor.
+        train_ddf (pl.LazyFrame): Preprocessed train lazy frame.
+        valid_ddf (pl.LazyFrame or None): Preprocessed valid lazy frame.
+        test_ddf (pl.LazyFrame or None): Preprocessed test lazy frame.
+
+    Returns:
+        pl.LazyFrame or None: Concatenated meta columns, or None if there
+        are no active meta features.
+    """
+    meta_cols = [col["name"] for col in feature_encoder.feature_cols
+                 if col["type"] == "meta" and col.get("active", True) != False]
+    if not meta_cols:
+        return None
+    parts = [ddf.select(meta_cols)
+             for ddf in (train_ddf, valid_ddf, test_ddf) if ddf is not None]
+    if len(parts) == 1:
+        return parts[0]
+    return pl.concat(parts)
+
+
 def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=None,
                   valid_size=0, test_size=0, split_type="sequential", data_block_size=0,
                   rebuild_dataset=True, **kwargs):
@@ -133,25 +161,29 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
             
             # fit and transform train_ddf
             train_ddf = feature_encoder.preprocess(train_ddf)
-            feature_encoder.fit(train_ddf, rebuild_dataset=True, **kwargs)
+            # Ensure valid/test are loaded and preprocessed so meta vocab covers all splits
+            if valid_ddf is None and valid_data is not None:
+                valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
+            if test_ddf is None and test_data is not None:
+                test_ddf = feature_encoder.read_data(test_data, **kwargs)
+            if valid_ddf is not None:
+                valid_ddf = feature_encoder.preprocess(valid_ddf)
+            if test_ddf is not None:
+                test_ddf = feature_encoder.preprocess(test_ddf)
+            meta_ddf = merge_meta_ddf(feature_encoder, train_ddf, valid_ddf, test_ddf)
+            feature_encoder.fit(train_ddf, rebuild_dataset=True, meta_ddf=meta_ddf, **kwargs)
             transform(feature_encoder, train_ddf, 'train', block_size=data_block_size)
             del train_ddf
             gc.collect()
 
             # Transfrom valid_ddf
-            if valid_ddf is None and (valid_data is not None):
-                valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
             if valid_ddf is not None:
-                valid_ddf = feature_encoder.preprocess(valid_ddf)
                 transform(feature_encoder, valid_ddf, 'valid', block_size=data_block_size)
                 del valid_ddf
                 gc.collect()
 
             # Transfrom test_ddf
-            if test_ddf is None and (test_data is not None):
-                test_ddf = feature_encoder.read_data(test_data, **kwargs)
             if test_ddf is not None:
-                test_ddf = feature_encoder.preprocess(test_ddf)
                 transform(feature_encoder, test_ddf, 'test', block_size=data_block_size)
                 del test_ddf
                 gc.collect()

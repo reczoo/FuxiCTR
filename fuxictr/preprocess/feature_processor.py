@@ -166,11 +166,16 @@ class FeatureProcessor(object):
         ddf = ddf.select(active_cols)
         return ddf
 
-    def fit(self, train_ddf, min_categr_count=1, num_buckets=10, rebuild_dataset=True, **kwargs):
+    def fit(self, train_ddf, meta_ddf=None, min_categr_count=1, num_buckets=10,
+            rebuild_dataset=True, **kwargs):
         """Fit preprocessors (tokenizers, normalizers, etc.) on the training data.
 
         Args:
             train_ddf (pl.LazyFrame): Training data lazy frame.
+            meta_ddf (pl.LazyFrame, optional): Lazy frame concatenating the meta
+                columns of train/valid/test. Used to build a global vocabulary
+                for meta features (e.g. group_id) so that IDs stay consistent
+                across all splits. Default: ``None`` (falls back to train_ddf).
             min_categr_count (int): Minimum frequency for categorical tokens.
             num_buckets (int): Number of buckets for quantile or hash bucketing.
             rebuild_dataset (bool): Whether to collect data for fitting.
@@ -187,7 +192,11 @@ class FeatureProcessor(object):
                     else None
                 )
                 if col["type"] == "meta": # e.g. set group_id in gAUC
-                    self.fit_meta_col(col)
+                    meta_series = None
+                    if self.rebuild_dataset:
+                        src = meta_ddf if meta_ddf is not None else train_ddf
+                        meta_series = src.select(name).collect().to_series().to_pandas()
+                    self.fit_meta_col(col, meta_series)
                 elif col["type"] == "numeric":
                     self.fit_numeric_col(col, col_series)
                 elif col["type"] == "embedding":
@@ -245,18 +254,23 @@ class FeatureProcessor(object):
         self.save_vocab(self.vocab_file)
         logging.info("Set feature processor done.")
 
-    def fit_meta_col(self, col):
+    def fit_meta_col(self, col, col_series):
         """Fit a meta column (e.g. group_id) by registering its tokenizer.
 
         Args:
             col (dict): Column specification dict.
+            col_series (pd.Series or None): Column data series, or None if
+                ``rebuild_dataset`` is False.
         """
         name = col["name"]
         feature_type = col["type"]
         self.feature_map.features[name] = {"type": feature_type}
         if col.get("remap", True):
-            # No need to fit, update vocab in encode_meta()
             tokenizer = Tokenizer(min_freq=1, remap=True)
+            if col_series is not None:
+                # Build the global vocab from the full training data
+                word_counts = Counter(dict(col_series.value_counts()))
+                tokenizer.build_vocab(word_counts)
             self.processor_dict[name + "::tokenizer"] = tokenizer
 
     def fit_numeric_col(self, col, col_series):

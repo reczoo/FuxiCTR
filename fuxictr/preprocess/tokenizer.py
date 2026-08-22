@@ -142,13 +142,14 @@ class Tokenizer(object):
             word_list (iterable): Words to add.
         """
         new_words = 0
-        for word in word_list:
+        # sort to guarantee the determinism of index order for new words
+        for word in sorted(word_list):
             if word not in self.vocab:
                 self.vocab[word] = self.vocab.get("__OOV__", 0) + new_words
                 new_words += 1
         if new_words > 0:
-            self.vocab["__OOV__"] = self.vocab_size()
-
+            self.vocab["__OOV__"] = self.vocab_size() # __OOV__ move to max + 1
+    
     def encode_meta(self, series):
         """Encode a meta column series to integer indices.
 
@@ -158,11 +159,6 @@ class Tokenizer(object):
         Returns:
             numpy.ndarray: Encoded integer values.
         """
-        word_counts = dict(series.value_counts())
-        if len(self.vocab) == 0:
-            self.build_vocab(word_counts)
-        else: # for considering meta data in test data
-            self.update_vocab(word_counts.keys())
         series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
         return series.values
 
