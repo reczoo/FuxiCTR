@@ -18,7 +18,7 @@
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
-from keras_preprocessing.sequence import pad_sequences
+from fuxictr.preprocess.tokenizer import pad_sequences
 import pandas as pd
 import torch
 

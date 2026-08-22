@@ -20,9 +20,35 @@ import numpy as np
 import h5py
 from tqdm import tqdm
 import polars as pl
-from keras_preprocessing.sequence import pad_sequences
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
+
+
+def pad_sequences(sequences, maxlen=None, dtype='int32',
+                  padding='pre', truncating='pre', value=0.):
+    """Pads sequences (list of list) to the ndarray of same length.
+    This is an equivalent implementation of tf.keras.preprocessing.sequence.pad_sequences.
+    """
+    assert padding in ["pre", "post"], "Invalid padding={}.".format(padding)
+    assert truncating in ["pre", "post"], "Invalid truncating={}.".format(truncating)
+
+    if maxlen is None:
+        maxlen = max(len(x) for x in sequences)
+    arr = np.full((len(sequences), maxlen), value, dtype=dtype)
+    for idx, x in enumerate(sequences):
+        if len(x) == 0:
+            continue  # empty list
+        if truncating == 'pre':
+            trunc = x[-maxlen:]
+        else:
+            trunc = x[:maxlen]
+        trunc = np.asarray(trunc, dtype=dtype)
+
+        if padding == 'pre':
+            arr[idx, -len(trunc):] = trunc
+        else:
+            arr[idx, :len(trunc)] = trunc
+    return arr
 
 
 class Tokenizer(object):
