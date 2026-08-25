@@ -1,7 +1,7 @@
 ### Tiny data for demo only
 tiny_seq:
     data_root: ../data/
-    data_format: npz
-    train_data: ../data/tiny_seq/train.npz
-    valid_data: ../data/tiny_seq/valid.npz
-    test_data: ../data/tiny_seq/test.npz
+    data_format: parquet
+    train_data: ../data/tiny_seq/train.parquet
+    valid_data: ../data/tiny_seq/valid.parquet
+    test_data: ../data/tiny_seq/test.parquet

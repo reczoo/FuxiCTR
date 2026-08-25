@@ -17,8 +17,7 @@
 
 from .npz_block_dataloader import NpzBlockDataLoader
 from .npz_dataloader import NpzDataLoader
-from .parquet_block_dataloader import ParquetBlockDataLoader
-from .parquet_dataloader import ParquetDataLoader
+from .hf_dataloader import HFDataLoader
 import logging
 
 
@@ -38,7 +37,7 @@ class RankDataLoader(object):
         batch_size (int, optional): Number of samples per batch. Default: ``32``.
         shuffle (bool, optional): Whether to shuffle training data. Default: ``True``.
         streaming (bool, optional): Whether to use block-wise streaming loaders. Default: ``False``.
-        data_format (str, optional): Data format, one of ``"npz"`` or ``"parquet"``. Default: ``"npz"``.
+        data_format (str, optional): Data format, one of ``"npz"`` or ``"parquet"``.
         **kwargs: Additional arguments passed to the underlying ``DataLoader``.
     """
 
@@ -53,19 +52,22 @@ class RankDataLoader(object):
         else:
             if data_format == "npz":
                 DataLoader = NpzBlockDataLoader if streaming else NpzDataLoader
-            else: # ["parquet", "csv"]
-                DataLoader = ParquetBlockDataLoader if streaming else ParquetDataLoader
+            elif data_format == "parquet":
+                DataLoader = HFDataLoader
+            else:
+                raise ValueError(f"data_format={data_format} not supported.")
         self.stage = stage
         if stage in ["both", "train"]:
             train_gen = DataLoader(feature_map, train_data, split="train", batch_size=batch_size,
-                                   shuffle=shuffle, **kwargs)
+                                   shuffle=shuffle, streaming=streaming, **kwargs)
             logging.info(
                 "Train samples: total/{:d}, blocks/{:d}"
                 .format(train_gen.num_samples, train_gen.num_blocks)
             )
             if valid_data:
                 valid_gen = DataLoader(feature_map, valid_data, split="valid",
-                                       batch_size=batch_size, shuffle=False, **kwargs)
+                                       batch_size=batch_size, shuffle=False, 
+                                       streaming=streaming, **kwargs)
                 logging.info(
                     "Validation samples: total/{:d}, blocks/{:d}"
                     .format(valid_gen.num_samples, valid_gen.num_blocks)
