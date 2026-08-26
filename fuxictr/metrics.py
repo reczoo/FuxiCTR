@@ -18,7 +18,7 @@
 
 from sklearn.metrics import roc_auc_score, log_loss, accuracy_score
 import numpy as np
-import pandas as pd
+import polars as pl
 import multiprocessing as mp
 from collections import OrderedDict
 
@@ -62,12 +62,12 @@ def evaluate_metrics(y_true, y_pred, metrics, group_id=None):
                 metric_funcs.append(eval(metric))
             except:
                 raise NotImplementedError('metrics={} not implemented.'.format(metric))
-        score_df = pd.DataFrame({"group_index": group_id,
+        score_df = pl.DataFrame({"group_index": group_id,
                                  "y_true": y_true,
                                  "y_pred": y_pred})
         results = []
         pool = mp.Pool(processes=mp.cpu_count() // 2)
-        for idx, df in score_df.groupby("group_index"):
+        for df in score_df.partition_by("group_index", maintain_order=True):
             results.append(pool.apply_async(evaluate_block, args=(df, metric_funcs)))
         pool.close()
         pool.join()
@@ -81,7 +81,7 @@ def evaluate_block(df, metric_funcs):
     """Evaluate a list of metric functions on a single group DataFrame.
 
     Args:
-        df (pd.DataFrame): DataFrame with ``y_true`` and ``y_pred`` columns.
+        df (pl.DataFrame): DataFrame with ``y_true`` and ``y_pred`` columns.
         metric_funcs (list): List of callable metric functions.
 
     Returns:
@@ -89,7 +89,7 @@ def evaluate_block(df, metric_funcs):
     """
     res_list = []
     for fn in metric_funcs:
-        v = fn(df.y_true.values, df.y_pred.values)
+        v = fn(df["y_true"].to_numpy(), df["y_pred"].to_numpy())
         if type(v) == tuple:
             res_list.append(v)
         else: # add group weight
