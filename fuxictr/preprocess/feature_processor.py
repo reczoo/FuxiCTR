@@ -18,7 +18,6 @@
 
 import numpy as np
 from collections import Counter, OrderedDict
-import pandas as pd
 import polars as pl
 import pickle
 import os
@@ -130,7 +129,7 @@ class FeatureProcessor(object):
         """
         logging.info("Preprocess feature columns...")
         all_cols = self.label_cols + self.feature_cols[::-1]
-        col_names = ddf.columns
+        col_names = ddf.collect_schema().names()
         for col in all_cols:
             name = col["name"]
             fill_na = None
@@ -157,7 +156,7 @@ class FeatureProcessor(object):
                 )
             if (fill_na is not None) and (not col_exist):
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
-            if col.get("type") == "sequence" and isinstance(ddf.select(name).dtypes[0], pl.List):
+            if col.get("type") == "sequence" and isinstance(ddf.collect_schema()[name], pl.List):
                 # Convert list to "^" seperated string for unified preprocessing of parquet and csv formats
                 ddf = ddf.with_columns(
                     pl.col(name).cast(pl.List(pl.String)).list.join("^")
@@ -425,49 +424,50 @@ class FeatureProcessor(object):
                                                 "max_len": tokenizer.max_len,
                                                 "vocab_size": tokenizer.vocab_size()})
 
-    def transform(self, ddf):
-        """Transform raw feature values into numeric IDs or normalized values.
+    def transform(self, batch):
+        """Batched transform of raw feature columns into integer IDs or normalized values.
 
         Args:
-            ddf (pl.DataFrame or pl.LazyFrame): Input data frame.
+            batch (dict): Mapping of column name to a list/array of values, as
+                provided by ``datasets.map``.
 
         Returns:
-            pl.DataFrame or pl.LazyFrame: Transformed data frame.
+            dict: Mapping of column name to transformed values.
         """
-        logging.info("Transform feature columns to IDs...")
         for feature, feature_spec in self.feature_map.features.items():
-            if feature in ddf.columns:
-                feature_type = feature_spec["type"]
-                col_series = ddf[feature]
-                if feature_type == "meta":
-                    if feature + "::tokenizer" in self.processor_dict:
-                        tokenizer = self.processor_dict[feature + "::tokenizer"]
-                        ddf[feature] = tokenizer.encode_meta(col_series)
-                        # Update vocab in tokenizer
-                        self.processor_dict[feature + "::tokenizer"] = tokenizer
-                elif feature_type == "numeric":
-                    normalizer = self.processor_dict.get(feature + "::normalizer")
-                    if normalizer:
-                        ddf[feature] = normalizer.transform(col_series.values)
-                elif feature_type == "categorical":
-                    category_processor = feature_spec.get("category_processor")
-                    if category_processor is None:
-                        ddf[feature] = (
-                            self.processor_dict.get(feature + "::tokenizer")
-                            .encode_category(col_series)
-                        )
-                    elif category_processor == "numeric_bucket":
-                        raise NotImplementedError
-                    elif category_processor == "hash_bucket":
-                        raise NotImplementedError
-                elif feature_type == "sequence":
-                    ddf[feature] = (self.processor_dict.get(feature + "::tokenizer")
-                                    .encode_sequence(col_series))
-                elif feature_type == "embedding":
-                    continue
-                else:
+            if feature not in batch:
+                continue
+            feature_type = feature_spec["type"]
+            col_series = batch[feature]
+            if feature_type == "meta":
+                tokenizer = self.processor_dict.get(feature + "::tokenizer")
+                if tokenizer is not None:
+                    batch[feature] = np.array(
+                        tokenizer.encode_category(col_series), dtype=np.int64)
+            elif feature_type == "numeric":
+                normalizer = self.processor_dict.get(feature + "::normalizer")
+                if normalizer is not None:
+                    batch[feature] = np.array(
+                        normalizer.transform(np.array(col_series)), dtype=np.float64)
+            elif feature_type == "categorical":
+                category_processor = feature_spec.get("category_processor")
+                if category_processor is None:
+                    batch[feature] = np.array(
+                        self.processor_dict.get(feature + "::tokenizer")
+                        .encode_category(col_series), dtype=np.int64)
+                elif category_processor == "numeric_bucket":
                     raise NotImplementedError
-        return ddf
+                elif category_processor == "hash_bucket":
+                    raise NotImplementedError
+            elif feature_type == "sequence":
+                batch[feature] = np.array(
+                    self.processor_dict.get(feature + "::tokenizer")
+                    .encode_sequence(col_series), dtype=np.int64)
+            elif feature_type == "embedding":
+                continue
+            else:
+                raise NotImplementedError
+        return batch
 
     def load_pickle(self, pickle_file=None):
         """ Load feature processor from cache """

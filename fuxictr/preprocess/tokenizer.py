@@ -176,47 +176,35 @@ class Tokenizer(object):
         if new_words > 0:
             self.vocab["__OOV__"] = self.vocab_size() # __OOV__ move to max + 1
     
-    def encode_meta(self, series):
-        """Encode a meta column series to integer indices.
-
-        Args:
-            series (pandas.Series): Raw meta values.
-
-        Returns:
-            numpy.ndarray: Encoded integer values.
-        """
-        series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
-        return series.values
-
     def encode_category(self, series):
-        """Encode a categorical series to integer indices.
+        """Encode a categorical column to integer indices.
 
         Args:
-            series (pandas.Series): Raw categorical values.
+            series (list or pandas.Series): Raw categorical values.
 
         Returns:
-            numpy.ndarray: Encoded integer values.
+            list: Encoded integer values.
         """
-        series = series.map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]))
-        return series.values
+        return list(map(lambda x: self.vocab.get(x, self.vocab["__OOV__"]), series))
 
     def encode_sequence(self, series):
-        """Encode a sequence series to padded integer arrays.
+        """Encode a sequence column to padded integer arrays.
 
         Args:
-            series (pandas.Series): Raw sequence strings.
+            series (list or pandas.Series): Raw sequence strings.
 
         Returns:
-            list: List of padded integer sequences.
+            numpy.ndarray: 2D padded integer array of shape (n_rows, maxlen).
         """
-        series = series.map(
-            lambda text: [self.vocab.get(x, self.vocab["__OOV__"]) if x != self._na_value \
-            else self.vocab["__PAD__"] for x in text.split(self._splitter)]
-        )
-        seqs = pad_sequences(series.to_list(), maxlen=self.max_len,
+        seqs = list(map(
+            lambda text: [self.vocab.get(x, self.vocab["__OOV__"]) if x != self._na_value
+                          else self.vocab["__PAD__"] for x in text.split(self._splitter)],
+            series
+        ))
+        seqs = pad_sequences(seqs, maxlen=self.max_len,
                              value=self.vocab["__PAD__"],
                              padding=self.padding, truncating=self.padding)
-        return seqs.tolist()
+        return seqs
 
     def load_pretrained_vocab(self, feature_dtype, pretrain_path, expand_vocab=True):
         """Load pretrained embedding keys and optionally expand vocabulary.

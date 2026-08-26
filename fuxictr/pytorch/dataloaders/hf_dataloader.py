@@ -21,7 +21,8 @@ import numpy as np
 import pyarrow.parquet as pq
 from torch.utils.data import DataLoader
 from datasets import load_dataset
-os.environ.setdefault("HF_DATASETS_OFFLINE", "1")
+import huggingface_hub.constants
+huggingface_hub.constants.HF_HUB_OFFLINE = True
 
 
 class HFDataLoader(DataLoader):

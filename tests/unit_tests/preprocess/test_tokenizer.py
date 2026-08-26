@@ -22,41 +22,6 @@ from fuxictr.preprocess import Tokenizer
 from fuxictr.preprocess.feature_processor import FeatureProcessor
 
 
-class TestEncodeMeta(object):
-
-    def test_encode_meta_prebuilt_vocab_is_consistent_across_blocks(self):
-        """Pre-built vocab: same token -> same id in every block; vocab unchanged."""
-        tknzr = Tokenizer(min_freq=1, remap=True)
-        tknzr.build_vocab(Counter({"a": 3, "b": 2, "c": 1}))
-        vocab_before = dict(tknzr.vocab)
-        # simulate two blocks sharing the pre-built tokenizer (block_size>0)
-        block1 = pd.Series(["a", "b", "c", "x"])  # x is OOV
-        block2 = pd.Series(["c", "a", "b", "y"])  # y is OOV
-        enc1 = tknzr.encode_meta(block1)
-        enc2 = tknzr.encode_meta(block2)
-        assert enc1[0] == vocab_before["a"]
-        assert enc1[1] == vocab_before["b"]
-        assert enc1[2] == vocab_before["c"]
-        assert enc1[3] == vocab_before["__OOV__"]
-        assert enc2[0] == vocab_before["c"]
-        assert enc2[1] == vocab_before["a"]
-        assert enc2[2] == vocab_before["b"]
-        assert enc2[3] == vocab_before["__OOV__"]
-        # shared vocab must not be mutated by encoding
-        assert tknzr.vocab == vocab_before
-
-    def test_encode_meta_prebuilt_vocab_no_update_on_new_tokens(self):
-        """New tokens seen at encode time must NOT be added to the vocab."""
-        tknzr = Tokenizer(min_freq=1, remap=True)
-        tknzr.build_vocab(Counter({"a": 3, "b": 2}))
-        vocab_before = dict(tknzr.vocab)
-        series = pd.Series(["a", "new_token"])
-        encoded = tknzr.encode_meta(series)
-        assert encoded[0] == vocab_before["a"]
-        assert encoded[1] == vocab_before["__OOV__"]  # not a fresh id
-        assert tknzr.vocab == vocab_before
-
-
 class TestUpdateVocab(object):
 
     def test_update_vocab_reuses_oov_slot_then_moves_oov(self):

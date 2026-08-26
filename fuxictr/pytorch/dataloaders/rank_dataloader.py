@@ -52,7 +52,7 @@ class RankDataLoader(object):
         else:
             if data_format == "npz":
                 DataLoader = NpzBlockDataLoader if streaming else NpzDataLoader
-            elif data_format == "parquet":
+            elif data_format in ["parquet", "csv"]:
                 DataLoader = HFDataLoader
             else:
                 raise ValueError(f"data_format={data_format} not supported.")

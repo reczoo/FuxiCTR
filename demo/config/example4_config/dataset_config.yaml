@@ -9,5 +9,6 @@ tiny_example4:
     feature_cols:
         [{name: ["userid","adgroup_id","pid","cate_id","campaign_id","customer","brand","cms_segid",
                  "cms_group_id","final_gender_code","age_level","pvalue_level","shopping_level","occupation"], 
-                 active: True, dtype: str, type: categorical}]
+                 active: True, dtype: str, type: categorical},
+         {name: "click_sequence", active: True, dtype: str, type: sequence, max_len: 5, splitter: "^"}]
     label_col: {name: clk, dtype: float}

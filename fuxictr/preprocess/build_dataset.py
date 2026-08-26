@@ -20,8 +20,10 @@ import os
 import logging
 import numpy as np
 import gc
-import multiprocessing as mp
 import polars as pl
+import pyarrow.dataset as pads
+from datasets import Dataset, Features, Value, Sequence
+import multiprocessing as mp
 
 
 def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0,
@@ -65,47 +67,50 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     return train_ddf, valid_ddf, test_ddf
 
 
-def transform_block(feature_encoder, df_block, filename):
-    """Transform a single data block and save to parquet.
+def transform(feature_encoder, ddf, split="train", block_size=0):
+    """Transform features to integer IDs via ``feature_encoder.transform`` and write parquet.
 
     Args:
         feature_encoder (FeatureProcessor): Fitted feature processor.
-        df_block (pd.DataFrame): Data block to transform.
-        filename (str): Output filename relative to ``data_dir``.
+        ddf (polars.LazyFrame): Input lazy frame.
+        split (str): Output name relative to ``data_dir`` (file prefix when
+            ``block_size == 0``, directory name when ``block_size > 0``).
+        block_size (int): Rows per parquet part. ``0`` writes a single file.
+            Default: ``0``.
     """
-    df_block = feature_encoder.transform(df_block)
-    data_path = os.path.join(feature_encoder.data_dir, filename)
-    logging.info("Saving data to parquet: " + data_path)
-    os.makedirs(os.path.dirname(data_path), exist_ok=True)
-    df_block.to_parquet(data_path, index=False, engine="pyarrow")
-
-
-def transform(feature_encoder, ddf, filename, block_size=0):
-    """Transform data and optionally write in parallel blocks.
-
-    Args:
-        feature_encoder (FeatureProcessor): Fitted feature processor.
-        ddf (polars.LazyFrame): Input LazyFrame.
-        filename (str): Output file or directory prefix.
-        block_size (int): Rows per block for parallel writing. ``0`` disables
-            blocking. Default: ``0``.
-    """
-    ddf = ddf.collect().to_pandas()
+    logging.info("Transform features to integer IDs...")
+    ds = Dataset.from_polars(ddf)
+    num_proc = max(1, mp.cpu_count() // 2)
+    ds = ds.map(feature_encoder.transform, batched=True, num_proc=num_proc)
+    feature_schema = dict(ds.features)
+    for feature, spec in feature_encoder.feature_map.features.items():
+        if feature in feature_schema:
+            ftype = spec["type"]
+            if ftype in ("categorical", "meta"):
+                feature_schema[feature] = Value("int64")
+            elif ftype == "numeric":
+                feature_schema[feature] = Value("float64")
+            elif ftype == "sequence":
+                feature_schema[feature] = Sequence(Value("int64"))
+    ds = ds.cast(Features(feature_schema))
     if block_size > 0:
-        pool = mp.Pool(mp.cpu_count() // 2)
-        block_id = 0
-        for idx in range(0, len(ddf), block_size):
-            df_block = ddf.iloc[idx:(idx + block_size)]
-            pool.apply_async(
-                transform_block,
-                args=(feature_encoder, df_block,
-                      '{}/part_{:05d}.parquet'.format(filename, block_id))
-            )
-            block_id += 1
-        pool.close()
-        pool.join()
+        data_path = os.path.join(feature_encoder.data_dir, split)
+        os.makedirs(data_path, exist_ok=True)
+        pads.write_dataset(
+            ds.data.table,
+            base_dir=data_path,
+            basename_template="part-{i}.parquet",
+            format="parquet",
+            max_rows_per_file=block_size,
+            max_rows_per_group=block_size,
+            use_threads=True,
+        )
+        logging.info("Saved parquet files to: " + data_path)
     else:
-        transform_block(feature_encoder, ddf, filename + ".parquet")
+        data_path = os.path.join(feature_encoder.data_dir, split + ".parquet")
+        os.makedirs(os.path.dirname(data_path), exist_ok=True)
+        ds.to_parquet(data_path)
+        logging.info("Saved parquet file to: " + data_path)
 
 
 def merge_meta_ddf(feature_encoder, train_ddf, valid_ddf=None, test_ddf=None):
@@ -172,27 +177,31 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
                 test_ddf = feature_encoder.preprocess(test_ddf)
             meta_ddf = merge_meta_ddf(feature_encoder, train_ddf, valid_ddf, test_ddf)
             feature_encoder.fit(train_ddf, rebuild_dataset=True, meta_ddf=meta_ddf, **kwargs)
-            transform(feature_encoder, train_ddf, 'train', block_size=data_block_size)
+            transform(feature_encoder, train_ddf, split='train', block_size=data_block_size)
             del train_ddf
             gc.collect()
 
             # Transfrom valid_ddf
             if valid_ddf is not None:
-                transform(feature_encoder, valid_ddf, 'valid', block_size=data_block_size)
+                transform(feature_encoder, valid_ddf, split='valid', block_size=data_block_size)
                 del valid_ddf
                 gc.collect()
 
             # Transfrom test_ddf
             if test_ddf is not None:
-                transform(feature_encoder, test_ddf, 'test', block_size=data_block_size)
+                transform(feature_encoder, test_ddf, split='test', block_size=data_block_size)
                 del test_ddf
                 gc.collect()
             logging.info("Transform csv data to parquet done.")
 
+        if data_block_size > 0:
+            train_set, valid_set, test_set = "train/", "valid/", "test/"
+        else:
+            train_set, valid_set, test_set = "train.parquet", "valid.parquet", "test.parquet"
         train_data, valid_data, test_data = (
-            os.path.join(feature_encoder.data_dir, "train"), \
-            os.path.join(feature_encoder.data_dir, "valid"), \
-            os.path.join(feature_encoder.data_dir, "test") if (
+            os.path.join(feature_encoder.data_dir, train_set), \
+            os.path.join(feature_encoder.data_dir, valid_set), \
+            os.path.join(feature_encoder.data_dir, test_set) if (
                 test_data or test_size > 0) else None
         )
     
