@@ -62,7 +62,10 @@ def _make_processor(tmpdir):
     fp.processor_dict["group_id::tokenizer"] = meta_tok
 
     norm = Normalizer("MinMaxScaler")
-    norm.fit(np.array([0., 10., 20.]))
+    # Normalizer.fit 已移除（用户决策），改用 fit_from_stats 直接重建
+    x = np.array([0., 10., 20.])
+    norm.fit_from_stats(min_value=float(np.min(x)), max_value=float(np.max(x)),
+                        mean=float(np.mean(x)), std=float(np.std(x)), count=int(len(x)))
     fp.processor_dict["age::normalizer"] = norm
 
     fp.feature_map.features = {

@@ -182,30 +182,32 @@ class FeatureProcessor(object):
         """
         logging.info("Fit feature processor...")
         self.rebuild_dataset = rebuild_dataset
+        if self.rebuild_dataset:
+            logging.info("Collecting dataset statistics...")
+            stats_dict = self._collect_statistics(train_ddf, meta_ddf)
         for col in self.feature_cols:
             name = col["name"]
             if col["active"]:
                 logging.info("Processing column: {}".format(col))
-                col_series = (
-                    train_ddf.select(name).collect().to_series().to_pandas() if self.rebuild_dataset
-                    else None
-                )
+                col_stats = stats_dict.get(name) if self.rebuild_dataset else None
                 if col["type"] == "meta": # e.g. set group_id in gAUC
-                    meta_series = None
-                    if self.rebuild_dataset:
-                        src = meta_ddf if meta_ddf is not None else train_ddf
-                        meta_series = src.select(name).collect().to_series().to_pandas()
-                    self.fit_meta_col(col, meta_series)
+                    self.fit_meta_col(col, col_stats)
                 elif col["type"] == "numeric":
-                    self.fit_numeric_col(col, col_series)
+                    self.fit_numeric_col(col, col_stats)
                 elif col["type"] == "embedding":
                     self.fit_embedding_col(col)
                 elif col["type"] == "categorical":
-                    self.fit_categorical_col(col, col_series,
+                    col_input = col_stats
+                    if col.get("category_processor") in ("quantile_bucket", "hash_bucket"):
+                        col_input = (
+                            train_ddf.select(name).collect().to_series().to_pandas() 
+                            if self.rebuild_dataset else None
+                        )
+                    self.fit_categorical_col(col, col_input,
                                              min_categr_count=min_categr_count,
                                              num_buckets=num_buckets)
                 elif col["type"] == "sequence":
-                    self.fit_sequence_col(col, col_series,
+                    self.fit_sequence_col(col, col_stats,
                                           min_categr_count=min_categr_count)
                 else:
                     raise NotImplementedError("feature type={}".format(col["type"]))
@@ -253,31 +255,149 @@ class FeatureProcessor(object):
         self.save_vocab(self.vocab_file)
         logging.info("Set feature processor done.")
 
-    def fit_meta_col(self, col, col_series):
+    def _collect_statistics(self, train_ddf, meta_ddf=None):
+        """Compute per-column statistics via three lazy queries in one streaming pass.
+
+        Args:
+            train_ddf (pl.LazyFrame): Training data lazy frame.
+            meta_ddf (pl.LazyFrame, optional): Lazy frame for the global meta vocab.
+
+        Returns:
+            dict: ``name -> stats`` where stats is one of
+            ``{"value_counts": {token: count}}`` /
+            ``{"max_len": int}`` /
+            ``{"min": .., "max": .., "mean": .., "std": .., "count": ..}``.
+        """
+        cat_cols = [c["name"] for c in self.feature_cols
+                    if c.get("active", True) and c["type"] == "categorical" and c.get("remap", True)]
+        meta_cols = [c["name"] for c in self.feature_cols
+                     if c.get("active", True) and c["type"] == "meta" and c.get("remap", True)]
+        seq_cols = [c["name"] for c in self.feature_cols
+                    if c.get("active", True) and c["type"] == "sequence" and c.get("remap", True)]
+        num_cols = [c["name"] for c in self.feature_cols
+                    if c.get("active", True) and c["type"] == "numeric" and "normalizer" in c]
+
+        # exclude categorical columns that use quantile/hash bucket (kept on raw values)
+        bucket_cols = {c["name"] for c in self.feature_cols
+                       if c.get("category_processor") in ("quantile_bucket", "hash_bucket")}
+        cat_cols = [c for c in cat_cols if c not in bucket_cols]
+        feature_spec = {c["name"]: c for c in self.feature_cols}
+
+        lazy_frames = []
+        count_lf, maxlen_lf = [], []
+
+        # (1) token frequency: cat/meta -> cast(List); seq -> str.split(splitter)
+        if meta_ddf is None:
+            meta_ddf = train_ddf
+        for c in meta_cols:
+            count_lf.append(meta_ddf.select([
+                pl.lit(c).alias("feature"),
+                pl.col(c).cast(pl.List(pl.String)).alias("value"),
+            ]))
+        for c in cat_cols:
+            count_lf.append(train_ddf.select([
+                pl.lit(c).alias("feature"),
+                pl.col(c).cast(pl.List(pl.String)).alias("value"),
+            ]))
+        for c in seq_cols:
+            splitter = feature_spec[c].get("splitter", "^")
+            count_lf.append(train_ddf.select([
+                pl.lit(c).alias("feature"),
+                pl.col(c).str.split(splitter).alias("value"),
+            ]))
+        if count_lf:
+            counts_lf = (pl.concat(count_lf)
+                         .explode("value")
+                         .drop_nulls()
+                         .group_by(["feature", "value"])
+                         .len()
+                         .sort(["feature", "len", "value"], descending=[False, True, False]))
+            lazy_frames.append(counts_lf)
+
+        # (2) max sequence length (not neccessary for columns with manually set max_len)
+        for c in seq_cols:
+            splitter = feature_spec[c].get("splitter", "^")
+            max_len = feature_spec[c].get("max_len", 0)
+            if max_len == 0:
+                maxlen_lf.append(pl.col(c).str.split(splitter).list.len().max().alias(c))
+        if maxlen_lf:
+            lazy_frames.append(train_ddf.select(maxlen_lf))
+
+        # (3) numeric statistics for normalizer reconstruction
+        exprs = []
+        for c in num_cols:
+            col_s = pl.col(c).drop_nulls()
+            exprs += [col_s.min().alias(f"{c}::min"),
+                      col_s.max().alias(f"{c}::max"),
+                      col_s.mean().alias(f"{c}::mean"),
+                      col_s.std(ddof=0).alias(f"{c}::std"),
+                      col_s.count().alias(f"{c}::count")]
+        if num_cols:
+            lazy_frames.append(train_ddf.select(exprs))
+
+        results = pl.collect_all(lazy_frames, engine="streaming") if lazy_frames else []
+
+        stats = {}
+        for name in cat_cols:
+            stats[name] = {"value_counts": {}}
+        for name in meta_cols:
+            stats[name] = {"value_counts": {}}
+        for name in seq_cols:
+            stats[name] = {"value_counts": {}, "max_len": 0}
+        for name in num_cols:
+            stats[name] = {}
+
+        idx = 0
+        if count_lf:
+            df_counts = results[idx]
+            idx += 1
+            for r in df_counts.iter_rows(named=True):
+                name, token, cnt = r["feature"], r["value"], r["len"]
+                stats[name]["value_counts"][token] = cnt
+        if maxlen_lf:
+            df_maxlen = results[idx]
+            idx += 1
+            for name in seq_cols:
+                stats[name]["max_len"] = int(df_maxlen[name][0])
+        if num_cols:
+            df_num = results[idx]
+            for c in num_cols:
+                stats[c] = {"min": df_num[f"{c}::min"][0],
+                            "max": df_num[f"{c}::max"][0],
+                            "mean": df_num[f"{c}::mean"][0],
+                            "std": df_num[f"{c}::std"][0],
+                            "count": df_num[f"{c}::count"][0]}
+        return stats
+
+    def fit_meta_col(self, col, stats_dict):
         """Fit a meta column (e.g. group_id) by registering its tokenizer.
 
         Args:
             col (dict): Column specification dict.
-            col_series (pd.Series or None): Column data series, or None if
-                ``rebuild_dataset`` is False.
+            stats_dict (dict or None): Global token counts from
+                :meth:`_collect_statistics`, or None if ``rebuild_dataset`` is False.
         """
         name = col["name"]
         feature_type = col["type"]
         self.feature_map.features[name] = {"type": feature_type}
         if col.get("remap", True):
             tokenizer = Tokenizer(min_freq=1, remap=True)
-            if col_series is not None:
-                # Build the global vocab from the full training data
-                word_counts = Counter(dict(col_series.value_counts()))
+            if stats_dict is not None:
+                # stats dict: {"value_counts": {token: count}}
+                word_counts = stats_dict.get("value_counts", stats_dict)
                 tokenizer.build_vocab(word_counts)
             self.processor_dict[name + "::tokenizer"] = tokenizer
 
-    def fit_numeric_col(self, col, col_series):
+    def fit_numeric_col(self, col, stats_dict=None):
         """Fit a numeric column, optionally registering a normalizer.
+
+        The normalizer is reconstructed from aggregate statistics (min/max/mean/std)
+        computed by :meth:`_collect_statistics`.
 
         Args:
             col (dict): Column specification dict.
-            col_series (pd.Series or None): Column data series, or None if
+            stats_dict (dict or None): Statistics dict with keys
+                ``min``/``max``/``mean``/``std``/``count``, or None if
                 ``rebuild_dataset`` is False.
         """
         name = col["name"]
@@ -290,10 +410,14 @@ class FeatureProcessor(object):
         if "embedding_dim" in col:
             self.feature_map.features[name]["embedding_dim"] = col["embedding_dim"]
         if "normalizer" in col:
-            normalizer = Normalizer(col["normalizer"])
-            if self.rebuild_dataset:
-                normalizer.fit(col_series.dropna().values)
-            self.processor_dict[name + "::normalizer"] = normalizer
+            if self.rebuild_dataset and stats_dict is not None:
+                normalizer = Normalizer(col["normalizer"])
+                normalizer.fit_from_stats(min_value=stats_dict.get("min"),
+                                          max_value=stats_dict.get("max"),
+                                          mean=stats_dict.get("mean"),
+                                          std=stats_dict.get("std"),
+                                          count=stats_dict.get("count"))
+                self.processor_dict[name + "::normalizer"] = normalizer
 
     def fit_embedding_col(self, col):
         """Fit an embedding column by recording its pretrain dimensions.
@@ -313,12 +437,14 @@ class FeatureProcessor(object):
         if "pretrain_dim" in col:
             self.feature_map.features[name]["pretrain_dim"] = col["pretrain_dim"]
 
-    def fit_categorical_col(self, col, col_series, min_categr_count=1, num_buckets=10):
+    def fit_categorical_col(self, col, col_series=None, min_categr_count=1, num_buckets=10):
         """Fit a categorical column, building or loading its tokenizer vocab.
 
         Args:
             col (dict): Column specification dict.
-            col_series (pd.Series or None): Column data series.
+            col_series (dict or pd.Series or None): Either the token counts from
+                :meth:`_compute_statistics` (``{token: count}``) or raw values,
+                or None if ``rebuild_dataset`` is False.
             min_categr_count (int): Minimum token frequency.
             num_buckets (int): Number of buckets for quantile/hash processors.
         """
@@ -335,12 +461,15 @@ class FeatureProcessor(object):
         if "emb_output_dim" in col:
             self.feature_map.features[name]["emb_output_dim"] = col["emb_output_dim"]
         if "category_processor" not in col:
-            tokenizer = Tokenizer(min_freq=min_categr_count, 
+            tokenizer = Tokenizer(min_freq=min_categr_count,
                                   na_value=col.get("fill_na", ""),
                                   remap=col.get("remap", True))
             if self.rebuild_dataset:
-                tokenizer.fit_on_texts(col_series)
+                if isinstance(col_series, dict):  # counts from _compute_statistics
+                    value_counts = col_series.get("value_counts", {})
+                    tokenizer.build_vocab(value_counts)
             else:
+                # rebuild_dataset=False: reconstruct from vocab_size
                 if "vocab_size" in col:
                     tokenizer.update_vocab(range(col["vocab_size"] - 1))
                 else:
@@ -364,7 +493,7 @@ class FeatureProcessor(object):
                 num_buckets = col.get("num_buckets", num_buckets)
                 qtf = sklearn_preprocess.QuantileTransformer(n_quantiles=num_buckets + 1)
                 if self.rebuild_dataset:
-                    qtf.fit(col_series.values)
+                    qtf.fit(col_series.values.reshape(-1,1))
                     boundaries = qtf.quantiles_[1:-1]
                     self.processor_dict[name + "::boundaries"] = boundaries
                 self.feature_map.features[name]["vocab_size"] = num_buckets
@@ -375,12 +504,14 @@ class FeatureProcessor(object):
             else:
                 raise NotImplementedError("category_processor={} not supported.".format(category_processor))
 
-    def fit_sequence_col(self, col, col_series, min_categr_count=1):
+    def fit_sequence_col(self, col, stats_dict=None, min_categr_count=1):
         """Fit a sequence column, building its tokenizer with splitting and padding.
 
         Args:
             col (dict): Column specification dict.
-            col_series (pd.Series or None): Column data series.
+            stats_dict (dict or None): Token counts from :meth:`_compute_statistics`
+                (``{"value_counts": {...}, "max_len": int}``), or None if
+                ``rebuild_dataset`` is False.
             min_categr_count (int): Minimum token frequency.
         """
         name = col["name"]
@@ -404,7 +535,9 @@ class FeatureProcessor(object):
                               na_value=na_value, max_len=max_len, padding=padding,
                               remap=col.get("remap", True))
         if self.rebuild_dataset:
-            tokenizer.fit_on_texts(col_series)
+            tokenizer.build_vocab(stats_dict["value_counts"])
+            if tokenizer.max_len == 0:
+                tokenizer.max_len = stats_dict.get("max_len", 0)
         else:
             if "vocab_size" in col:
                 tokenizer.update_vocab(range(col["vocab_size"] - 1))

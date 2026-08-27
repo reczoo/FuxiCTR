@@ -18,10 +18,7 @@
 from collections import Counter
 import numpy as np
 import h5py
-from tqdm import tqdm
 import polars as pl
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import multiprocessing as mp
 
 
 def pad_sequences(sequences, maxlen=None, dtype='int32',
@@ -81,38 +78,15 @@ class Tokenizer(object):
         self.padding = padding
         self.remap = remap
 
-    def fit_on_texts(self, series):
-        """Fit tokenizer on a text series and build vocabulary.
-
-        Uses parallel processing to count tokens across chunks.
-
-        Args:
-            series (pandas.Series): Text data series.
-        """
-        max_len = 0
-        word_counts = Counter()
-        with ProcessPoolExecutor(max_workers=(mp.cpu_count() // 2)) as executor:
-            chunk_size = 1000000
-            tasks = []
-            for idx in range(0, len(series), chunk_size):
-                data_chunk = series.iloc[idx: (idx + chunk_size)]
-                tasks.append(executor.submit(count_tokens, data_chunk, self._splitter))
-            for future in tqdm(as_completed(tasks), total=len(tasks)):
-                chunk_word_counts, chunk_max_len = future.result()
-                word_counts.update(chunk_word_counts)
-                max_len = max(max_len, chunk_max_len)
-        if self.max_len == 0:  # if argument max_len not given
-            self.max_len = max_len
-        self.build_vocab(word_counts)
-
     def build_vocab(self, word_counts):
         """Build vocabulary from token frequency counts.
 
         Args:
-            word_counts (Counter): Token frequency counts.
+            word_counts (Counter or dict): Token frequency counts. Both
+                ``collections.Counter`` and a plain ``dict`` are supported.
         """
-        # sort to guarantee the determinism of index order
-        word_counts = word_counts.most_common()
+        word_counts = Counter(word_counts)
+        word_counts = word_counts.most_common() # sort to guarantee the determinism of index order
         if self._max_features: # keep the most frequent features
             word_counts = word_counts[0:self._max_features]
         words = []
@@ -227,27 +201,6 @@ class Tokenizer(object):
                     vocab_size += 1
 
 
-def count_tokens(series, splitter=None):
-    """Count token frequencies and max sequence length in a series.
-
-    Args:
-        series (pandas.Series): Text data series.
-        splitter (str, optional): Delimiter for splitting sequences.
-
-    Returns:
-        tuple: ``(word_counts, max_len)`` where ``word_counts`` is a dict
-        and ``max_len`` is the maximum sequence length.
-    """
-    max_len = 0
-    if splitter is not None: # for sequence
-        series = series.map(lambda text: text.split(splitter))
-        max_len = series.str.len().max()
-        word_counts = series.explode().value_counts()
-    else:
-        word_counts = series.value_counts()
-    return dict(word_counts), max_len
-
-
 def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
     """Load pretrained embedding data from file.
 
@@ -272,8 +225,8 @@ def load_pretrain_emb(pretrain_path, keys=["key", "value"]):
         npz = np.load(pretrain_path)
         values = [npz[k] for k in keys]
     elif pretrain_path.endswith("parquet"):
-        df = pd.read_parquet(pretrain_path)
-        values = [df[k].values for k in keys]
+        df = pl.read_parquet(pretrain_path)
+        values = [df[k].to_numpy() for k in keys]
     else:
         raise ValueError(f"Embedding format not supported: {pretrain_path}")
     return values[0] if len(values) == 1 else values

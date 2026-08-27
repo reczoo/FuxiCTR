@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/bash
 cd "$(pwd)/../demo"
 
 echo "=== Testing example1 ===" && python example1_build_dataset_to_parquet.py && \
