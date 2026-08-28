@@ -17,7 +17,7 @@
 
 from .npz_block_dataloader import NpzBlockDataLoader
 from .npz_dataloader import NpzDataLoader
-from .hf_dataloader import HFDataLoader
+from .parquet_dataloader import ParquetDataLoader
 import logging
 
 
@@ -53,7 +53,7 @@ class RankDataLoader(object):
             if data_format == "npz":
                 DataLoader = NpzBlockDataLoader if streaming else NpzDataLoader
             elif data_format in ["parquet", "csv"]:
-                DataLoader = HFDataLoader
+                DataLoader = ParquetDataLoader
             else:
                 raise ValueError(f"data_format={data_format} not supported.")
         self.stage = stage

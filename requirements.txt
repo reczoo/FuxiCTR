@@ -8,3 +8,5 @@ tqdm
 pyarrow
 polars>=1.40.1
 datasets
+ray[data]>=2.40
+pydantic
