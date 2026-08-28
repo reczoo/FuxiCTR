@@ -1,12 +1,11 @@
-pyyaml>=6.0.3
-scikit-learn>=1.8.0
+pyyaml>=6.0.1
+scikit-learn
 numpy
 scipy
 pandas
 h5py
 tqdm
 pyarrow
-polars>=1.40.1
-datasets
-ray[data]>=2.40
+polars
+ray[data]>=2.52.0
 pydantic

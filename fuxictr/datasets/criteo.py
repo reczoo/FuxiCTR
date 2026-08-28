@@ -42,4 +42,3 @@ class CustomizedFeatureProcessor(FeatureProcessor):
             .otherwise(pl.col(col_name))
             .cast(pl.Int32)
         )
-

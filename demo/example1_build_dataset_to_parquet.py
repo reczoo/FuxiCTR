@@ -42,4 +42,5 @@ if __name__ == '__main__':
     build_dataset(feature_encoder, 
                   train_data=params["train_data"],
                   valid_data=params["valid_data"],
-                  test_data=params["test_data"])
+                  test_data=params["test_data"],
+                  data_block_size=params.get("data_block_size", 0))

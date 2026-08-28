@@ -43,12 +43,12 @@ class ParquetDataLoader(object):
             Default: 1
         buffer_size (int, optional): Local shuffle buffer size (number of rows)
             used when ``shuffle=True``. Default: ``100000``.
-        **kwargs: Additional arguments (e.g. ``streaming``)
-            accepted for backward compatibility but ignored.
+        **kwargs: Additional arguments accepted for backward compatibility but 
+            ignored.
     """
 
     def __init__(self, feature_map, data_path, split="train", batch_size=32,
-                 shuffle=False, num_workers=1, buffer_size=100000, **kwargs):
+                 shuffle=False, num_workers=1, buffer_size=1000000, **kwargs):
         self.feature_map = feature_map
         self.batch_size = batch_size
         self.split = split
@@ -61,11 +61,10 @@ class ParquetDataLoader(object):
             # Suppress Ray's own logs so they don't mix with FuxiCTR logs.
             ray.init(ignore_reinit_error=True,
                      logging_level=logging.ERROR,
-                     log_to_driver=False)
-            ctx = ray.data.DataContext.get_current()
-            ctx.enable_progress_bars = False
-            ctx.enable_rich_progress_bars = False
+                     log_to_driver=True)
             logging.info("Ray initialized for data loading.")
+        ctx = ray.data.DataContext.get_current()
+        ctx.enable_progress_bars = False
 
         self.dataset = self.load_data(data_path)
 

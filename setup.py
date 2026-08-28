@@ -17,9 +17,9 @@ setuptools.setup(
         exclude=["model_zoo", "tests", "data", "docs", "demo"]),
     include_package_data=True,
     python_requires=">=3.10",
-    install_requires=["pandas", "PyYAML>=6.0.1", "scikit-learn",
-                      "numpy", "h5py", "tqdm", "pyarrow", "polars", "datasets",
-                      "ray[data]>=2.40", "pydantic"],
+    install_requires=["pandas", "pyyaml>=6.0.1", "scikit-learn",
+                      "numpy", "h5py", "tqdm", "pyarrow", "polars", 
+                      "ray[data]>=2.52.0", "pydantic"],
     classifiers=(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",

@@ -21,9 +21,17 @@ import logging
 import numpy as np
 import gc
 import polars as pl
-import pyarrow.dataset as pads
-from datasets import Dataset, Features, Value, Sequence
-import multiprocessing as mp
+import ray
+from ray.data.datasource.filename_provider import FilenameProvider
+from ray.data import SaveMode, TaskPoolStrategy
+
+
+class SimpleFilenameProvider(FilenameProvider):
+    def __init__(self, file_format="parquet"):
+        self.file_format = file_format
+    
+    def get_filename_for_task(self, write_uuid, task_index):
+        return f"part-{task_index:06d}.{self.file_format}"
 
 
 def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0,
@@ -67,6 +75,21 @@ def split_train_test(train_ddf=None, valid_ddf=None, test_ddf=None, valid_size=0
     return train_ddf, valid_ddf, test_ddf
 
 
+def init_ray():
+    # Initialize Ray if not already running
+    if not ray.is_initialized():
+        # Ensure Ray workers can import fuxictr by adding the project root to PYTHONPATH
+        project_root = os.path.dirname(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))))
+        ray.init(ignore_reinit_error=True,
+                 logging_level=logging.ERROR,
+                 log_to_driver=True,
+                 runtime_env={"env_vars": {"PYTHONPATH": project_root}})
+        logging.info("Ray initialized for data transformation.")
+        ctx = ray.data.DataContext.get_current()
+        ctx.enable_progress_bars = True
+        
+
 def transform(feature_encoder, ddf, split="train", block_size=0):
     """Transform features to integer IDs via ``feature_encoder.transform`` and write parquet.
 
@@ -78,38 +101,37 @@ def transform(feature_encoder, ddf, split="train", block_size=0):
         block_size (int): Rows per parquet part. ``0`` writes a single file.
             Default: ``0``.
     """
-    logging.info("Transform features to integer IDs...")
-    ds = Dataset.from_polars(ddf)
-    num_proc = max(1, mp.cpu_count() // 2)
-    ds = ds.map(feature_encoder.transform, batched=True, num_proc=num_proc)
-    feature_schema = dict(ds.features)
-    for feature, spec in feature_encoder.feature_map.features.items():
-        if feature in feature_schema:
-            ftype = spec["type"]
-            if ftype in ("categorical", "meta"):
-                feature_schema[feature] = Value("int64")
-            elif ftype == "numeric":
-                feature_schema[feature] = Value("float64")
-            elif ftype == "sequence":
-                feature_schema[feature] = Sequence(Value("int64"))
-    ds = ds.cast(Features(feature_schema))
+    logging.info(f"Transform {split} features to integer IDs...")
+
+    # Convert polars LazyFrame to Ray Dataset via Arrow
+    init_ray()
+    table = ddf.collect().to_arrow()
+    ds = ray.data.from_arrow(table)
+    del table; gc.collect()
+
+    # Parallel batched transform via Ray Data map_batches
+    num_blocks = ds.count() // block_size if block_size > 0 else os.cpu_count() // 2
+    num_workers = min(num_blocks, os.cpu_count() // 2)
+    ds = ds.repartition(num_blocks=num_blocks).map_batches(
+        feature_encoder.transform,
+        batch_size=100000,
+        batch_format="numpy",
+        num_cpus=1,
+        compute=TaskPoolStrategy(size=num_workers)
+    )
+
+    # Write parquet outputss
     if block_size > 0:
         data_path = os.path.join(feature_encoder.data_dir, split)
         os.makedirs(data_path, exist_ok=True)
-        pads.write_dataset(
-            ds.data.table,
-            base_dir=data_path,
-            basename_template="part-{i}.parquet",
-            format="parquet",
-            max_rows_per_file=block_size,
-            max_rows_per_group=block_size,
-            use_threads=True,
+        ds.write_parquet(
+            data_path, filename_provider=SimpleFilenameProvider(), mode=SaveMode.OVERWRITE
         )
-        logging.info("Saved parquet files to: " + data_path)
+        logging.info(f"Saved {num_blocks} parquet files to: " + data_path)
     else:
         data_path = os.path.join(feature_encoder.data_dir, split + ".parquet")
-        os.makedirs(os.path.dirname(data_path), exist_ok=True)
-        ds.to_parquet(data_path)
+        os.makedirs(feature_encoder.data_dir, exist_ok=True)
+        ds.to_pandas().to_parquet(data_path)
         logging.info("Saved parquet file to: " + data_path)
 
 
@@ -169,14 +191,17 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
             # Ensure valid/test are loaded and preprocessed so meta vocab covers all splits
             if valid_ddf is None and valid_data is not None:
                 valid_ddf = feature_encoder.read_data(valid_data, **kwargs)
-            if test_ddf is None and test_data is not None:
-                test_ddf = feature_encoder.read_data(test_data, **kwargs)
             if valid_ddf is not None:
                 valid_ddf = feature_encoder.preprocess(valid_ddf)
+            if test_ddf is None and test_data is not None:
+                test_ddf = feature_encoder.read_data(test_data, **kwargs)
             if test_ddf is not None:
                 test_ddf = feature_encoder.preprocess(test_ddf)
             meta_ddf = merge_meta_ddf(feature_encoder, train_ddf, valid_ddf, test_ddf)
             feature_encoder.fit(train_ddf, rebuild_dataset=True, meta_ddf=meta_ddf, **kwargs)
+            
+            
+            
             transform(feature_encoder, train_ddf, split='train', block_size=data_block_size)
             del train_ddf
             gc.collect()

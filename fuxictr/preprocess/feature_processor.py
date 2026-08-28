@@ -127,7 +127,6 @@ class FeatureProcessor(object):
         Returns:
             pl.LazyFrame: Lazy frame with preprocessed columns.
         """
-        logging.info("Preprocess feature columns...")
         all_cols = self.label_cols + self.feature_cols[::-1]
         col_names = ddf.collect_schema().names()
         for col in all_cols:
@@ -152,7 +151,6 @@ class FeatureProcessor(object):
                 ddf = ddf.with_columns(
                     preprocess_fn(*preprocess_args)
                     .alias(name)
-                    .cast(self.dtype_dict[name])
                 )
             if (fill_na is not None) and (not col_exist):
                 ddf = ddf.with_columns(pl.col(name).fill_null(fill_na))
@@ -180,7 +178,6 @@ class FeatureProcessor(object):
             rebuild_dataset (bool): Whether to collect data for fitting.
             **kwargs: Additional keyword arguments.
         """
-        logging.info("Fit feature processor...")
         self.rebuild_dataset = rebuild_dataset
         if self.rebuild_dataset:
             logging.info("Collecting dataset statistics...")
@@ -253,7 +250,7 @@ class FeatureProcessor(object):
         self.feature_map.save(self.json_file)
         self.save_pickle(self.pickle_file)
         self.save_vocab(self.vocab_file)
-        logging.info("Set feature processor done.")
+        logging.info("Setting up feature processor done.")
 
     def _collect_statistics(self, train_ddf, meta_ddf=None):
         """Compute per-column statistics via three lazy queries in one streaming pass.
@@ -465,7 +462,7 @@ class FeatureProcessor(object):
                                   na_value=col.get("fill_na", ""),
                                   remap=col.get("remap", True))
             if self.rebuild_dataset:
-                if isinstance(col_series, dict):  # counts from _compute_statistics
+                if isinstance(col_series, dict):  # counts from _collect_statistics
                     value_counts = col_series.get("value_counts", {})
                     tokenizer.build_vocab(value_counts)
             else:
