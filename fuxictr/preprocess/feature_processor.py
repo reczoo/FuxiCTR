@@ -295,9 +295,7 @@ class FeatureProcessor(object):
                       ])
                       .drop_nulls()
                       .group_by(["feature", "value"])
-                      .len()
-                      .sort(["feature", "len", "value"],
-                            descending=[False, True, False]))
+                      .len())
             count_indices[c] = len(lazy_frames)
             lazy_frames.append(col_lf)
             count_cols.append(c)
@@ -310,9 +308,7 @@ class FeatureProcessor(object):
                       .explode("value")
                       .drop_nulls()
                       .group_by(["feature", "value"])
-                      .len()
-                      .sort(["feature", "len", "value"],
-                            descending=[False, True, False]))
+                      .len())
             count_indices[c] = len(lazy_frames)
             lazy_frames.append(col_lf)
             count_cols.append(c)

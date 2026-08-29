@@ -15,7 +15,6 @@
 # limitations under the License.
 # =========================================================================
 
-from collections import Counter
 import numpy as np
 import h5py
 import polars as pl
@@ -82,12 +81,11 @@ class Tokenizer(object):
         """Build vocabulary from token frequency counts.
 
         Args:
-            word_counts (Counter or dict): Token frequency counts. Both
-                ``collections.Counter`` and a plain ``dict`` are supported.
+            word_counts (dict): Token frequency counts.
         """
-        word_counts = Counter(word_counts)
-        word_counts = word_counts.most_common() # sort to guarantee the determinism of index order
-        if self._max_features: # keep the most frequent features
+        # Sort by frequency descending to filter max_features and min_freq
+        word_counts = sorted(word_counts.items(), key=lambda x: -x[1])
+        if self._max_features:  # keep the most frequent features
             word_counts = word_counts[0:self._max_features]
         words = []
         for token, count in word_counts:
@@ -96,6 +94,8 @@ class Tokenizer(object):
                     words.append(token.lower() if self._lower else token)
             else:
                 break # already sorted in decending order
+        # Sort by key ascending to guarantee deterministic index order
+        words = sorted(words)
         if self.remap:
             self.vocab = dict((token, idx) for idx, token in enumerate(words, 1))
         else:
