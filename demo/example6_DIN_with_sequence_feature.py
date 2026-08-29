@@ -51,7 +51,7 @@ if __name__ == '__main__':
                                           valid_data=params['valid_data'],
                                           batch_size=params['batch_size'],
                                           data_format=params["data_format"],
-                                          shuffle=params['shuffle']).make_iterator()
+                                          shuffle=params['shuffle'])
 
     # Model initialization and fitting
     model = DIN(feature_map, **params)
@@ -66,5 +66,5 @@ if __name__ == '__main__':
                               test_data=params['test_data'],
                               batch_size=params['batch_size'],
                               data_format=params["data_format"],
-                              shuffle=False).make_iterator()
+                              shuffle=False)
     model.evaluate(test_gen)

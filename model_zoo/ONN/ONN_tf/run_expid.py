@@ -60,7 +60,7 @@ if __name__ == '__main__':
     model_class = getattr(model, params['model'])
     model = model_class(feature_map, **params)
 
-    train_gen, valid_gen = TFRecordDataLoader(feature_map, stage='train', **params).make_iterator()
+    train_gen, valid_gen = TFRecordDataLoader(feature_map, stage='train', **params)
     model.fit(train_gen, validation_data=valid_gen, **params)
 
     logging.info('****** Validation evaluation ******')
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     gc.collect()
     
     logging.info('******** Test evaluation ********')
-    test_gen = TFRecordDataLoader(feature_map, stage='test', **params).make_iterator()
+    test_gen = TFRecordDataLoader(feature_map, stage='test', **params)
     test_result = {}
     if test_gen:
       test_result = model.evaluate(test_gen)

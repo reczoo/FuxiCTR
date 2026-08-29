@@ -101,8 +101,16 @@ class ParquetDataLoader(object):
                       drop_last=False,
                       prefetch_batches=self.num_workers)
         if self.shuffle:
-            kwargs["local_shuffle_buffer_size"] = self.buffer_size
-        return iter(self.dataset.iter_torch_batches(**kwargs))
+            if self.num_blocks > 1:
+                # Global multi-block shuffle + local block shuffle
+                dataset = self.dataset.randomize_block_order()
+                kwargs["local_shuffle_buffer_size"] = self.buffer_size
+            else:
+                # Global shuffle
+                dataset = self.dataset.random_shuffle()
+        else:
+            dataset = self.dataset
+        return iter(dataset.iter_torch_batches(**kwargs))
 
     def __len__(self):
         """Return the number of batches per epoch.

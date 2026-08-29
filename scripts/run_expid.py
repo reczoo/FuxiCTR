@@ -63,7 +63,7 @@ if __name__ == '__main__':
     model = model_class(feature_map, **params)
     model.count_parameters() # print number of parameters used in model
 
-    train_gen, valid_gen = RankDataLoader(feature_map, stage='train', **params).make_iterator()
+    train_gen, valid_gen = RankDataLoader(feature_map, stage='train', **params)
     model.fit(train_gen, validation_data=valid_gen, **params)
 
     logging.info('****** Validation evaluation ******')
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     test_result = {}
     if params["test_data"]:
         logging.info('******** Test evaluation ********')
-        test_gen = RankDataLoader(feature_map, stage='test', **params).make_iterator()
+        test_gen = RankDataLoader(feature_map, stage='test', **params)
         test_result = model.evaluate(test_gen)
     
     result_filename = Path(args['config']).name.replace(".yaml", "") + '.csv'
