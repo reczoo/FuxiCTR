@@ -200,8 +200,6 @@ def build_dataset(feature_encoder, train_data=None, valid_data=None, test_data=N
             meta_ddf = merge_meta_ddf(feature_encoder, train_ddf, valid_ddf, test_ddf)
             feature_encoder.fit(train_ddf, rebuild_dataset=True, meta_ddf=meta_ddf, **kwargs)
             
-            
-            
             transform(feature_encoder, train_ddf, split='train', block_size=data_block_size)
             del train_ddf
             gc.collect()

@@ -289,18 +289,18 @@ class FeatureProcessor(object):
         for c in meta_cols:
             count_lf.append(meta_ddf.select([
                 pl.lit(c).alias("feature"),
-                pl.col(c).cast(pl.List(pl.String)).alias("value"),
+                pl.concat_list(pl.col(c)).alias("value")
             ]))
         for c in cat_cols:
             count_lf.append(train_ddf.select([
                 pl.lit(c).alias("feature"),
-                pl.col(c).cast(pl.List(pl.String)).alias("value"),
+                pl.concat_list(pl.col(c)).alias("value")
             ]))
         for c in seq_cols:
             splitter = feature_spec[c].get("splitter", "^")
             count_lf.append(train_ddf.select([
                 pl.lit(c).alias("feature"),
-                pl.col(c).str.split(splitter).alias("value"),
+                pl.col(c).str.split(splitter).alias("value")
             ]))
         if count_lf:
             counts_lf = (pl.concat(count_lf)
