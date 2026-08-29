@@ -105,6 +105,9 @@ def transform(feature_encoder, ddf, split="train", block_size=0):
 
     # Convert polars LazyFrame to Ray Dataset via Arrow
     init_ray()
+    row_index = "row_index"
+    if block_size == 0:
+        ddf = ddf.with_row_index(name=row_index)
     table = ddf.collect().to_arrow()
     ds = ray.data.from_arrow(table)
     del table; gc.collect()
@@ -131,6 +134,7 @@ def transform(feature_encoder, ddf, split="train", block_size=0):
     else:
         data_path = os.path.join(feature_encoder.data_dir, split + ".parquet")
         os.makedirs(feature_encoder.data_dir, exist_ok=True)
+        ds = ds.sort(row_index).drop_columns(row_index)
         ds.to_pandas().to_parquet(data_path)
         logging.info("Saved parquet file to: " + data_path)
 
