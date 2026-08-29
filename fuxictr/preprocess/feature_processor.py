@@ -281,44 +281,55 @@ class FeatureProcessor(object):
         feature_spec = {c["name"]: c for c in self.feature_cols}
 
         lazy_frames = []
-        count_lf, maxlen_lf = [], []
+        count_cols, maxlen_cols = [], []
+        # Track per-column lazy query index for reading results
+        count_indices = {}  # col_name -> index in lazy_frames
 
-        # (1) token frequency: cat/meta -> cast(List); seq -> str.split(splitter)
         if meta_ddf is None:
             meta_ddf = train_ddf
-        for c in meta_cols:
-            count_lf.append(meta_ddf.select([
-                pl.lit(c).alias("feature"),
-                pl.concat_list(pl.col(c)).alias("value")
-            ]))
-        for c in cat_cols:
-            count_lf.append(train_ddf.select([
-                pl.lit(c).alias("feature"),
-                pl.concat_list(pl.col(c)).alias("value")
-            ]))
+        for c in meta_cols + cat_cols:
+            source_ddf = meta_ddf if c in meta_cols else train_ddf
+            col_lf = (source_ddf.select([
+                        pl.lit(c).alias("feature"),
+                        pl.col(c).alias("value")
+                      ])
+                      .drop_nulls()
+                      .group_by(["feature", "value"])
+                      .len()
+                      .sort(["feature", "len", "value"],
+                            descending=[False, True, False]))
+            count_indices[c] = len(lazy_frames)
+            lazy_frames.append(col_lf)
+            count_cols.append(c)
         for c in seq_cols:
             splitter = feature_spec[c].get("splitter", "^")
-            count_lf.append(train_ddf.select([
-                pl.lit(c).alias("feature"),
-                pl.col(c).str.split(splitter).alias("value")
-            ]))
-        if count_lf:
-            counts_lf = (pl.concat(count_lf)
-                         .explode("value")
-                         .drop_nulls()
-                         .group_by(["feature", "value"])
-                         .len()
-                         .sort(["feature", "len", "value"], descending=[False, True, False]))
-            lazy_frames.append(counts_lf)
+            col_lf = (train_ddf.select([
+                        pl.lit(c).alias("feature"),
+                        pl.col(c).str.split(splitter).alias("value")
+                      ])
+                      .explode("value")
+                      .drop_nulls()
+                      .group_by(["feature", "value"])
+                      .len()
+                      .sort(["feature", "len", "value"],
+                            descending=[False, True, False]))
+            count_indices[c] = len(lazy_frames)
+            lazy_frames.append(col_lf)
+            count_cols.append(c)
 
         # (2) max sequence length (not neccessary for columns with manually set max_len)
+        maxlen_exprs = []
         for c in seq_cols:
             splitter = feature_spec[c].get("splitter", "^")
             max_len = feature_spec[c].get("max_len", 0)
             if max_len == 0:
-                maxlen_lf.append(pl.col(c).str.split(splitter).list.len().max().alias(c))
-        if maxlen_lf:
-            lazy_frames.append(train_ddf.select(maxlen_lf))
+                maxlen_exprs.append(
+                    pl.col(c).str.split(splitter).list.len().max().alias(c))
+        if maxlen_exprs:
+            maxlen_idx = len(lazy_frames)
+            lazy_frames.append(train_ddf.select(maxlen_exprs))
+            maxlen_cols = [c for c in seq_cols
+                           if feature_spec[c].get("max_len", 0) == 0]
 
         # (3) numeric statistics for normalizer reconstruction
         exprs = []
@@ -330,6 +341,7 @@ class FeatureProcessor(object):
                       col_s.std(ddof=0).alias(f"{c}::std"),
                       col_s.count().alias(f"{c}::count")]
         if num_cols:
+            num_idx = len(lazy_frames)
             lazy_frames.append(train_ddf.select(exprs))
 
         results = pl.collect_all(lazy_frames, engine="streaming") if lazy_frames else []
@@ -344,20 +356,21 @@ class FeatureProcessor(object):
         for name in num_cols:
             stats[name] = {}
 
-        idx = 0
-        if count_lf:
-            df_counts = results[idx]
-            idx += 1
+        # Read back per-column count results (each preserves its own dtype)
+        for c in count_cols:
+            df_counts = results[count_indices[c]]
             for r in df_counts.iter_rows(named=True):
-                name, token, cnt = r["feature"], r["value"], r["len"]
-                stats[name]["value_counts"][token] = cnt
-        if maxlen_lf:
-            df_maxlen = results[idx]
-            idx += 1
-            for name in seq_cols:
+                token, cnt = r["value"], r["len"]
+                stats[c]["value_counts"][token] = cnt
+
+        # Read back max sequence lengths
+        if maxlen_cols:
+            df_maxlen = results[maxlen_idx]
+            for name in maxlen_cols:
                 stats[name]["max_len"] = int(df_maxlen[name][0])
+
         if num_cols:
-            df_num = results[idx]
+            df_num = results[num_idx]
             for c in num_cols:
                 stats[c] = {"min": df_num[f"{c}::min"][0],
                             "max": df_num[f"{c}::max"][0],
