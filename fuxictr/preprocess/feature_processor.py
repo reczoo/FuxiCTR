@@ -243,7 +243,8 @@ class FeatureProcessor(object):
                 else:
                     self.feature_map.total_features += self.feature_map.features[name]["vocab_size"]
                 if "pretrained_emb" not in spec: # "oov_idx" not used without pretrained_emb
-                    del self.feature_map.features[name]["oov_idx"]
+                    # bucketized columns (quantile_bucket / hash_bucket) have no tokenizer or oov_idx
+                    self.feature_map.features[name].pop("oov_idx", None)
 
         self.feature_map.num_fields = self.feature_map.get_num_fields()
         self.feature_map.set_column_index()
@@ -640,7 +641,7 @@ class FeatureProcessor(object):
         logging.info("Save feature_vocab to json: " + vocab_file)
         vocab = dict()
         for feature, spec in self.feature_map.features.items():
-            if spec["type"] in ["categorical", "sequence"]:
+            if spec["type"] in ["categorical", "sequence"] and feature + "::tokenizer" in self.processor_dict:
                 vocab[feature] = OrderedDict(
                     sorted(self.processor_dict[feature + "::tokenizer"].vocab.items(), key=lambda x:x[1]))
         with open(vocab_file, "w") as fd:
