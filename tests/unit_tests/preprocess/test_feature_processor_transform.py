@@ -124,6 +124,22 @@ class TestTransformBatch:
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+    def test_transform_batch_quantile_bucket(self):
+        tmpdir = tempfile.mkdtemp()
+        try:
+            fp = _make_processor(tmpdir)
+            fp.fit_categorical_col(
+                {"name": "score", "type": "categorical",
+                 "category_processor": "quantile_bucket", "num_buckets": 4},
+                pd.Series([float(i) for i in range(1, 101)]))
+            out = fp.transform({"score": [1.0, 30.0, 60.0, 100.0]})
+            ids = np.asarray(out["score"])
+            assert ids.dtype == np.int64
+            assert list(ids) == [0, 1, 2, 3]
+            assert ids.max() < fp.feature_map.features["score"]["vocab_size"]
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
     def test_transform_batch_does_not_mutate_processor_dict(self):
         tmpdir = tempfile.mkdtemp()
         try:

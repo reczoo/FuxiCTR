@@ -594,8 +594,10 @@ class FeatureProcessor(object):
                         self.processor_dict.get(feature + "::tokenizer")
                         .encode_category(col_series)
                     )
-                elif category_processor == "numeric_bucket":
-                    raise NotImplementedError
+                elif category_processor == "quantile_bucket":
+                    boundaries = self.processor_dict[feature + "::boundaries"]
+                    batch[feature] = np.digitize(np.asarray(col_series, dtype=np.float64),
+                                                 np.ravel(boundaries)).astype(np.int64)
                 elif category_processor == "hash_bucket":
                     raise NotImplementedError
             elif feature_type == "sequence":
