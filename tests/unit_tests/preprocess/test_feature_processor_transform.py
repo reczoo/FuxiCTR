@@ -175,6 +175,22 @@ class TestBuildDatasetTransform:
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+    def test_transform_block_size_larger_than_split(self):
+        from fuxictr.preprocess.build_dataset import transform
+        import polars as pl
+        tmpdir = tempfile.mkdtemp()
+        try:
+            fp = _make_processor(tmpdir)
+            os.makedirs(fp.data_dir, exist_ok=True)
+            lf = pl.from_pandas(pd.DataFrame(_make_batch())).lazy()  # 4 rows
+            transform(fp, lf, "valid", block_size=15)
+            out_dir = os.path.join(fp.data_dir, "valid")
+            parts = sorted(glob.glob(os.path.join(out_dir, "part-*.parquet")))
+            assert len(parts) == 1
+            assert len(pd.read_parquet(parts[0])) == 4
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
