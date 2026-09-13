@@ -133,7 +133,7 @@ def transform(feature_encoder, ddf, split="train", block_size=0):
         os.makedirs(data_path, exist_ok=True)
         ds.write_parquet(
             data_path, filename_provider=SimpleFilenameProvider(), mode=SaveMode.OVERWRITE,
-            min_rows_per_file=block_size, max_rows_per_file=block_size
+            max_rows_per_file=block_size
         )
         logging.info(f"Saved {num_blocks} parquet files to: " + data_path)
     else:
