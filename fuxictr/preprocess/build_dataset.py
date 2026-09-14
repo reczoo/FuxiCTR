@@ -113,7 +113,11 @@ def transform(feature_encoder, ddf, split="train", block_size=0):
     del table; gc.collect()
 
     # Parallel batched transform via Ray Data map_batches
-    num_blocks = ds.count() // block_size if block_size > 0 else os.cpu_count() // 2
+    if block_size > 0:
+        # Round up so the last partial block is kept and small splits still get one block
+        num_blocks = max((ds.count() + block_size - 1) // block_size, 1)
+    else:
+        num_blocks = os.cpu_count() // 2
     num_workers = min(num_blocks, os.cpu_count() // 2)
     ds = ds.repartition(num_blocks=num_blocks).map_batches(
         feature_encoder.transform,
@@ -128,7 +132,8 @@ def transform(feature_encoder, ddf, split="train", block_size=0):
         data_path = os.path.join(feature_encoder.data_dir, split)
         os.makedirs(data_path, exist_ok=True)
         ds.write_parquet(
-            data_path, filename_provider=SimpleFilenameProvider(), mode=SaveMode.OVERWRITE
+            data_path, filename_provider=SimpleFilenameProvider(), mode=SaveMode.OVERWRITE,
+            max_rows_per_file=block_size
         )
         logging.info(f"Saved {num_blocks} parquet files to: " + data_path)
     else:
