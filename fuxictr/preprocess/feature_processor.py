@@ -243,7 +243,8 @@ class FeatureProcessor(object):
                 else:
                     self.feature_map.total_features += self.feature_map.features[name]["vocab_size"]
                 if "pretrained_emb" not in spec: # "oov_idx" not used without pretrained_emb
-                    del self.feature_map.features[name]["oov_idx"]
+                    # bucketized columns (quantile_bucket / hash_bucket) have no tokenizer or oov_idx
+                    self.feature_map.features[name].pop("oov_idx", None)
 
         self.feature_map.num_fields = self.feature_map.get_num_fields()
         self.feature_map.set_column_index()
@@ -594,8 +595,10 @@ class FeatureProcessor(object):
                         self.processor_dict.get(feature + "::tokenizer")
                         .encode_category(col_series)
                     )
-                elif category_processor == "numeric_bucket":
-                    raise NotImplementedError
+                elif category_processor == "quantile_bucket":
+                    boundaries = self.processor_dict[feature + "::boundaries"]
+                    batch[feature] = np.digitize(np.asarray(col_series, dtype=np.float64),
+                                                 np.ravel(boundaries)).astype(np.int64)
                 elif category_processor == "hash_bucket":
                     raise NotImplementedError
             elif feature_type == "sequence":
@@ -638,7 +641,7 @@ class FeatureProcessor(object):
         logging.info("Save feature_vocab to json: " + vocab_file)
         vocab = dict()
         for feature, spec in self.feature_map.features.items():
-            if spec["type"] in ["categorical", "sequence"]:
+            if spec["type"] in ["categorical", "sequence"] and feature + "::tokenizer" in self.processor_dict:
                 vocab[feature] = OrderedDict(
                     sorted(self.processor_dict[feature + "::tokenizer"].vocab.items(), key=lambda x:x[1]))
         with open(vocab_file, "w") as fd:

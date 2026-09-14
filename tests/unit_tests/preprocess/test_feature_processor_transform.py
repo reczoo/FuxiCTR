@@ -124,6 +124,48 @@ class TestTransformBatch:
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+    def test_transform_batch_quantile_bucket(self):
+        tmpdir = tempfile.mkdtemp()
+        try:
+            fp = _make_processor(tmpdir)
+            fp.fit_categorical_col(
+                {"name": "score", "type": "categorical",
+                 "category_processor": "quantile_bucket", "num_buckets": 4},
+                pd.Series([float(i) for i in range(1, 101)]))
+            out = fp.transform({"score": [1.0, 30.0, 60.0, 100.0]})
+            ids = np.asarray(out["score"])
+            assert ids.dtype == np.int64
+            assert list(ids) == [0, 1, 2, 3]
+            assert ids.max() < fp.feature_map.features["score"]["vocab_size"]
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+    def test_fit_then_transform_quantile_bucket(self):
+        import polars as pl
+        tmpdir = tempfile.mkdtemp()
+        try:
+            fp = FeatureProcessor(
+                feature_cols=[
+                    {"name": "user_id", "type": "categorical", "dtype": "str", "active": True},
+                    {"name": "score", "type": "categorical", "dtype": "float", "active": True,
+                     "category_processor": "quantile_bucket", "num_buckets": 4},
+                ],
+                label_col={"name": "label", "dtype": "float"},
+                dataset_id="test_quantile_fit",
+                data_root=tmpdir,
+            )
+            ddf = fp.preprocess(pl.LazyFrame({
+                "user_id": [f"u{i % 5}" for i in range(100)],
+                "score": [float(i) for i in range(100)],
+                "label": [float(i % 2) for i in range(100)],
+            }))
+            fp.fit(ddf, rebuild_dataset=True)
+            assert fp.feature_map.features["score"]["vocab_size"] == 4
+            out = fp.transform({"score": [0.0, 30.0, 60.0, 99.0]})
+            assert list(np.asarray(out["score"])) == [0, 1, 2, 3]
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
     def test_transform_batch_does_not_mutate_processor_dict(self):
         tmpdir = tempfile.mkdtemp()
         try:
