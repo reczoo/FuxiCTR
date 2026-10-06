@@ -19,6 +19,7 @@ import os
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 import sys
 import logging
+import importlib
 import fuxictr_version
 from datetime import datetime
 from fuxictr.utils import load_config, set_logger, print_to_json, print_to_list
@@ -52,7 +53,12 @@ if __name__ == '__main__':
     data_dir = os.path.join(params['data_root'], params['dataset_id'])
     feature_map_json = os.path.join(data_dir, "feature_map.json")
     # Build feature_map and transform data
-    feature_encoder = FeatureProcessor(**params)
+    processor_cls = FeatureProcessor
+    if "customized_feature_processor" in params:
+        module_path, class_name = params["customized_feature_processor"].rsplit(".", 1)
+        processor_cls = getattr(importlib.import_module(module_path), class_name)
+        logging.info(f"Using customized feature processor: {params['customized_feature_processor']}")
+    feature_encoder = processor_cls(**params)
     params["train_data"], params["valid_data"], params["test_data"] = \
         build_dataset(feature_encoder, **params)
     feature_map = FeatureMap(params['dataset_id'], data_dir)
