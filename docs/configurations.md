@@ -16,6 +16,7 @@ The `dataset_config` contains the following keys:
 + **valid_data**: validation data file path
 + **test_data**: test data file path
 + **min_categr_count**: the default threshold used to filter rare features
++ **customized_feature_processor**: optional, the fully qualified class path of a custom `FeatureProcessor` used by `scripts/run_expid.py`, e.g., `fuxictr.datasets.criteo.CustomizedFeatureProcessor`. The module must be importable from the training environment. If omitted, the default `FeatureProcessor` is used.
 + **feature_cols**: a list of feature columns, each containing the following keys
   - **name**: feature name, i.e., column header name.
   - **active**: True | False, whether to use the feature.
